@@ -1,0 +1,227 @@
+@import url('https://fonts.googleapis.com/css2?family=Jost:wght@100;200;300;400;500;600;700;800;900&family=Montserrat:wght@100;200;300;400;500;600;700;800;900&family=Bitter:wght@100;200;300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+/* Design system tokens matching ukiahseniorcenter.org */
+:root {
+  /* Colors */
+  --teal: #427d78;
+  --tealHover: #5eb3a1;
+  --tealDark: #25686A;
+  --ink: #000000;
+  --copy: #666666;
+  --mute: #6B7280;
+  --bg: #fafbff;
+  --card: #FFFFFF;
+  --ring: #427d78;
+  --border: #E5E7EB;
+  
+  /* Spacing scale */
+  --space-1: 8px;
+  --space-2: 12px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 32px;
+  --space-6: 48px;
+  --space-7: 64px;
+  
+  /* Layout */
+  --container-max-width: 1140px;
+  --container-padding: 24px;
+  --container-padding-mobile: 16px;
+  
+  /* Border radius */
+  --radius: 10px;
+  --radius-sm: 6px;
+  
+  /* Shadows */
+  --shadow: 0 6px 18px rgba(0,0,0,0.06);
+  --shadow-md: 0 8px 24px rgba(0,0,0,0.08);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,0.12);
+  
+  /* Grid */
+  --grid-gap: 24px;
+  --grid-gap-mobile: 16px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--copy);
+  font-family: 'Bitter', Georgia, "Times New Roman", serif;
+  font-size: 18px;
+  line-height: 1.8;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Increase base font size for better senior readability */
+@media (min-width: 768px) {
+  html {
+    font-size: 19px;
+  }
+}
+
+@media (min-width: 1024px) {
+  html {
+    font-size: 20px;
+  }
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--ink);
+  font-family: 'Jost', Helvetica, Arial, Lucida, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+h1 {
+  line-height: 1.15;
+  margin: var(--space-5) 0 var(--space-3);
+}
+
+h2 {
+  line-height: 1.25;
+  margin: var(--space-4) 0 var(--space-2);
+}
+
+h3 {
+  line-height: 1.3;
+  margin: var(--space-3) 0 var(--space-2);
+}
+
+p {
+  margin-bottom: var(--space-3);
+  line-height: 1.8;
+}
+
+/* Improve link visibility for seniors */
+a {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  transition: all 200ms ease;
+}
+
+a:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* Enhanced button styles for accessibility */
+button,
+.btn-primary,
+a[role="button"] {
+  cursor: pointer;
+  min-height: 44px;
+  min-width: 44px;
+  font-size: 1rem;
+  padding: 0.75rem 1.5rem;
+}
+
+button:hover,
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Container system */
+.container {
+  max-width: var(--container-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  padding-inline: var(--container-padding);
+}
+
+@media (max-width: 767px) {
+  .container {
+    padding-inline: var(--container-padding-mobile);
+  }
+}
+
+/* Focus styles - Accessible */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Selection color */
+::selection {
+  background-color: var(--ring);
+  color: white;
+}
+
+/* Card styles matching homepage */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+}
+
+@media (min-width: 768px) {
+  .card {
+    padding: 28px;
+  }
+}
+
+/* Grid system */
+.grid-cards {
+  display: grid;
+  gap: var(--grid-gap-mobile);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .grid-cards {
+    gap: var(--grid-gap);
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid-cards.three-col {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Button styles matching homepage */
+.btn-primary {
+  background-color: var(--teal);
+  color: var(--card);
+  border: 2px solid var(--teal);
+  padding: 0.75rem 1.5rem;
+  border-radius: 3px;
+  font-family: 'Montserrat', Helvetica, Arial, sans-serif;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  transition: all 300ms ease;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background-color: var(--tealHover);
+  border-color: var(--tealHover);
+}

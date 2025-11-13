@@ -133,8 +133,8 @@ export function ZeffyModal({ isOpen, onClose, eventTitle, zeffyUrl }: ZeffyModal
     >
       <div
         ref={modalRef}
-        className="max-w-[900px] w-[92vw] rounded-lg shadow-xl ring-1 ring-black/5 p-6 relative bg-white"
-        style={{ maxHeight: '90vh', overflowY: 'auto' }}
+        className="max-w-[900px] w-[92vw] rounded-lg shadow-xl ring-1 ring-black/5 relative bg-white flex flex-col"
+        style={{ maxHeight: '90vh' }}
       >
         {/* Visually hidden title for a11y */}
         <h2 id="ticket-modal-title" className="sr-only">
@@ -153,32 +153,25 @@ export function ZeffyModal({ isOpen, onClose, eventTitle, zeffyUrl }: ZeffyModal
           </svg>
         </button>
 
-        {/* Modal Header */}
-        <div className="mb-6 text-center border-b border-neutral-200 pb-6">
+        {/* Modal Header - Fixed at top */}
+        <div className="px-6 pt-6 pb-4 border-b border-neutral-200 flex items-center justify-center gap-3">
           <img 
             src="/logo.png" 
             alt="Ukiah Senior Center" 
-            className="mx-auto mb-4"
-            style={{ width: '120px', height: 'auto', display: 'block' }}
+            style={{ width: '60px', height: 'auto', display: 'block' }}
           />
-          <h3 className="text-xl md:text-2xl font-['Jost',sans-serif] font-bold text-[#427d78]" style={{ lineHeight: '1.2' }}>
+          <h3 className="text-lg md:text-xl font-['Jost',sans-serif] font-bold text-[#427d78]" style={{ lineHeight: '1.2' }}>
             {eventTitle}
           </h3>
-          <p className="text-sm text-neutral-600 mt-2 font-['Bitter',serif]">
-            Purchase your tickets below
-          </p>
         </div>
 
-        {/* Tip Notice */}
-        <div className="mb-6 pb-6 border-b border-neutral-200">
-          <div className="bg-red-50 border-2 border-red-400 rounded-lg" style={{ padding: 'var(--space-3)' }}>
-            <h3 className="text-base md:text-lg font-['Jost',sans-serif] font-bold text-red-900 text-center" style={{ marginBottom: 'var(--space-2)', lineHeight: '1.3' }}>
-              ⚠️ Set Zeffy Tip to $0
-            </h3>
-            <p className="text-xs md:text-sm text-red-900 font-['Bitter',serif] text-center" style={{ marginBottom: 'var(--space-2)', maxWidth: '700px', marginInline: 'auto', lineHeight: '1.6' }}>
-              When filling out the form below, <strong>set the tip to $0</strong> so you don&apos;t pay any fees.
+        {/* Tip Notice - Fixed at top */}
+        <div className="px-6 py-3 border-b border-neutral-200">
+          <div className="bg-red-50 border border-red-400 rounded" style={{ padding: '8px 12px' }}>
+            <p className="text-xs text-red-900 font-['Bitter',serif] text-center" style={{ marginBottom: '6px', lineHeight: '1.4' }}>
+              <strong>⚠️ Set Zeffy Tip to $0</strong> so you don&apos;t pay any fees.
             </p>
-            <div className="bg-white rounded border border-red-300" style={{ padding: 'var(--space-2)', maxWidth: '600px', marginInline: 'auto', overflow: 'hidden' }}>
+            <div className="bg-white rounded border border-red-300" style={{ padding: '6px', overflow: 'hidden' }}>
               <img
                 src="/zero_tip.png"
                 alt="Set Zeffy tip to zero"
@@ -193,8 +186,8 @@ export function ZeffyModal({ isOpen, onClose, eventTitle, zeffyUrl }: ZeffyModal
           </div>
         </div>
 
-        {/* Iframe Container */}
-        <div className="relative min-h-[600px] rounded-lg overflow-hidden bg-gray-50">
+        {/* Iframe Container - Scrollable */}
+        <div className="relative flex-1 bg-gray-50" style={{ minHeight: '600px' }}>
           {isLoading && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="flex flex-col items-center space-y-4">

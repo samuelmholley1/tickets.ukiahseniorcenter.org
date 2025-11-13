@@ -171,12 +171,13 @@ export function ZeffyModal({ isOpen, onClose, eventTitle, zeffyUrl }: ZeffyModal
             <p className="text-xs text-red-900 font-['Bitter',serif] text-center" style={{ marginBottom: '6px', lineHeight: '1.4' }}>
               <strong>⚠️ Set Zeffy Tip to $0</strong> so you don&apos;t pay any fees.
             </p>
-            <div className="bg-white rounded border border-red-300" style={{ padding: '6px', overflow: 'hidden' }}>
+            <div className="bg-white rounded border border-red-300 flex justify-center" style={{ padding: '6px', overflow: 'hidden' }}>
               <img
                 src="/zero_tip.png"
                 alt="Set Zeffy tip to zero"
                 className="rounded"
                 style={{ 
+                  width: '300px',
                   maxWidth: '100%', 
                   height: 'auto', 
                   display: 'block'

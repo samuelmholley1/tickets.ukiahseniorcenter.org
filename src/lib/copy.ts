@@ -39,7 +39,6 @@ export const EVENTS: Event[] = [
     title: 'Thanksgiving Feast',
     description: 'Join us for a traditional Thanksgiving dinner with all the fixings. Celebrate the season with friends and community.',
     date: 'November 27, 2025',
-    time: 'TBD',
     location: 'Ukiah Senior Center',
     zeffyUrl: 'https://www.zeffy.com/embed/ticketing/thanksgiving-feast--2026?modal=true',
     buttonText: 'Reserve Your Seat'
@@ -49,7 +48,6 @@ export const EVENTS: Event[] = [
     title: 'New Year\'s Eve Gala Dance',
     description: 'Ring in 2026 with style! Join us for an elegant evening of dancing, celebration, and festive fun.',
     date: 'December 31, 2025',
-    time: 'TBD',
     location: 'Ukiah Senior Center',
     zeffyUrl: 'https://www.zeffy.com/embed/ticketing/new-years-eve-gala-dance--2025?modal=true',
     buttonText: 'Get Tickets'

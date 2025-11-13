@@ -163,10 +163,27 @@ export function ZeffyModal({ isOpen, onClose, eventTitle, zeffyUrl }: ZeffyModal
           </p>
         </div>
 
-        {/* Tip Instruction */}
+        {/* Tip Notice */}
         <div className="mb-6 pb-6 border-b border-neutral-200">
-          <div className="text-sm text-neutral-700 font-['Bitter',serif]">
-            💡 <strong>Tip:</strong> The tip to Zeffy is optional. You can adjust or set it to $0 during checkout.
+          <div className="bg-red-50 border-2 border-red-400 rounded-lg" style={{ padding: 'var(--space-3)' }}>
+            <h3 className="text-base md:text-lg font-['Jost',sans-serif] font-bold text-red-900 text-center" style={{ marginBottom: 'var(--space-2)', lineHeight: '1.3' }}>
+              ⚠️ Set Zeffy Tip to $0
+            </h3>
+            <p className="text-xs md:text-sm text-red-900 font-['Bitter',serif] text-center" style={{ marginBottom: 'var(--space-2)', maxWidth: '700px', marginInline: 'auto', lineHeight: '1.6' }}>
+              When filling out the form below, <strong>set the tip to $0</strong> so you don&apos;t pay any fees.
+            </p>
+            <div className="bg-white rounded border border-red-300" style={{ padding: 'var(--space-2)', maxWidth: '600px', marginInline: 'auto', overflow: 'hidden' }}>
+              <img
+                src="/zero_tip.png"
+                alt="Set Zeffy tip to zero"
+                className="rounded"
+                style={{ 
+                  maxWidth: '100%', 
+                  height: 'auto', 
+                  display: 'block'
+                }}
+              />
+            </div>
           </div>
         </div>
 

@@ -155,6 +155,12 @@ export function ZeffyModal({ isOpen, onClose, eventTitle, zeffyUrl }: ZeffyModal
 
         {/* Modal Header */}
         <div className="mb-6 text-center border-b border-neutral-200 pb-6">
+          <img 
+            src="/logo.png" 
+            alt="Ukiah Senior Center" 
+            className="mx-auto mb-4"
+            style={{ width: '120px', height: 'auto' }}
+          />
           <h3 className="text-xl md:text-2xl font-['Jost',sans-serif] font-bold text-[#427d78]" style={{ lineHeight: '1.2' }}>
             {eventTitle}
           </h3>

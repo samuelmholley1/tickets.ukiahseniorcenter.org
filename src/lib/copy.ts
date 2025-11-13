@@ -35,23 +35,23 @@ export interface Event {
 
 export const EVENTS: Event[] = [
   {
-    id: 'sample-event-1',
-    title: 'Sample Event - Spring Luncheon',
-    description: 'Join us for our annual spring luncheon featuring live music and a delicious meal.',
-    date: 'March 15, 2025',
-    time: '12:00 PM - 2:00 PM',
-    location: 'Ukiah Senior Center Hall',
-    zeffyUrl: 'https://www.zeffy.com/ticketing/your-event-id-1',
-    buttonText: 'Get Tickets'
+    id: 'thanksgiving-feast',
+    title: 'Thanksgiving Feast',
+    description: 'Join us for a traditional Thanksgiving dinner with all the fixings. Celebrate the season with friends and community.',
+    date: 'November 27, 2025',
+    time: 'TBD',
+    location: 'Ukiah Senior Center',
+    zeffyUrl: 'https://www.zeffy.com/embed/ticketing/thanksgiving-feast--2026?modal=true',
+    buttonText: 'Reserve Your Seat'
   },
   {
-    id: 'sample-event-2',
-    title: 'Sample Event - Bingo Night',
-    description: 'An evening of bingo, prizes, and fun with friends.',
-    date: 'March 22, 2025',
-    time: '6:00 PM - 8:00 PM',
-    location: 'Ukiah Senior Center Hall',
-    zeffyUrl: 'https://www.zeffy.com/ticketing/your-event-id-2',
-    buttonText: 'Reserve Your Spot'
+    id: 'nye-gala-dance',
+    title: 'New Year\'s Eve Gala Dance',
+    description: 'Ring in 2026 with style! Join us for an elegant evening of dancing, celebration, and festive fun.',
+    date: 'December 31, 2025',
+    time: 'TBD',
+    location: 'Ukiah Senior Center',
+    zeffyUrl: 'https://www.zeffy.com/embed/ticketing/new-years-eve-gala-dance--2025?modal=true',
+    buttonText: 'Get Tickets'
   },
 ];

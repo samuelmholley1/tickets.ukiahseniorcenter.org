@@ -14,8 +14,10 @@ export default function Tickets() {
   const scrollToForm = (formId: string) => {
     const element = document.getElementById(formId);
     if (element) {
-      // Scroll with some offset to show the tip notice above
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Get element position and scroll with offset to show warning section
+      const yOffset = -100; // Negative offset to show content above
+      const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+      window.scrollTo({ top: y, behavior: 'smooth' });
     }
   };
 

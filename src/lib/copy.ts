@@ -35,13 +35,13 @@ export interface Event {
 
 export const EVENTS: Event[] = [
   {
-    id: 'thanksgiving-feast',
-    title: 'Thanksgiving Feast',
-    description: 'Join us for a traditional Thanksgiving dinner with all the fixings. Celebrate the season with friends and community.',
-    date: 'November 27, 2025',
+    id: 'christmas-drive-thru',
+    title: 'Christmas Drive-Thru Meal',
+    description: 'Enjoy a festive Christmas meal from the comfort of your car. Pick up your holiday dinner at our convenient drive-thru.',
+    date: 'December 23, 2025',
     location: 'Ukiah Senior Center',
-    zeffyUrl: 'https://www.zeffy.com/embed/ticketing/thanksgiving-feast--2026?modal=true',
-    buttonText: 'Reserve Your Seat'
+    zeffyUrl: 'https://www.zeffy.com/embed/ticketing/christmas-drive-thru-meal--2025',
+    buttonText: 'Reserve Your Meal'
   },
   {
     id: 'nye-gala-dance',

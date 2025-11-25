@@ -72,6 +72,10 @@ export default function TicketGenerator() {
                   padding: 20px;
                   background: white;
                 }
+                @keyframes sparkle {
+                  0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+                  50% { transform: scale(1.2) rotate(10deg); opacity: 0.8; }
+                }
                 @media print {
                   body { padding: 0; }
                   @page { margin: 0; }
@@ -219,23 +223,76 @@ export default function TicketGenerator() {
                   <div 
                     ref={ticketRef}
                     className="bg-white border-4 border-[#427d78] rounded-lg p-8 print:border-0"
-                    style={{ maxWidth: '600px', marginInline: 'auto' }}
+                    style={{ maxWidth: '600px', marginInline: 'auto', position: 'relative', overflow: 'hidden' }}
                   >
-                    {/* Logo */}
-                    <div style={{ textAlign: 'center', marginBottom: 'var(--space-3)' }}>
-                      <Image
-                        src="/logo.png"
-                        alt="Ukiah Senior Center"
-                        width={200}
-                        height={200}
-                        style={{ marginInline: 'auto' }}
-                      />
+                    {/* Christmas Decorations */}
+                    {selectedEvent === 'christmas-drive-thru' && (
+                      <>
+                        {/* Snowflakes */}
+                        <div style={{ position: 'absolute', top: '10px', left: '10px', fontSize: '2rem', opacity: 0.3 }}>❄️</div>
+                        <div style={{ position: 'absolute', top: '30px', right: '20px', fontSize: '1.5rem', opacity: 0.3 }}>❄️</div>
+                        <div style={{ position: 'absolute', bottom: '20px', left: '30px', fontSize: '1.8rem', opacity: 0.3 }}>❄️</div>
+                        <div style={{ position: 'absolute', bottom: '40px', right: '15px', fontSize: '2rem', opacity: 0.3 }}>❄️</div>
+                        {/* Christmas tree */}
+                        <div style={{ position: 'absolute', top: '15px', left: '50%', transform: 'translateX(-50%)', fontSize: '2.5rem', opacity: 0.2 }}>🎄</div>
+                      </>
+                    )}
+                    
+                    {/* NYE Decorations */}
+                    {selectedEvent === 'nye-gala' && (
+                      <>
+                        {/* Confetti and celebration */}
+                        <div style={{ position: 'absolute', top: '15px', left: '15px', fontSize: '1.8rem' }}>🎉</div>
+                        <div style={{ position: 'absolute', top: '20px', right: '20px', fontSize: '2rem' }}>✨</div>
+                        <div style={{ position: 'absolute', top: '50px', left: '40px', fontSize: '1.5rem' }}>🎊</div>
+                        <div style={{ position: 'absolute', bottom: '30px', left: '20px', fontSize: '2rem' }}>🥂</div>
+                        <div style={{ position: 'absolute', bottom: '25px', right: '25px', fontSize: '1.8rem' }}>🎆</div>
+                        <div style={{ position: 'absolute', top: '40%', right: '10px', fontSize: '1.5rem' }}>💫</div>
+                      </>
+                    )}
+
+                    {/* Logo with Santa Hat for Christmas */}
+                    <div style={{ textAlign: 'center', marginBottom: 'var(--space-3)', position: 'relative' }}>
+                      <div style={{ position: 'relative', display: 'inline-block' }}>
+                        <Image
+                          src="/logo.png"
+                          alt="Ukiah Senior Center"
+                          width={200}
+                          height={200}
+                          style={{ marginInline: 'auto' }}
+                        />
+                        {selectedEvent === 'christmas-drive-thru' && (
+                          <div style={{ 
+                            position: 'absolute', 
+                            top: '-10px', 
+                            right: '20px', 
+                            fontSize: '3rem',
+                            transform: 'rotate(25deg)',
+                            filter: 'drop-shadow(2px 2px 4px rgba(0,0,0,0.2))'
+                          }}>
+                            🎅
+                          </div>
+                        )}
+                        {selectedEvent === 'nye-gala' && (
+                          <div style={{ 
+                            position: 'absolute', 
+                            top: '-5px', 
+                            right: '15px', 
+                            fontSize: '3rem',
+                            animation: 'sparkle 2s ease-in-out infinite'
+                          }}>
+                            🎩
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     {/* Event Info */}
                     <div style={{ textAlign: 'center', marginBottom: 'var(--space-4)', borderBottom: '2px solid #427d78', paddingBottom: 'var(--space-3)' }}>
                       <h3 className="font-['Jost',sans-serif] font-bold text-[#427d78]" style={{ fontSize: '2rem', marginBottom: 'var(--space-2)', lineHeight: '1.2' }}>
+                        {selectedEvent === 'christmas-drive-thru' && '🎄 '}
                         {ticketData.eventName}
+                        {selectedEvent === 'nye-gala' && ' 🎊'}
                       </h3>
                       <p className="font-['Bitter',serif] text-gray-700" style={{ fontSize: '1.25rem', marginBottom: 'var(--space-1)' }}>
                         📅 {ticketData.eventDate}

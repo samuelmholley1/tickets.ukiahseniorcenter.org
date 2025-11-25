@@ -8,6 +8,7 @@ import { SiteFooterContent } from '@/components/SiteFooterContent';
 interface TicketData {
   eventName: string;
   eventDate: string;
+  eventTime: string;
   eventLocation: string;
   customerName: string;
   customerPhone: string;
@@ -19,12 +20,14 @@ const EVENTS = [
     id: 'christmas-drive-thru',
     name: 'Christmas Drive-Thru Meal',
     date: 'December 23, 2025',
+    time: '12:00 PM - 12:30 PM',
     location: 'Ukiah Senior Center'
   },
   {
     id: 'nye-gala',
     name: 'New Year\'s Eve Gala Dance',
     date: 'December 31, 2025',
+    time: '6:00 PM - 10:00 PM',
     location: 'Ukiah Senior Center'
   }
 ];
@@ -34,6 +37,7 @@ export default function TicketGenerator() {
   const [ticketData, setTicketData] = useState<TicketData>({
     eventName: '',
     eventDate: '',
+    eventTime: '',
     eventLocation: '',
     customerName: '',
     customerPhone: '',
@@ -49,6 +53,7 @@ export default function TicketGenerator() {
         ...ticketData,
         eventName: event.name,
         eventDate: event.date,
+        eventTime: event.time,
         eventLocation: event.location
       });
     }
@@ -77,8 +82,11 @@ export default function TicketGenerator() {
                   50% { transform: scale(1.2) rotate(10deg); opacity: 0.8; }
                 }
                 @media print {
-                  body { padding: 0; }
-                  @page { margin: 0; }
+                  body { padding: 0; margin: 0; }
+                  @page { 
+                    size: 3.5in 2in;
+                    margin: 0; 
+                  }
                 }
               </style>
             </head>
@@ -155,6 +163,7 @@ export default function TicketGenerator() {
                       setTicketData({
                         eventName: '',
                         eventDate: '',
+                        eventTime: '',
                         eventLocation: '',
                         customerName: '',
                         customerPhone: '',
@@ -222,19 +231,25 @@ export default function TicketGenerator() {
 
                   <div 
                     ref={ticketRef}
-                    className="bg-white border-4 border-[#427d78] rounded-lg p-8 print:border-0"
-                    style={{ maxWidth: '600px', marginInline: 'auto', position: 'relative', overflow: 'hidden' }}
+                    className="bg-white border-4 border-[#427d78] rounded-lg print:border-2"
+                    style={{ 
+                      width: '3.5in', 
+                      height: '2in', 
+                      marginInline: 'auto', 
+                      position: 'relative', 
+                      overflow: 'hidden',
+                      padding: '12px',
+                      fontSize: '9px'
+                    }}
                   >
                     {/* Christmas Decorations */}
                     {selectedEvent === 'christmas-drive-thru' && (
                       <>
                         {/* Snowflakes */}
-                        <div style={{ position: 'absolute', top: '10px', left: '10px', fontSize: '2rem', opacity: 0.3 }}>❄️</div>
-                        <div style={{ position: 'absolute', top: '30px', right: '20px', fontSize: '1.5rem', opacity: 0.3 }}>❄️</div>
-                        <div style={{ position: 'absolute', bottom: '20px', left: '30px', fontSize: '1.8rem', opacity: 0.3 }}>❄️</div>
-                        <div style={{ position: 'absolute', bottom: '40px', right: '15px', fontSize: '2rem', opacity: 0.3 }}>❄️</div>
-                        {/* Christmas tree */}
-                        <div style={{ position: 'absolute', top: '15px', left: '50%', transform: 'translateX(-50%)', fontSize: '2.5rem', opacity: 0.2 }}>🎄</div>
+                        <div style={{ position: 'absolute', top: '5px', left: '5px', fontSize: '0.8rem', opacity: 0.3 }}>❄️</div>
+                        <div style={{ position: 'absolute', top: '8px', right: '8px', fontSize: '0.7rem', opacity: 0.3 }}>❄️</div>
+                        <div style={{ position: 'absolute', bottom: '8px', left: '10px', fontSize: '0.7rem', opacity: 0.3 }}>❄️</div>
+                        <div style={{ position: 'absolute', bottom: '12px', right: '6px', fontSize: '0.8rem', opacity: 0.3 }}>❄️</div>
                       </>
                     )}
                     
@@ -242,33 +257,31 @@ export default function TicketGenerator() {
                     {selectedEvent === 'nye-gala' && (
                       <>
                         {/* Confetti and celebration */}
-                        <div style={{ position: 'absolute', top: '15px', left: '15px', fontSize: '1.8rem' }}>🎉</div>
-                        <div style={{ position: 'absolute', top: '20px', right: '20px', fontSize: '2rem' }}>✨</div>
-                        <div style={{ position: 'absolute', top: '50px', left: '40px', fontSize: '1.5rem' }}>🎊</div>
-                        <div style={{ position: 'absolute', bottom: '30px', left: '20px', fontSize: '2rem' }}>🥂</div>
-                        <div style={{ position: 'absolute', bottom: '25px', right: '25px', fontSize: '1.8rem' }}>🎆</div>
-                        <div style={{ position: 'absolute', top: '40%', right: '10px', fontSize: '1.5rem' }}>💫</div>
+                        <div style={{ position: 'absolute', top: '6px', left: '6px', fontSize: '0.7rem' }}>🎉</div>
+                        <div style={{ position: 'absolute', top: '8px', right: '8px', fontSize: '0.8rem' }}>✨</div>
+                        <div style={{ position: 'absolute', bottom: '10px', left: '8px', fontSize: '0.8rem' }}>🥂</div>
+                        <div style={{ position: 'absolute', bottom: '8px', right: '10px', fontSize: '0.7rem' }}>🎆</div>
                       </>
                     )}
 
-                    {/* Logo with Santa Hat for Christmas */}
-                    <div style={{ textAlign: 'center', marginBottom: 'var(--space-3)', position: 'relative' }}>
+                    {/* Logo with decorations */}
+                    <div style={{ textAlign: 'center', marginBottom: '4px', position: 'relative' }}>
                       <div style={{ position: 'relative', display: 'inline-block' }}>
                         <Image
                           src="/logo.png"
                           alt="Ukiah Senior Center"
-                          width={200}
-                          height={200}
+                          width={60}
+                          height={60}
                           style={{ marginInline: 'auto' }}
                         />
                         {selectedEvent === 'christmas-drive-thru' && (
                           <div style={{ 
                             position: 'absolute', 
-                            top: '-10px', 
-                            right: '20px', 
-                            fontSize: '3rem',
+                            top: '-3px', 
+                            right: '5px', 
+                            fontSize: '1rem',
                             transform: 'rotate(25deg)',
-                            filter: 'drop-shadow(2px 2px 4px rgba(0,0,0,0.2))'
+                            filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.2))'
                           }}>
                             🎅
                           </div>
@@ -276,9 +289,9 @@ export default function TicketGenerator() {
                         {selectedEvent === 'nye-gala' && (
                           <div style={{ 
                             position: 'absolute', 
-                            top: '-5px', 
-                            right: '15px', 
-                            fontSize: '3rem',
+                            top: '-2px', 
+                            right: '4px', 
+                            fontSize: '1rem',
                             animation: 'sparkle 2s ease-in-out infinite'
                           }}>
                             🎩
@@ -288,26 +301,27 @@ export default function TicketGenerator() {
                     </div>
 
                     {/* Event Info */}
-                    <div style={{ textAlign: 'center', marginBottom: 'var(--space-4)', borderBottom: '2px solid #427d78', paddingBottom: 'var(--space-3)' }}>
-                      <h3 className="font-['Jost',sans-serif] font-bold text-[#427d78]" style={{ fontSize: '2rem', marginBottom: 'var(--space-2)', lineHeight: '1.2' }}>
-                        {selectedEvent === 'christmas-drive-thru' && '🎄 '}
+                    <div style={{ textAlign: 'center', marginBottom: '6px', borderBottom: '1px solid #427d78', paddingBottom: '4px' }}>
+                      <h3 className="font-['Jost',sans-serif] font-bold text-[#427d78]" style={{ fontSize: '13px', marginBottom: '2px', lineHeight: '1.1' }}>
                         {ticketData.eventName}
-                        {selectedEvent === 'nye-gala' && ' 🎊'}
                       </h3>
-                      <p className="font-['Bitter',serif] text-gray-700" style={{ fontSize: '1.25rem', marginBottom: 'var(--space-1)' }}>
+                      <p className="font-['Bitter',serif] text-gray-700" style={{ fontSize: '9px', marginBottom: '1px', lineHeight: '1.2' }}>
                         📅 {ticketData.eventDate}
                       </p>
-                      <p className="font-['Bitter',serif] text-gray-700" style={{ fontSize: '1.125rem' }}>
+                      <p className="font-['Bitter',serif] text-gray-700" style={{ fontSize: '9px', marginBottom: '1px', lineHeight: '1.2', fontWeight: 'bold' }}>
+                        🕐 {ticketData.eventTime}
+                      </p>
+                      <p className="font-['Bitter',serif] text-gray-700" style={{ fontSize: '8px', lineHeight: '1.2' }}>
                         📍 {ticketData.eventLocation}
                       </p>
                     </div>
 
                     {/* Customer Info */}
-                    <div style={{ marginBottom: 'var(--space-3)' }}>
-                      <h4 className="font-['Jost',sans-serif] font-bold text-[#427d78]" style={{ fontSize: '1.25rem', marginBottom: 'var(--space-2)' }}>
+                    <div style={{ marginBottom: '4px' }}>
+                      <h4 className="font-['Jost',sans-serif] font-bold text-[#427d78]" style={{ fontSize: '10px', marginBottom: '2px' }}>
                         Ticket Holder
                       </h4>
-                      <div className="font-['Bitter',serif] text-gray-700" style={{ fontSize: '1.125rem', lineHeight: '1.8' }}>
+                      <div className="font-['Bitter',serif] text-gray-700" style={{ fontSize: '8px', lineHeight: '1.3' }}>
                         <p><strong>Name:</strong> {ticketData.customerName}</p>
                         <p><strong>Phone:</strong> {ticketData.customerPhone}</p>
                         <p><strong>Email:</strong> {ticketData.customerEmail}</p>
@@ -315,10 +329,9 @@ export default function TicketGenerator() {
                     </div>
 
                     {/* Footer */}
-                    <div style={{ textAlign: 'center', borderTop: '2px solid #427d78', paddingTop: 'var(--space-3)', marginTop: 'var(--space-4)' }}>
-                      <p className="font-['Bitter',serif] text-gray-600" style={{ fontSize: '0.875rem' }}>
-                        499 Leslie St, Ukiah, CA 95482<br />
-                        (707) 462-4343
+                    <div style={{ textAlign: 'center', borderTop: '1px solid #427d78', paddingTop: '3px', marginTop: '4px' }}>
+                      <p className="font-['Bitter',serif] text-gray-600" style={{ fontSize: '7px', lineHeight: '1.2' }}>
+                        499 Leslie St, Ukiah, CA 95482 • (707) 462-4343
                       </p>
                     </div>
                   </div>

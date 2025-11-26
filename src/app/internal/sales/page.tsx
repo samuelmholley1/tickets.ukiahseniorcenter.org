@@ -108,6 +108,17 @@ export default function UnifiedSalesPage() {
       <div className="bg-[#fafbff]" style={{ paddingBlock: 'var(--space-4)' }}>
         <div className="container" style={{ maxWidth: '900px' }}>
           
+          {/* Card Payment Button */}
+          <div style={{ textAlign: 'center', marginBottom: 'var(--space-3)' }}>
+            <a
+              href="https://tickets.ukiahseniorcenter.org"
+              className="inline-block bg-[#5eb3a1] hover:bg-[#427d78] text-white font-['Jost',sans-serif] font-bold px-6 py-3 rounded-lg transition-colors duration-300 shadow-md hover:shadow-lg"
+              style={{ fontSize: 'clamp(0.875rem, 2.5vw, 1rem)' }}
+            >
+              💳 Card Payment? Click Here
+            </a>
+          </div>
+
           {/* Page Header */}
           <div style={{ textAlign: 'center', marginBottom: 'var(--space-4)' }}>
             <h1 className="font-['Jost',sans-serif] font-bold text-[#427d78]" style={{ marginBottom: 'var(--space-2)', lineHeight: '1.2', fontSize: 'clamp(1.5rem, 5vw, 2.5rem)' }}>

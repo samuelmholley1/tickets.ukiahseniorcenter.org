@@ -1,0 +1,195 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - link "Ukiah Senior Center" [ref=e5] [cursor=pointer]:
+        - /url: https://ukiahseniorcenter.org
+        - img "Ukiah Senior Center" [ref=e6]
+      - link "← Back to Home" [ref=e7] [cursor=pointer]:
+        - /url: https://ukiahseniorcenter.org
+  - generic [ref=e9]:
+    - generic [ref=e10]:
+      - heading "Event Tickets" [level=1] [ref=e11]
+      - paragraph [ref=e12]: Purchase tickets for upcoming events at the Ukiah Senior Center
+    - generic [ref=e13]:
+      - button "Purchase tickets for Christmas Drive-Thru Meal" [ref=e14] [cursor=pointer]:
+        - generic [ref=e15]: Christmas Drive-Thru Meal
+        - generic [ref=e16]: 📅 December 23, 2025
+        - generic [ref=e17]: 📍 Ukiah Senior Center
+      - button "Purchase tickets for New Year's Eve Gala Dance" [ref=e18] [cursor=pointer]:
+        - generic [ref=e19]: New Year's Eve Gala Dance
+        - generic [ref=e20]: 📅 December 31, 2025
+        - generic [ref=e21]: 📍 Ukiah Senior Center
+    - generic [ref=e22]:
+      - generic [ref=e23]:
+        - generic [ref=e24]:
+          - heading "⚠️ Set Zeffy Tip to $0" [level=3] [ref=e25]
+          - paragraph [ref=e26]:
+            - text: When filling out the form below,
+            - strong [ref=e27]: set the tip to $0
+            - text: so you don't pay any fees.
+          - img "Set Zeffy tip to zero" [ref=e29]
+        - generic [ref=e30]:
+          - generic [ref=e31]:
+            - heading "Christmas Drive-Thru Meal" [level=2] [ref=e32]
+            - paragraph [ref=e33]: 📅 December 23, 2025
+            - paragraph [ref=e34]: 📍 Ukiah Senior Center
+            - paragraph [ref=e35]: Enjoy a festive Christmas meal from the comfort of your car. Pick up your holiday dinner at our convenient drive-thru.
+          - iframe [ref=e38]:
+            - generic [active] [ref=f1e1]:
+              - generic [ref=f1e8]:
+                - generic [ref=f1e9]:
+                  - generic [ref=f1e13]:
+                    - generic [ref=f1e17]:
+                      - generic [ref=f1e18]:
+                        - heading "Member Ticket" [level=6] [ref=f1e20]
+                        - heading "$15" [level=6] [ref=f1e22]
+                      - button "Add" [ref=f1e24] [cursor=pointer]:
+                        - generic [ref=f1e25]:
+                          - text: Add
+                          - img [ref=f1e27]
+                    - generic [ref=f1e33]:
+                      - generic [ref=f1e34]:
+                        - heading "Nonmember Ticket" [level=6] [ref=f1e36]
+                        - heading "$20" [level=6] [ref=f1e38]
+                      - button "Add" [ref=f1e40] [cursor=pointer]:
+                        - generic [ref=f1e41]:
+                          - text: Add
+                          - img [ref=f1e43]
+                  - generic [ref=f1e47]:
+                    - heading "Add a donation for Ukiah Senior Center Inc" [level=6] [ref=f1e48]
+                    - generic [ref=f1e51]:
+                      - spinbutton [ref=f1e52]
+                      - paragraph [ref=f1e53]: $
+                  - generic [ref=f1e56]:
+                    - img [ref=f1e58]
+                    - paragraph [ref=f1e62]: Did you know? We fundraise with Zeffy to ensure 100% of your purchase goes to our mission!
+                - generic:
+                  - button "Continue" [disabled]:
+                    - generic:
+                      - text: Continue
+                      - generic:
+                        - img
+                - button "Choose tickets" [ref=f1e63] [cursor=pointer]:
+                  - generic [ref=f1e64]:
+                    - text: Choose tickets
+                    - img [ref=f1e66]
+              - alert [ref=f1e68]
+      - generic [ref=e39]:
+        - generic [ref=e40]:
+          - heading "⚠️ Set Zeffy Tip to $0" [level=3] [ref=e41]
+          - paragraph [ref=e42]:
+            - text: When filling out the form below,
+            - strong [ref=e43]: set the tip to $0
+            - text: so you don't pay any fees.
+          - img "Set Zeffy tip to zero" [ref=e45]
+        - generic [ref=e46]:
+          - generic [ref=e47]:
+            - heading "New Year's Eve Gala Dance" [level=2] [ref=e48]
+            - paragraph [ref=e49]: 📅 December 31, 2025
+            - paragraph [ref=e50]: 📍 Ukiah Senior Center
+            - paragraph [ref=e51]: Ring in 2026 with style! Join us for an elegant evening of dancing, celebration, and festive fun.
+          - iframe [ref=e54]:
+            - generic [active] [ref=f2e1]:
+              - generic [ref=f2e8]:
+                - generic [ref=f2e9]:
+                  - generic [ref=f2e13]:
+                    - generic [ref=f2e17]:
+                      - generic [ref=f2e18]:
+                        - heading "Nonmember" [level=6] [ref=f2e20]
+                        - heading "$45" [level=6] [ref=f2e22]
+                      - button "Add" [ref=f2e24] [cursor=pointer]:
+                        - generic [ref=f2e25]:
+                          - text: Add
+                          - img [ref=f2e27]
+                    - generic [ref=f2e33]:
+                      - generic [ref=f2e34]:
+                        - heading "Member" [level=6] [ref=f2e36]
+                        - heading "$35" [level=6] [ref=f2e38]
+                      - button "Add" [ref=f2e40] [cursor=pointer]:
+                        - generic [ref=f2e41]:
+                          - text: Add
+                          - img [ref=f2e43]
+                  - generic [ref=f2e47]:
+                    - heading "Add a donation for Ukiah Senior Center Inc" [level=6] [ref=f2e48]
+                    - generic [ref=f2e51]:
+                      - spinbutton [ref=f2e52]
+                      - paragraph [ref=f2e53]: $
+                  - generic [ref=f2e56]:
+                    - img [ref=f2e58]
+                    - paragraph [ref=f2e62]: Did you know? We fundraise with Zeffy to ensure 100% of your purchase goes to our mission!
+                - generic:
+                  - button "Continue" [disabled]:
+                    - generic:
+                      - text: Continue
+                      - generic:
+                        - img
+                - button "Choose tickets" [ref=f2e63] [cursor=pointer]:
+                  - generic [ref=f2e64]:
+                    - text: Choose tickets
+                    - img [ref=f2e66]
+              - alert [ref=f2e68]
+    - generic [ref=e55]:
+      - heading "Questions About Events?" [level=3] [ref=e56]
+      - paragraph [ref=e57]:
+        - text: Contact us at
+        - link "(707) 462-4343" [ref=e58] [cursor=pointer]:
+          - /url: tel:+17074624343
+        - text: or email
+        - link "director@ukiahseniorcenter.org" [ref=e59] [cursor=pointer]:
+          - /url: mailto:director@ukiahseniorcenter.org
+  - contentinfo [ref=e60]:
+    - generic [ref=e61]:
+      - generic [ref=e62]:
+        - generic [ref=e63]:
+          - heading "Contact Us" [level=2] [ref=e64]
+          - generic [ref=e65]:
+            - strong [ref=e66]: Ukiah Senior Center
+            - text: 499 Leslie St
+            - text: Ukiah CA 95482
+            - link "(707) 462-4343" [ref=e67] [cursor=pointer]:
+              - /url: tel:+17074624343
+            - link "director@ukiahseniorcenter.org" [ref=e68] [cursor=pointer]:
+              - /url: mailto:director@ukiahseniorcenter.org
+            - paragraph [ref=e69]:
+              - text: 501(c)3 non-profit
+              - text: Tax ID# 23-7258082
+        - generic [ref=e70]:
+          - heading "About Us" [level=2] [ref=e71]
+          - paragraph [ref=e72]: Enhancing quality of life for Ukiah seniors, families, and caregivers.
+          - link "Visit us on Facebook" [ref=e74] [cursor=pointer]:
+            - /url: https://www.facebook.com/UkiahSeniorCenter/
+            - img [ref=e75]
+        - generic [ref=e77]:
+          - heading "Site Links" [level=2] [ref=e78]
+          - list [ref=e79]:
+            - listitem [ref=e80]:
+              - link "Services" [ref=e81] [cursor=pointer]:
+                - /url: https://ukiahseniorcenter.org/category/services
+            - listitem [ref=e82]:
+              - link "Activities" [ref=e83] [cursor=pointer]:
+                - /url: https://ukiahseniorcenter.org/category/activities
+            - listitem [ref=e84]:
+              - link "Thrift Store" [ref=e85] [cursor=pointer]:
+                - /url: https://ukiahseniorcenter.org/thrift-store
+            - listitem [ref=e86]:
+              - link "Hall Rental" [ref=e87] [cursor=pointer]:
+                - /url: https://ukiahseniorcenter.org/hall-rental
+            - listitem [ref=e88]:
+              - link "Support Us" [ref=e89] [cursor=pointer]:
+                - /url: https://ukiahseniorcenter.org/support-us
+        - generic [ref=e90]:
+          - heading "Support" [level=2] [ref=e91]
+          - paragraph [ref=e92]: Thank you to our sponsors who help make our services possible.
+      - generic [ref=e94]:
+        - paragraph [ref=e95]: © 2025 Ukiah Senior Center
+        - paragraph [ref=e96]:
+          - text: Web page by
+          - link "Samuel Holley AI Consulting" [ref=e97] [cursor=pointer]:
+            - /url: https://samuelholley.com
+  - button "Open Next.js Dev Tools" [ref=e103] [cursor=pointer]:
+    - img [ref=e104]
+  - alert [ref=e107]
+```

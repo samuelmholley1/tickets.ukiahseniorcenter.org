@@ -22,37 +22,21 @@ export default function InternalPage() {
             </p>
           </div>
 
-          {/* Event Selection Buttons */}
-          <div className="grid-cards" style={{ marginBottom: 'var(--space-4)', maxWidth: '900px', marginInline: 'auto' }}>
+          {/* Unified Sales Form Button */}
+          <div style={{ marginBottom: 'var(--space-4)', maxWidth: '600px', marginInline: 'auto' }}>
             <Link
-              href="/internal/christmas-drive-thru-2025"
+              href="/internal/sales"
               className="group flex flex-col items-center justify-center text-center bg-white rounded-lg border-4 border-[#427d78] hover:bg-[#427d78] transition-all duration-300 shadow-lg hover:shadow-xl"
-              style={{ padding: '24px 20px', minHeight: '180px' }}
+              style={{ padding: '32px 24px', minHeight: '200px' }}
             >
-              <div className="text-lg md:text-xl font-['Jost',sans-serif] font-bold text-gray-900 group-hover:text-white transition-colors" style={{ marginBottom: 'var(--space-2)', lineHeight: '1.2' }}>
-                Christmas Drive-Thru Meal
+              <div className="text-2xl md:text-3xl font-['Jost',sans-serif] font-bold text-gray-900 group-hover:text-white transition-colors" style={{ marginBottom: 'var(--space-3)', lineHeight: '1.2' }}>
+                Record Ticket Sale
               </div>
-              <div className="text-sm md:text-base text-[#666] group-hover:text-white transition-colors font-['Bitter',serif]" style={{ marginBottom: 'var(--space-1)', lineHeight: '1.4' }}>
-                📅 December 23, 2025
+              <div className="text-base md:text-lg text-[#666] group-hover:text-white transition-colors font-['Bitter',serif]" style={{ marginBottom: 'var(--space-2)', lineHeight: '1.5' }}>
+                Sell tickets for both events
               </div>
-              <div className="text-xs md:text-sm text-[#666] group-hover:text-white transition-colors font-['Bitter',serif]" style={{ lineHeight: '1.4' }}>
-                Enter ticket sale →
-              </div>
-            </Link>
-
-            <Link
-              href="/internal/nye-gala-2025"
-              className="group flex flex-col items-center justify-center text-center bg-white rounded-lg border-4 border-[#427d78] hover:bg-[#427d78] transition-all duration-300 shadow-lg hover:shadow-xl"
-              style={{ padding: '24px 20px', minHeight: '180px' }}
-            >
-              <div className="text-lg md:text-xl font-['Jost',sans-serif] font-bold text-gray-900 group-hover:text-white transition-colors" style={{ marginBottom: 'var(--space-2)', lineHeight: '1.2' }}>
-                New Year&apos;s Eve Gala Dance
-              </div>
-              <div className="text-sm md:text-base text-[#666] group-hover:text-white transition-colors font-['Bitter',serif]" style={{ marginBottom: 'var(--space-1)', lineHeight: '1.4' }}>
-                📅 December 31, 2025
-              </div>
-              <div className="text-xs md:text-sm text-[#666] group-hover:text-white transition-colors font-['Bitter',serif]" style={{ lineHeight: '1.4' }}>
-                Enter ticket sale →
+              <div className="text-sm text-[#666] group-hover:text-white transition-colors font-['Bitter',serif]" style={{ lineHeight: '1.4', opacity: '0.9' }}>
+                Christmas Drive-Thru • NYE Gala Dance
               </div>
             </Link>
           </div>

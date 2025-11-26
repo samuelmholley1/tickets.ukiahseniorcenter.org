@@ -26,6 +26,20 @@ interface RequestBody {
 
 export async function POST(request: NextRequest) {
   try {
+    // Validate environment variables
+    if (!process.env.AIRTABLE_API_KEY) {
+      throw new Error('AIRTABLE_API_KEY is not configured');
+    }
+    if (!process.env.AIRTABLE_BASE_ID) {
+      throw new Error('AIRTABLE_BASE_ID is not configured');
+    }
+    if (!process.env.AIRTABLE_CHRISTMAS_TICKETS_TABLE_ID) {
+      throw new Error('AIRTABLE_CHRISTMAS_TICKETS_TABLE_ID is not configured');
+    }
+    if (!process.env.AIRTABLE_NYE_TICKETS_TABLE_ID) {
+      throw new Error('AIRTABLE_NYE_TICKETS_TABLE_ID is not configured');
+    }
+
     const body: RequestBody = await request.json();
     const { quantities, customer } = body;
 
@@ -74,8 +88,9 @@ export async function POST(request: NextRequest) {
       );
 
       if (!christmasResponse.ok) {
-        const error = await christmasResponse.json();
-        throw new Error(`Christmas table error: ${JSON.stringify(error)}`);
+        const errorText = await christmasResponse.text();
+        console.error('Christmas Airtable API Error:', errorText);
+        throw new Error(`Christmas table error (${christmasResponse.status}): ${errorText}`);
       }
 
       results.push({ event: 'Christmas Drive-Thru', total: christmasTotal });
@@ -119,8 +134,9 @@ export async function POST(request: NextRequest) {
       );
 
       if (!nyeResponse.ok) {
-        const error = await nyeResponse.json();
-        throw new Error(`NYE table error: ${JSON.stringify(error)}`);
+        const errorText = await nyeResponse.text();
+        console.error('NYE Airtable API Error:', errorText);
+        throw new Error(`NYE table error (${nyeResponse.status}): ${errorText}`);
       }
 
       results.push({ event: 'NYE Gala Dance', total: nyeTotal });
@@ -134,8 +150,16 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error submitting ticket sale:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to submit ticket sale';
+    console.error('Error details:', {
+      message: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to submit ticket sale' },
+      { 
+        error: errorMessage,
+        details: error instanceof Error ? error.stack : undefined
+      },
       { status: 500 }
     );
   }

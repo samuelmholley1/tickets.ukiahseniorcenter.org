@@ -155,8 +155,9 @@ test.describe('Unified Sales Form - Field Validation', () => {
   });
 
   test('should enable submit button when tickets are selected', async ({ page }) => {
-    // Add a ticket
-    await page.getByLabel(/Member Tickets.*\$15/).first().fill('1');
+    // Add a ticket using nth selector
+    const numberInputs = page.locator('input[type="number"]');
+    await numberInputs.nth(0).fill('1');
     
     const submitButton = page.locator('button[type="submit"]');
     await expect(submitButton).toBeEnabled();
@@ -291,22 +292,19 @@ test.describe('Ticket Generator Page', () => {
     await expect(page.locator('h1')).toBeVisible();
   });
 
-  test('should have all input fields', async ({ page }) => {
+  test('should have event selection', async ({ page }) => {
     await page.goto('/ticket');
     
-    // Check for common form fields (flexible matching)
-    const inputs = page.locator('input[type="text"], input[type="email"]');
-    const count = await inputs.count();
-    
-    // Should have at least some input fields
-    expect(count).toBeGreaterThan(0);
+    // Check for event options
+    await expect(page.getByText('Christmas Drive-Thru Meal').first()).toBeVisible();
+    await expect(page.getByText('New Year\'s Eve Gala Dance').first()).toBeVisible();
   });
 
-  test('should have print button or similar action', async ({ page }) => {
+  test('should have print button', async ({ page }) => {
     await page.goto('/ticket');
     
-    // Look for any button that could be used to print or proceed
-    const actionButton = page.locator('button').first();
-    await expect(actionButton).toBeVisible();
+    // Look for print button
+    const printButton = page.locator('button:has-text("Print Ticket"), button:has-text("Print")').first();
+    await expect(printButton).toBeVisible();
   });
 });

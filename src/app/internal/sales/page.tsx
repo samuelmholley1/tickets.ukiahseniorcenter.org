@@ -80,7 +80,8 @@ export default function UnifiedSalesPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to submit ticket sale');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to submit ticket sale');
       }
 
       // Prepare data for success page

@@ -43,6 +43,45 @@ export async function POST(request: NextRequest) {
     const body: RequestBody = await request.json();
     const { quantities, customer } = body;
 
+    // Input validation
+    if (!customer.firstName?.trim() || !customer.lastName?.trim()) {
+      return NextResponse.json({ error: 'First and last name are required' }, { status: 400 });
+    }
+    if (!customer.email?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email)) {
+      return NextResponse.json({ error: 'Valid email is required' }, { status: 400 });
+    }
+    if (!customer.phone?.trim()) {
+      return NextResponse.json({ error: 'Phone number is required' }, { status: 400 });
+    }
+    if (!customer.staffInitials?.trim()) {
+      return NextResponse.json({ error: 'Staff initials are required' }, { status: 400 });
+    }
+
+    // Validate quantities are non-negative integers
+    const allQuantities = Object.values(quantities);
+    if (allQuantities.some(q => !Number.isInteger(q) || q < 0)) {
+      return NextResponse.json({ error: 'Invalid ticket quantities' }, { status: 400 });
+    }
+
+    // Prevent excessive orders (max 50 tickets per transaction)
+    const totalTickets = allQuantities.reduce((sum, q) => sum + q, 0);
+    if (totalTickets === 0) {
+      return NextResponse.json({ error: 'At least one ticket must be selected' }, { status: 400 });
+    }
+    if (totalTickets > 50) {
+      return NextResponse.json({ error: 'Maximum 50 tickets per order' }, { status: 400 });
+    }
+
+    // Sanitize string inputs
+    customer.firstName = customer.firstName.trim();
+    customer.lastName = customer.lastName.trim();
+    customer.email = customer.email.trim().toLowerCase();
+    customer.phone = customer.phone.trim();
+    customer.staffInitials = customer.staffInitials.trim();
+    if (customer.checkNumber) {
+      customer.checkNumber = customer.checkNumber.trim();
+    }
+
     const CHRISTMAS_MEMBER = 15;
     const CHRISTMAS_NON_MEMBER = 20;
     const NYE_MEMBER = 35;
@@ -155,10 +194,13 @@ export async function POST(request: NextRequest) {
       message: errorMessage,
       stack: error instanceof Error ? error.stack : undefined,
     });
+    
+    // Don't expose stack traces or sensitive info in production
+    const isProduction = process.env.NODE_ENV === 'production';
     return NextResponse.json(
       { 
-        error: errorMessage,
-        details: error instanceof Error ? error.stack : undefined
+        error: isProduction ? 'An error occurred processing your request. Please try again.' : errorMessage,
+        ...(isProduction ? {} : { details: error instanceof Error ? error.stack : undefined })
       },
       { status: 500 }
     );

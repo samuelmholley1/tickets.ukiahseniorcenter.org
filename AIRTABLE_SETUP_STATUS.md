@@ -14,39 +14,27 @@
    - `src/lib/airtable.ts` - Helper functions for ticket management
    - Functions: createTicketRecord, getTicketRecords, findTicketByEmail, getTotalSales, getTicketCount
 
-## 🔧 What You Need to Do
+## ✅ Tables Created Successfully!
 
-### Step 1: Create Airtable Tables
+Both Airtable tables have been created using the API:
 
-Go to Airtable and create two new tables in the **Ukiah Senior Center** base:
+### Christmas Drive-Thru 2025
+- **Table ID:** `tbljtMTsXvSP3MDt4`
+- **URL:** https://airtable.com/appZ6HE5luAFV0Ot2/tbljtMTsXvSP3MDt4
+- **Fields:** First Name, Last Name, Email, Phone, Payment Method, Check Number, Amount Paid, Staff Initials
 
-#### Table 1: Christmas Drive-Thru 2025
-Fields to add:
-- First Name (Single line text)
-- Last Name (Single line text)  
-- Email (Email)
-- Phone (Phone number)
-- Payment Method (Single select: Cash, Check)
-- Check Number (Single line text)
-- Amount Paid (Currency - US Dollar)
-- Staff Initials (Single line text)
-- Created Time (Created time)
+### NYE Gala Dance 2025
+- **Table ID:** `tbl5OyCybJCfrebOb`
+- **URL:** https://airtable.com/appZ6HE5luAFV0Ot2/tbl5OyCybJCfrebOb
+- **Fields:** First Name, Last Name, Email, Phone, Payment Method, Check Number, Amount Paid, Staff Initials
 
-#### Table 2: NYE Gala 2025
-Same fields as above
+Both tables have been tested and are working correctly!
 
-### Step 2: Get Table IDs
+### Step 1: Verify Tables in Airtable
 
-1. After creating each table, click on it in Airtable
-2. Look at the URL: `https://airtable.com/appZ6HE5luAFV0Ot2/tblXXXXXXXXXXXXXX/...`
-3. Copy the table ID (starts with `tbl`)
-4. Update your local `.env.local` file:
-   ```
-   AIRTABLE_CHRISTMAS_TICKETS_TABLE_ID=tblYourActualTableId
-   AIRTABLE_NYE_TICKETS_TABLE_ID=tblYourActualTableId
-   ```
+Go to https://airtable.com/appZ6HE5luAFV0Ot2 and you'll see the two new tables with test records already created.
 
-### Step 3: Test Connection
+### Step 2: Test Connection (Already Done!)
 
 Run this command (replacing with your actual table ID):
 

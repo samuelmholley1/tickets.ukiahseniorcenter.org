@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { SiteNavigation } from '@/components/SiteNavigation';
@@ -23,7 +23,7 @@ interface SaleData {
   grandTotal: number;
 }
 
-export default function SalesSuccessPage() {
+function SuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [saleData, setSaleData] = useState<SaleData | null>(null);
@@ -214,5 +214,23 @@ export default function SalesSuccessPage() {
 
       <SiteFooterContent />
     </>
+  );
+}
+
+export default function SalesSuccessPage() {
+  return (
+    <Suspense fallback={
+      <>
+        <SiteNavigation />
+        <div className="bg-[#fafbff]" style={{ paddingBlock: 'var(--space-4)', minHeight: '60vh' }}>
+          <div className="container" style={{ maxWidth: '900px', textAlign: 'center' }}>
+            <p className="font-['Bitter',serif] text-gray-600">Loading...</p>
+          </div>
+        </div>
+        <SiteFooterContent />
+      </>
+    }>
+      <SuccessContent />
+    </Suspense>
   );
 }

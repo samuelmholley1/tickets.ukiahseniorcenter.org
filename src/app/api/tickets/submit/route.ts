@@ -68,7 +68,6 @@ export async function POST(request: NextRequest) {
               'Check Number': customer.checkNumber || '',
               'Amount Paid': christmasTotal,
               'Staff Initials': customer.staffInitials,
-              'Ticket Details': christmasTicketInfo.join(', '),
             },
           }),
         }
@@ -114,7 +113,6 @@ export async function POST(request: NextRequest) {
               'Check Number': customer.checkNumber || '',
               'Amount Paid': nyeTotal,
               'Staff Initials': customer.staffInitials,
-              'Ticket Details': nyeTicketInfo.join(', '),
             },
           }),
         }

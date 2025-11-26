@@ -1,0 +1,125 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - link "Ukiah Senior Center" [ref=e5] [cursor=pointer]:
+        - /url: https://ukiahseniorcenter.org
+        - img "Ukiah Senior Center" [ref=e6]
+      - link "← Back to Home" [ref=e7] [cursor=pointer]:
+        - /url: https://ukiahseniorcenter.org
+  - generic [ref=e9]:
+    - generic [ref=e10]:
+      - heading "Ticket Sales" [level=1] [ref=e11]
+      - paragraph [ref=e12]: Staff use only - Record cash or check ticket sales
+    - paragraph [ref=e14]: ✗ Failed to submit ticket sale
+    - generic [ref=e15]:
+      - generic [ref=e16]:
+        - heading "Select Tickets" [level=2] [ref=e17]
+        - generic [ref=e18]:
+          - heading "Christmas Drive-Thru Meal" [level=3] [ref=e19]
+          - paragraph [ref=e20]: December 23, 2025 • 12:00 PM - 12:30 PM
+          - generic [ref=e21]:
+            - generic [ref=e22]:
+              - generic [ref=e23]: Member Tickets ($15 each)
+              - spinbutton [ref=e24]: "1"
+            - generic [ref=e25]:
+              - generic [ref=e26]: Non-Member Tickets ($20 each)
+              - spinbutton [ref=e27]: "0"
+          - generic [ref=e29]: "Subtotal: $15.00"
+        - generic [ref=e30]:
+          - heading "New Year's Eve Gala Dance" [level=3] [ref=e31]
+          - paragraph [ref=e32]: December 31, 2025 • 6:00 PM - 10:00 PM
+          - generic [ref=e33]:
+            - generic [ref=e34]:
+              - generic [ref=e35]: Member Tickets ($35 each)
+              - spinbutton [ref=e36]: "0"
+            - generic [ref=e37]:
+              - generic [ref=e38]: Non-Member Tickets ($40 each)
+              - spinbutton [ref=e39]: "0"
+        - generic [ref=e40]:
+          - generic [ref=e41]: "Total: $15.00"
+          - generic [ref=e42]: (1 ticket)
+      - generic [ref=e43]:
+        - heading "Customer Information" [level=2] [ref=e44]
+        - generic [ref=e45]:
+          - generic [ref=e46]:
+            - generic [ref=e47]: First Name *
+            - textbox [ref=e48]: Jane
+          - generic [ref=e49]:
+            - generic [ref=e50]: Last Name *
+            - textbox [ref=e51]: Smith
+        - generic [ref=e52]:
+          - generic [ref=e53]:
+            - generic [ref=e54]: Email Address *
+            - textbox [ref=e55]: jane@example.com
+          - generic [ref=e56]:
+            - generic [ref=e57]: Phone Number *
+            - textbox [ref=e58]: 707-555-5678
+        - generic [ref=e59]:
+          - generic [ref=e60]:
+            - generic [ref=e61]: Payment Method *
+            - combobox [ref=e62]:
+              - option "Cash"
+              - option "Check" [selected]
+          - generic [ref=e63]:
+            - generic [ref=e64]: Check Number *
+            - textbox [ref=e65]: "1234"
+          - generic [ref=e66]:
+            - generic [ref=e67]: Staff Initials/Name *
+            - textbox "e.g., JD" [ref=e68]: JS
+      - button "Record Sale - $15.00" [ref=e69] [cursor=pointer]
+  - contentinfo [ref=e70]:
+    - generic [ref=e71]:
+      - generic [ref=e72]:
+        - generic [ref=e73]:
+          - heading "Contact Us" [level=2] [ref=e74]
+          - generic [ref=e75]:
+            - strong [ref=e76]: Ukiah Senior Center
+            - text: 499 Leslie St
+            - text: Ukiah CA 95482
+            - link "(707) 462-4343" [ref=e77] [cursor=pointer]:
+              - /url: tel:+17074624343
+            - link "director@ukiahseniorcenter.org" [ref=e78] [cursor=pointer]:
+              - /url: mailto:director@ukiahseniorcenter.org
+            - paragraph [ref=e79]:
+              - text: 501(c)3 non-profit
+              - text: Tax ID# 23-7258082
+        - generic [ref=e80]:
+          - heading "About Us" [level=2] [ref=e81]
+          - paragraph [ref=e82]: Enhancing quality of life for Ukiah seniors, families, and caregivers.
+          - link "Visit us on Facebook" [ref=e84] [cursor=pointer]:
+            - /url: https://www.facebook.com/UkiahSeniorCenter/
+            - img [ref=e85]
+        - generic [ref=e87]:
+          - heading "Site Links" [level=2] [ref=e88]
+          - list [ref=e89]:
+            - listitem [ref=e90]:
+              - link "Services" [ref=e91] [cursor=pointer]:
+                - /url: https://ukiahseniorcenter.org/category/services
+            - listitem [ref=e92]:
+              - link "Activities" [ref=e93] [cursor=pointer]:
+                - /url: https://ukiahseniorcenter.org/category/activities
+            - listitem [ref=e94]:
+              - link "Thrift Store" [ref=e95] [cursor=pointer]:
+                - /url: https://ukiahseniorcenter.org/thrift-store
+            - listitem [ref=e96]:
+              - link "Hall Rental" [ref=e97] [cursor=pointer]:
+                - /url: https://ukiahseniorcenter.org/hall-rental
+            - listitem [ref=e98]:
+              - link "Support Us" [ref=e99] [cursor=pointer]:
+                - /url: https://ukiahseniorcenter.org/support-us
+        - generic [ref=e100]:
+          - heading "Support" [level=2] [ref=e101]
+          - paragraph [ref=e102]: Thank you to our sponsors who help make our services possible.
+      - generic [ref=e104]:
+        - paragraph [ref=e105]: © 2025 Ukiah Senior Center
+        - paragraph [ref=e106]:
+          - text: Web page by
+          - link "Samuel Holley AI Consulting" [ref=e107] [cursor=pointer]:
+            - /url: https://samuelholley.com
+  - button "Open Next.js Dev Tools" [ref=e113] [cursor=pointer]:
+    - img [ref=e114]
+  - alert [ref=e117]
+```

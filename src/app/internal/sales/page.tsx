@@ -83,27 +83,17 @@ export default function UnifiedSalesPage() {
         throw new Error('Failed to submit ticket sale');
       }
 
-      setSuccess(true);
-      
-      // Reset form after 3 seconds
-      setTimeout(() => {
-        setQuantities({
-          christmasMember: 0,
-          christmasNonMember: 0,
-          nyeMember: 0,
-          nyeNonMember: 0,
-        });
-        setFormData({
-          firstName: '',
-          lastName: '',
-          email: '',
-          phone: '',
-          paymentMethod: 'cash',
-          checkNumber: '',
-          staffInitials: ''
-        });
-        setSuccess(false);
-      }, 3000);
+      // Prepare data for success page
+      const saleData = {
+        ...formData,
+        ...quantities,
+        christmasTotal,
+        nyeTotal,
+        grandTotal
+      };
+
+      // Redirect to success page with data
+      router.push(`/internal/sales/success?data=${encodeURIComponent(JSON.stringify(saleData))}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {

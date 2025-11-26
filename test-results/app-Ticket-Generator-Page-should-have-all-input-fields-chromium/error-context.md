@@ -1,0 +1,75 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - link "Ukiah Senior Center" [ref=e5] [cursor=pointer]:
+        - /url: https://ukiahseniorcenter.org
+        - img "Ukiah Senior Center" [ref=e6]
+      - link "← Back to Home" [ref=e7] [cursor=pointer]:
+        - /url: https://ukiahseniorcenter.org
+  - generic [ref=e9]:
+    - generic [ref=e10]:
+      - heading "Ticket Generator" [level=1] [ref=e11]
+      - paragraph [ref=e12]: Generate and print tickets for events
+    - generic [ref=e13]:
+      - heading "Select Event" [level=2] [ref=e14]
+      - generic [ref=e15]:
+        - button "Christmas Drive-Thru Meal 📅 December 23, 2025" [ref=e16] [cursor=pointer]:
+          - generic [ref=e17]: Christmas Drive-Thru Meal
+          - generic [ref=e18]: 📅 December 23, 2025
+        - button "New Year's Eve Gala Dance 📅 December 31, 2025" [ref=e19] [cursor=pointer]:
+          - generic [ref=e20]: New Year's Eve Gala Dance
+          - generic [ref=e21]: 📅 December 31, 2025
+  - contentinfo [ref=e22]:
+    - generic [ref=e23]:
+      - generic [ref=e24]:
+        - generic [ref=e25]:
+          - heading "Contact Us" [level=2] [ref=e26]
+          - generic [ref=e27]:
+            - strong [ref=e28]: Ukiah Senior Center
+            - text: 499 Leslie St
+            - text: Ukiah CA 95482
+            - link "(707) 462-4343" [ref=e29] [cursor=pointer]:
+              - /url: tel:+17074624343
+            - link "director@ukiahseniorcenter.org" [ref=e30] [cursor=pointer]:
+              - /url: mailto:director@ukiahseniorcenter.org
+            - paragraph [ref=e31]:
+              - text: 501(c)3 non-profit
+              - text: Tax ID# 23-7258082
+        - generic [ref=e32]:
+          - heading "About Us" [level=2] [ref=e33]
+          - paragraph [ref=e34]: Enhancing quality of life for Ukiah seniors, families, and caregivers.
+          - link "Visit us on Facebook" [ref=e36] [cursor=pointer]:
+            - /url: https://www.facebook.com/UkiahSeniorCenter/
+            - img [ref=e37]
+        - generic [ref=e39]:
+          - heading "Site Links" [level=2] [ref=e40]
+          - list [ref=e41]:
+            - listitem [ref=e42]:
+              - link "Services" [ref=e43] [cursor=pointer]:
+                - /url: https://ukiahseniorcenter.org/category/services
+            - listitem [ref=e44]:
+              - link "Activities" [ref=e45] [cursor=pointer]:
+                - /url: https://ukiahseniorcenter.org/category/activities
+            - listitem [ref=e46]:
+              - link "Thrift Store" [ref=e47] [cursor=pointer]:
+                - /url: https://ukiahseniorcenter.org/thrift-store
+            - listitem [ref=e48]:
+              - link "Hall Rental" [ref=e49] [cursor=pointer]:
+                - /url: https://ukiahseniorcenter.org/hall-rental
+            - listitem [ref=e50]:
+              - link "Support Us" [ref=e51] [cursor=pointer]:
+                - /url: https://ukiahseniorcenter.org/support-us
+        - generic [ref=e52]:
+          - heading "Support" [level=2] [ref=e53]
+          - paragraph [ref=e54]: Thank you to our sponsors who help make our services possible.
+      - generic [ref=e56]:
+        - paragraph [ref=e57]: © 2025 Ukiah Senior Center
+        - paragraph [ref=e58]:
+          - text: Web page by
+          - link "Samuel Holley AI Consulting" [ref=e59] [cursor=pointer]:
+            - /url: https://samuelholley.com
+  - alert [ref=e60]
+```

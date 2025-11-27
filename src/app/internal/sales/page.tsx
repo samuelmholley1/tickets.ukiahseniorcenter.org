@@ -137,15 +137,6 @@ export default function UnifiedSalesPage() {
             </p>
           </div>
 
-          {/* Success Message */}
-          {success && (
-            <div className="bg-green-50 border-2 border-green-400 rounded-lg text-center" style={{ padding: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
-              <p className="text-green-900 font-['Jost',sans-serif] font-bold text-lg">
-                ✓ Ticket sale recorded successfully!
-              </p>
-            </div>
-          )}
-
           {/* Error Message */}
           {error && (
             <div className="bg-red-50 border-2 border-red-400 rounded-lg text-center" style={{ padding: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>

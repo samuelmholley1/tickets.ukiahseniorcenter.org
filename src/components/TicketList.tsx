@@ -210,68 +210,86 @@ export function TicketList({ autoRefresh = false }: TicketListProps) {
                 <div 
                   key={record.id} 
                   style={{ 
-                    padding: 'var(--space-3)', 
-                    background: '#f8f9fa', 
-                    borderRadius: '8px',
-                    borderLeft: '4px solid #427d78'
+                    padding: 'var(--space-4)', 
+                    background: 'white', 
+                    borderRadius: '12px',
+                    border: '1px solid #dee2e6',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
                   }}
                 >
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
+                  {/* Header: Customer Name + Total */}
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    marginBottom: 'var(--space-3)',
+                    paddingBottom: 'var(--space-3)',
+                    borderBottom: '2px solid #f8f9fa'
+                  }}>
                     <div>
-                      <div className="font-['Jost',sans-serif] font-bold text-xs text-gray-500 uppercase">Date/Time</div>
-                      <div className="font-['Bitter',serif] text-sm">{formatDate(record.createdTime)}</div>
-                    </div>
-                    {eventFilter === 'all' && (
-                      <div>
-                        <div className="font-['Jost',sans-serif] font-bold text-xs text-gray-500 uppercase">Event</div>
-                        <div className="font-['Bitter',serif] text-sm font-medium">{record.event}</div>
-                      </div>
-                    )}
-                    <div>
-                      <div className="font-['Jost',sans-serif] font-bold text-xs text-gray-500 uppercase">Staff</div>
-                      <div className="font-['Bitter',serif] text-sm">{record.fields['Staff Initials']}</div>
-                    </div>
-                  </div>
-                  
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
-                    <div>
-                      <div className="font-['Jost',sans-serif] font-bold text-xs text-gray-500 uppercase">Customer</div>
-                      <div className="font-['Bitter',serif] text-sm">
+                      <div className="font-['Jost',sans-serif] font-bold text-xl text-gray-900">
                         {record.fields['First Name']} {record.fields['Last Name']}
                       </div>
+                      <div className="font-['Bitter',serif] text-xs text-gray-500" style={{ marginTop: '4px' }}>
+                        {formatDate(record.createdTime)} • {record.fields['Staff Initials']}
+                        {eventFilter === 'all' && ` • ${record.event}`}
+                      </div>
                     </div>
-                    <div>
-                      <div className="font-['Jost',sans-serif] font-bold text-xs text-gray-500 uppercase">Email</div>
-                      <div className="font-['Bitter',serif] text-sm">{record.fields['Email']}</div>
-                    </div>
-                    <div>
-                      <div className="font-['Jost',sans-serif] font-bold text-xs text-gray-500 uppercase">Phone</div>
-                      <div className="font-['Bitter',serif] text-sm">{record.fields['Phone']}</div>
+                    <div className="font-['Jost',sans-serif] font-bold text-2xl text-[#427d78]">
+                      ${record.fields['Amount Paid'].toFixed(2)}
                     </div>
                   </div>
                   
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-2)' }}>
+                  {/* Tickets Section - Most Important */}
+                  <div style={{ 
+                    marginBottom: 'var(--space-3)',
+                    padding: 'var(--space-3)',
+                    background: '#f8f9fa',
+                    borderRadius: '8px'
+                  }}>
+                    <div className="font-['Jost',sans-serif] font-bold text-sm text-gray-700" style={{ marginBottom: '6px' }}>
+                      Tickets Purchased
+                    </div>
+                    <div className="font-['Bitter',serif] text-base text-gray-900">
+                      {formatTicketQuantity(record)}
+                    </div>
+                    {record.fields['Donation Amount'] ? (
+                      <div className="font-['Bitter',serif] text-sm text-gray-600" style={{ marginTop: '6px' }}>
+                        + ${record.fields['Donation Amount'].toFixed(2)} donation
+                      </div>
+                    ) : null}
+                  </div>
+                  
+                  {/* Contact & Payment - Secondary Info */}
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+                    gap: 'var(--space-3)',
+                    fontSize: '0.875rem'
+                  }}>
                     <div>
-                      <div className="font-['Jost',sans-serif] font-bold text-xs text-gray-500 uppercase">Payment</div>
-                      <div className="font-['Bitter',serif] text-sm">
+                      <div className="font-['Jost',sans-serif] text-xs text-gray-500" style={{ marginBottom: '4px' }}>
+                        EMAIL
+                      </div>
+                      <div className="font-['Bitter',serif] text-gray-700">
+                        {record.fields['Email']}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-['Jost',sans-serif] text-xs text-gray-500" style={{ marginBottom: '4px' }}>
+                        PHONE
+                      </div>
+                      <div className="font-['Bitter',serif] text-gray-700">
+                        {record.fields['Phone']}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-['Jost',sans-serif] text-xs text-gray-500" style={{ marginBottom: '4px' }}>
+                        PAYMENT
+                      </div>
+                      <div className="font-['Bitter',serif] text-gray-700">
                         {record.fields['Payment Method']}
                         {record.fields['Check Number'] && ` #${record.fields['Check Number']}`}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="font-['Jost',sans-serif] font-bold text-xs text-gray-500 uppercase">Tickets</div>
-                      <div className="font-['Bitter',serif] text-sm">{formatTicketQuantity(record)}</div>
-                    </div>
-                    <div>
-                      <div className="font-['Jost',sans-serif] font-bold text-xs text-gray-500 uppercase">Donation</div>
-                      <div className="font-['Jost',sans-serif] text-sm">
-                        {record.fields['Donation Amount'] ? `$${record.fields['Donation Amount'].toFixed(2)}` : '-'}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="font-['Jost',sans-serif] font-bold text-xs text-gray-500 uppercase">Total</div>
-                      <div className="font-['Jost',sans-serif] font-bold text-lg text-[#427d78]">
-                        ${record.fields['Amount Paid'].toFixed(2)}
                       </div>
                     </div>
                   </div>

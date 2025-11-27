@@ -40,12 +40,14 @@ export default function TicketListPage() {
     try {
       const response = await fetch(`/api/tickets/list?event=${eventFilter}`);
       if (!response.ok) {
-        throw new Error('Failed to fetch tickets');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to fetch tickets');
       }
       const data = await response.json();
-      setRecords(data.records);
+      setRecords(data.records || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
+      setRecords([]); // Clear records on error
     } finally {
       setLoading(false);
     }

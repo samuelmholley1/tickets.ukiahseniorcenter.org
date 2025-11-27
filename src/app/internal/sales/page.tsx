@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { SiteNavigation } from '@/components/SiteNavigation';
 import { SiteFooterContent } from '@/components/SiteFooterContent';
 
@@ -109,8 +110,8 @@ export default function UnifiedSalesPage() {
       <div className="bg-[#fafbff]" style={{ paddingBlock: 'var(--space-4)' }}>
         <div className="container" style={{ maxWidth: '900px' }}>
           
-          {/* Card Payment Button */}
-          <div style={{ textAlign: 'center', marginBottom: 'var(--space-3)' }}>
+          {/* Action Buttons */}
+          <div style={{ display: 'flex', gap: 'var(--space-2)', justifyContent: 'center', marginBottom: 'var(--space-3)', flexWrap: 'wrap' }}>
             <a
               href="https://tickets.ukiahseniorcenter.org"
               className="inline-block bg-[#5eb3a1] hover:bg-[#427d78] text-white font-['Jost',sans-serif] font-bold px-6 py-3 rounded-lg transition-colors duration-300 shadow-md hover:shadow-lg"
@@ -118,6 +119,13 @@ export default function UnifiedSalesPage() {
             >
               💳 Card Payment? Click Here
             </a>
+            <Link
+              href="/internal/sales/list"
+              className="inline-block bg-[#427d78] hover:bg-[#5eb3a1] text-white font-['Jost',sans-serif] font-bold px-6 py-3 rounded-lg transition-colors duration-300 shadow-md hover:shadow-lg"
+              style={{ fontSize: 'clamp(0.875rem, 2.5vw, 1rem)' }}
+            >
+              📋 View Sold Tickets
+            </Link>
           </div>
 
           {/* Page Header */}

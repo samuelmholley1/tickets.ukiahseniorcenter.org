@@ -22,6 +22,7 @@ interface CustomerInfo {
 interface RequestBody {
   quantities: TicketQuantities;
   customer: CustomerInfo;
+  donation?: number;
 }
 
 // Generate a unique transaction ID
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body: RequestBody = await request.json();
-    const { quantities, customer } = body;
+    const { quantities, customer, donation = 0 } = body;
 
     // Input validation
     if (!customer.firstName?.trim() || !customer.lastName?.trim()) {
@@ -85,6 +86,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Check number is required for check payments' }, { status: 400 });
     }
 
+    // Validate donation amount
+    if (donation < 0 || donation > 10000) {
+      return NextResponse.json({ error: 'Donation must be between $0 and $10,000' }, { status: 400 });
+    }
+    if (!Number.isFinite(donation)) {
+      return NextResponse.json({ error: 'Invalid donation amount' }, { status: 400 });
+    }
+
     // Sanitize string inputs with length limits (Airtable has limits)
     customer.firstName = customer.firstName.trim().substring(0, 100);
     customer.lastName = customer.lastName.trim().substring(0, 100);
@@ -106,6 +115,13 @@ export async function POST(request: NextRequest) {
     const christmasTotal = 
       (quantities.christmasMember * CHRISTMAS_MEMBER) + 
       (quantities.christmasNonMember * CHRISTMAS_NON_MEMBER);
+    
+    const nyeTotal = 
+      (quantities.nyeMember * NYE_MEMBER) + 
+      (quantities.nyeNonMember * NYE_NON_MEMBER);
+    
+    // Determine where donation goes: Christmas if both selected, otherwise whichever event
+    const donationGoesToChristmas = christmasTotal > 0;
 
     if (christmasTotal > 0) {
       const christmasTicketInfo = [];
@@ -125,7 +141,9 @@ export async function POST(request: NextRequest) {
           'Phone': customer.phone,
           'Payment Method': customer.paymentMethod === 'cash' ? 'Cash' : 'Check',
           'Check Number': customer.checkNumber || '',
-          'Amount Paid': christmasTotal,
+          'Ticket Subtotal': christmasTotal,
+          'Donation Amount': donationGoesToChristmas ? donation : 0,
+          'Amount Paid': donationGoesToChristmas ? christmasTotal + donation : christmasTotal,
           'Ticket Quantity': quantities.christmasMember + quantities.christmasNonMember,
           'Christmas Member Tickets': quantities.christmasMember,
           'Christmas Non-Member Tickets': quantities.christmasNonMember,
@@ -173,10 +191,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Submit to NYE table if any NYE tickets selected
-    const nyeTotal = 
-      (quantities.nyeMember * NYE_MEMBER) + 
-      (quantities.nyeNonMember * NYE_NON_MEMBER);
-
     if (nyeTotal > 0) {
       const nyeTicketInfo = [];
       if (quantities.nyeMember > 0) {
@@ -195,7 +209,9 @@ export async function POST(request: NextRequest) {
           'Phone': customer.phone,
           'Payment Method': customer.paymentMethod === 'cash' ? 'Cash' : 'Check',
           'Check Number': customer.checkNumber || '',
-          'Amount Paid': nyeTotal,
+          'Ticket Subtotal': nyeTotal,
+          'Donation Amount': !donationGoesToChristmas ? donation : 0,
+          'Amount Paid': !donationGoesToChristmas ? nyeTotal + donation : nyeTotal,
           'Ticket Quantity': quantities.nyeMember + quantities.nyeNonMember,
           'NYE Member Tickets': quantities.nyeMember,
           'NYE Non-Member Tickets': quantities.nyeNonMember,

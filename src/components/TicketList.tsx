@@ -15,6 +15,8 @@ interface TicketRecord {
     'Phone': string;
     'Payment Method': string;
     'Check Number'?: string;
+    'Ticket Subtotal'?: number;
+    'Donation Amount'?: number;
     'Amount Paid': number;
     'Ticket Quantity'?: number;
     'Christmas Member Tickets'?: number;
@@ -212,14 +214,15 @@ export function TicketList({ autoRefresh = false }: TicketListProps) {
                   <th className="font-['Jost',sans-serif] font-bold text-left text-[#427d78]" style={{ padding: 'var(--space-3)' }}>Phone</th>
                   <th className="font-['Jost',sans-serif] font-bold text-left text-[#427d78]" style={{ padding: 'var(--space-3)' }}>Payment</th>
                   <th className="font-['Jost',sans-serif] font-bold text-left text-[#427d78]" style={{ padding: 'var(--space-3)' }}>Tickets</th>
-                  <th className="font-['Jost',sans-serif] font-bold text-right text-[#427d78]" style={{ padding: 'var(--space-3)' }}>Amount</th>
+                  <th className="font-['Jost',sans-serif] font-bold text-right text-[#427d78]" style={{ padding: 'var(--space-3)' }}>Donation</th>
+                  <th className="font-['Jost',sans-serif] font-bold text-right text-[#427d78]" style={{ padding: 'var(--space-3)' }}>Total</th>
                   <th className="font-['Jost',sans-serif] font-bold text-left text-[#427d78]" style={{ padding: 'var(--space-3)' }}>Staff</th>
                 </tr>
               </thead>
               <tbody>
                 {records.length === 0 ? (
                   <tr>
-                    <td colSpan={eventFilter === 'all' ? 10 : 9} className="text-center text-gray-500 font-['Bitter',serif]" style={{ padding: 'var(--space-4)' }}>
+                    <td colSpan={eventFilter === 'all' ? 11 : 10} className="text-center text-gray-500 font-['Bitter',serif]" style={{ padding: 'var(--space-4)' }}>
                       No tickets found
                     </td>
                   </tr>
@@ -252,6 +255,9 @@ export function TicketList({ autoRefresh = false }: TicketListProps) {
                       </td>
                       <td className="font-['Bitter',serif] text-sm" style={{ padding: 'var(--space-3)' }}>
                         {formatTicketQuantity(record)}
+                      </td>
+                      <td className="font-['Jost',sans-serif] text-right" style={{ padding: 'var(--space-3)' }}>
+                        {record.fields['Donation Amount'] ? `$${record.fields['Donation Amount'].toFixed(2)}` : '-'}
                       </td>
                       <td className="font-['Jost',sans-serif] font-bold text-right" style={{ padding: 'var(--space-3)' }}>
                         ${record.fields['Amount Paid'].toFixed(2)}

@@ -33,6 +33,9 @@ export default function UnifiedSalesPage() {
     staffInitials: ''
   });
 
+  const [wantsDonation, setWantsDonation] = useState(false);
+  const [donationAmount, setDonationAmount] = useState('');
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -51,7 +54,9 @@ export default function UnifiedSalesPage() {
     (quantities.nyeMember * NYE_MEMBER) + 
     (quantities.nyeNonMember * NYE_NON_MEMBER);
   
-  const grandTotal = christmasTotal + nyeTotal;
+  const ticketSubtotal = christmasTotal + nyeTotal;
+  const donation = wantsDonation ? (parseFloat(donationAmount) || 0) : 0;
+  const grandTotal = ticketSubtotal + donation;
   
   const totalTickets = 
     quantities.christmasMember + 
@@ -67,6 +72,11 @@ export default function UnifiedSalesPage() {
       return;
     }
 
+    if (wantsDonation && (!donationAmount || parseFloat(donationAmount) <= 0)) {
+      setError('Please enter a donation amount or select "No"');
+      return;
+    }
+
     setSubmitting(true);
     setError('');
 
@@ -76,7 +86,8 @@ export default function UnifiedSalesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           quantities,
-          customer: formData
+          customer: formData,
+          donation: wantsDonation ? parseFloat(donationAmount) : 0
         })
       });
 
@@ -235,15 +246,85 @@ export default function UnifiedSalesPage() {
                 )}
               </div>
 
-              {/* Grand Total */}
+              {/* Donation Section */}
+              {ticketSubtotal > 0 && (
+                <div style={{ marginTop: 'var(--space-4)' }}>
+                  <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-3">
+                    Would the customer like to make a donation today? *
+                  </label>
+                  <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
+                    <label className="flex items-center cursor-pointer">
+                      <input
+                        type="radio"
+                        name="donation"
+                        checked={!wantsDonation}
+                        onChange={() => { setWantsDonation(false); setDonationAmount(''); }}
+                        className="mr-2 w-5 h-5"
+                      />
+                      <span className="font-['Bitter',serif] text-lg">No</span>
+                    </label>
+                    <label className="flex items-center cursor-pointer">
+                      <input
+                        type="radio"
+                        name="donation"
+                        checked={wantsDonation}
+                        onChange={() => setWantsDonation(true)}
+                        className="mr-2 w-5 h-5"
+                      />
+                      <span className="font-['Bitter',serif] text-lg">Yes</span>
+                    </label>
+                  </div>
+
+                  {wantsDonation && (
+                    <div>
+                      <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">
+                        Donation Amount *
+                      </label>
+                      <input
+                        type="number"
+                        min="0.01"
+                        max="10000"
+                        step="0.01"
+                        value={donationAmount}
+                        onChange={(e) => setDonationAmount(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif] text-lg"
+                        required
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Total Breakdown */}
               {grandTotal > 0 && (
-                <div style={{ padding: 'var(--space-3)', background: '#427d78', borderRadius: '8px', textAlign: 'right' }}>
-                  <span className="font-['Jost',sans-serif] font-bold text-white text-2xl">
-                    Total: ${grandTotal.toFixed(2)}
-                  </span>
-                  <span className="font-['Bitter',serif] text-white text-sm ml-4">
-                    ({totalTickets} ticket{totalTickets !== 1 ? 's' : ''})
-                  </span>
+                <div style={{ marginTop: 'var(--space-4)', padding: 'var(--space-3)', background: '#f8f9fa', borderRadius: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-2)' }}>
+                    <span className="font-['Bitter',serif] text-gray-700">
+                      Ticket Subtotal ({totalTickets} ticket{totalTickets !== 1 ? 's' : ''}):
+                    </span>
+                    <span className="font-['Jost',sans-serif] font-bold text-gray-900">
+                      ${ticketSubtotal.toFixed(2)}
+                    </span>
+                  </div>
+                  {donation > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-2)' }}>
+                      <span className="font-['Bitter',serif] text-gray-700">
+                        Donation:
+                      </span>
+                      <span className="font-['Jost',sans-serif] font-bold text-gray-900">
+                        ${donation.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 'var(--space-2)', borderTop: '2px solid #427d78' }}>
+                    <span className="font-['Jost',sans-serif] font-bold text-[#427d78] text-xl">
+                      Total Amount:
+                    </span>
+                    <span className="font-['Jost',sans-serif] font-bold text-[#427d78] text-2xl">
+                      ${grandTotal.toFixed(2)}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>

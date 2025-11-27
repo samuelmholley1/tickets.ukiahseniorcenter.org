@@ -6,6 +6,7 @@ interface AirtableRecord {
   id: string;
   createdTime: string;
   fields: {
+    'Transaction ID'?: string;
     'First Name': string;
     'Last Name': string;
     'Email': string;

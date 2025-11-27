@@ -14,6 +14,10 @@ interface AirtableRecord {
     'Check Number'?: string;
     'Amount Paid': number;
     'Ticket Quantity'?: number;
+    'Christmas Member Tickets'?: number;
+    'Christmas Non-Member Tickets'?: number;
+    'NYE Member Tickets'?: number;
+    'NYE Non-Member Tickets'?: number;
     'Staff Initials': string;
   };
 }

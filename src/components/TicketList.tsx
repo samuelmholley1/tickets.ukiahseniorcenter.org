@@ -218,12 +218,6 @@ export function TicketList({ autoRefresh = false }: TicketListProps) {
                 >
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
                     <div>
-                      <div className="font-['Jost',sans-serif] font-bold text-xs text-gray-500 uppercase">Transaction ID</div>
-                      <div className="font-['Bitter',serif] text-sm" style={{ fontFamily: 'monospace' }}>
-                        {record.fields['Transaction ID'] || '-'}
-                      </div>
-                    </div>
-                    <div>
                       <div className="font-['Jost',sans-serif] font-bold text-xs text-gray-500 uppercase">Date/Time</div>
                       <div className="font-['Bitter',serif] text-sm">{formatDate(record.createdTime)}</div>
                     </div>

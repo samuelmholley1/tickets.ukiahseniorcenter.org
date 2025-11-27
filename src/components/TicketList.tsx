@@ -199,77 +199,91 @@ export function TicketList({ autoRefresh = false }: TicketListProps) {
 
       {/* Tickets Table */}
       {!loading && !error && (
-        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ background: '#f8f9fa', borderBottom: '2px solid #dee2e6' }}>
-                  <th className="font-['Jost',sans-serif] font-bold text-left text-[#427d78]" style={{ padding: 'var(--space-3)' }}>Transaction ID</th>
-                  <th className="font-['Jost',sans-serif] font-bold text-left text-[#427d78]" style={{ padding: 'var(--space-3)' }}>Date/Time</th>
-                  {eventFilter === 'all' && (
-                    <th className="font-['Jost',sans-serif] font-bold text-left text-[#427d78]" style={{ padding: 'var(--space-3)' }}>Event</th>
-                  )}
-                  <th className="font-['Jost',sans-serif] font-bold text-left text-[#427d78]" style={{ padding: 'var(--space-3)' }}>Customer Name</th>
-                  <th className="font-['Jost',sans-serif] font-bold text-left text-[#427d78]" style={{ padding: 'var(--space-3)' }}>Email</th>
-                  <th className="font-['Jost',sans-serif] font-bold text-left text-[#427d78]" style={{ padding: 'var(--space-3)' }}>Phone</th>
-                  <th className="font-['Jost',sans-serif] font-bold text-left text-[#427d78]" style={{ padding: 'var(--space-3)' }}>Payment</th>
-                  <th className="font-['Jost',sans-serif] font-bold text-left text-[#427d78]" style={{ padding: 'var(--space-3)' }}>Tickets</th>
-                  <th className="font-['Jost',sans-serif] font-bold text-right text-[#427d78]" style={{ padding: 'var(--space-3)' }}>Donation</th>
-                  <th className="font-['Jost',sans-serif] font-bold text-right text-[#427d78]" style={{ padding: 'var(--space-3)' }}>Total</th>
-                  <th className="font-['Jost',sans-serif] font-bold text-left text-[#427d78]" style={{ padding: 'var(--space-3)' }}>Staff</th>
-                </tr>
-              </thead>
-              <tbody>
-                {records.length === 0 ? (
-                  <tr>
-                    <td colSpan={eventFilter === 'all' ? 11 : 10} className="text-center text-gray-500 font-['Bitter',serif]" style={{ padding: 'var(--space-4)' }}>
-                      No tickets found
-                    </td>
-                  </tr>
-                ) : (
-                  records.map((record) => (
-                    <tr key={record.id} style={{ borderBottom: '1px solid #dee2e6' }}>
-                      <td className="font-['Bitter',serif] text-xs" style={{ padding: 'var(--space-3)', whiteSpace: 'nowrap', fontFamily: 'monospace' }}>
+        <div className="card" style={{ padding: 'var(--space-3)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+            {records.length === 0 ? (
+              <div className="text-center text-gray-500 font-['Bitter',serif]" style={{ padding: 'var(--space-4)' }}>
+                No tickets found
+              </div>
+            ) : (
+              records.map((record) => (
+                <div 
+                  key={record.id} 
+                  style={{ 
+                    padding: 'var(--space-3)', 
+                    background: '#f8f9fa', 
+                    borderRadius: '8px',
+                    borderLeft: '4px solid #427d78'
+                  }}
+                >
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
+                    <div>
+                      <div className="font-['Jost',sans-serif] font-bold text-xs text-gray-500 uppercase">Transaction ID</div>
+                      <div className="font-['Bitter',serif] text-sm" style={{ fontFamily: 'monospace' }}>
                         {record.fields['Transaction ID'] || '-'}
-                      </td>
-                      <td className="font-['Bitter',serif] text-sm" style={{ padding: 'var(--space-3)', whiteSpace: 'nowrap' }}>
-                        {formatDate(record.createdTime)}
-                      </td>
-                      {eventFilter === 'all' && (
-                        <td className="font-['Bitter',serif] text-sm font-medium" style={{ padding: 'var(--space-3)' }}>
-                          {record.event}
-                        </td>
-                      )}
-                      <td className="font-['Bitter',serif]" style={{ padding: 'var(--space-3)' }}>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-['Jost',sans-serif] font-bold text-xs text-gray-500 uppercase">Date/Time</div>
+                      <div className="font-['Bitter',serif] text-sm">{formatDate(record.createdTime)}</div>
+                    </div>
+                    {eventFilter === 'all' && (
+                      <div>
+                        <div className="font-['Jost',sans-serif] font-bold text-xs text-gray-500 uppercase">Event</div>
+                        <div className="font-['Bitter',serif] text-sm font-medium">{record.event}</div>
+                      </div>
+                    )}
+                    <div>
+                      <div className="font-['Jost',sans-serif] font-bold text-xs text-gray-500 uppercase">Staff</div>
+                      <div className="font-['Bitter',serif] text-sm">{record.fields['Staff Initials']}</div>
+                    </div>
+                  </div>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
+                    <div>
+                      <div className="font-['Jost',sans-serif] font-bold text-xs text-gray-500 uppercase">Customer</div>
+                      <div className="font-['Bitter',serif] text-sm">
                         {record.fields['First Name']} {record.fields['Last Name']}
-                      </td>
-                      <td className="font-['Bitter',serif] text-sm" style={{ padding: 'var(--space-3)' }}>
-                        {record.fields['Email']}
-                      </td>
-                      <td className="font-['Bitter',serif] text-sm" style={{ padding: 'var(--space-3)', whiteSpace: 'nowrap' }}>
-                        {record.fields['Phone']}
-                      </td>
-                      <td className="font-['Bitter',serif] text-sm" style={{ padding: 'var(--space-3)' }}>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-['Jost',sans-serif] font-bold text-xs text-gray-500 uppercase">Email</div>
+                      <div className="font-['Bitter',serif] text-sm">{record.fields['Email']}</div>
+                    </div>
+                    <div>
+                      <div className="font-['Jost',sans-serif] font-bold text-xs text-gray-500 uppercase">Phone</div>
+                      <div className="font-['Bitter',serif] text-sm">{record.fields['Phone']}</div>
+                    </div>
+                  </div>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-2)' }}>
+                    <div>
+                      <div className="font-['Jost',sans-serif] font-bold text-xs text-gray-500 uppercase">Payment</div>
+                      <div className="font-['Bitter',serif] text-sm">
                         {record.fields['Payment Method']}
                         {record.fields['Check Number'] && ` #${record.fields['Check Number']}`}
-                      </td>
-                      <td className="font-['Bitter',serif] text-sm" style={{ padding: 'var(--space-3)' }}>
-                        {formatTicketQuantity(record)}
-                      </td>
-                      <td className="font-['Jost',sans-serif] text-right" style={{ padding: 'var(--space-3)' }}>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-['Jost',sans-serif] font-bold text-xs text-gray-500 uppercase">Tickets</div>
+                      <div className="font-['Bitter',serif] text-sm">{formatTicketQuantity(record)}</div>
+                    </div>
+                    <div>
+                      <div className="font-['Jost',sans-serif] font-bold text-xs text-gray-500 uppercase">Donation</div>
+                      <div className="font-['Jost',sans-serif] text-sm">
                         {record.fields['Donation Amount'] ? `$${record.fields['Donation Amount'].toFixed(2)}` : '-'}
-                      </td>
-                      <td className="font-['Jost',sans-serif] font-bold text-right" style={{ padding: 'var(--space-3)' }}>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-['Jost',sans-serif] font-bold text-xs text-gray-500 uppercase">Total</div>
+                      <div className="font-['Jost',sans-serif] font-bold text-lg text-[#427d78]">
                         ${record.fields['Amount Paid'].toFixed(2)}
-                      </td>
-                      <td className="font-['Bitter',serif] text-sm" style={{ padding: 'var(--space-3)' }}>
-                        {record.fields['Staff Initials']}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}

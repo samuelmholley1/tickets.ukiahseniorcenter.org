@@ -35,10 +35,10 @@ function SuccessContent() {
         setSaleData(JSON.parse(decodeURIComponent(data)));
       } catch (err) {
         console.error('Failed to parse sale data:', err);
-        router.push('/internal/sales');
+        router.push('/internal');
       }
     } else {
-      router.push('/internal/sales');
+      router.push('/internal');
     }
   }, [searchParams, router]);
 
@@ -196,16 +196,16 @@ function SuccessContent() {
           {/* Action Buttons */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
             <Link
-              href="/internal/sales"
+              href="/internal"
               className="block text-center bg-[#427d78] hover:bg-[#5eb3a1] text-white font-['Jost',sans-serif] font-bold text-lg py-4 rounded-lg transition-colors duration-300 shadow-lg hover:shadow-xl"
             >
               Record Another Sale
             </Link>
             <Link
-              href="/internal"
+              href="/internal/list"
               className="block text-center bg-gray-600 hover:bg-gray-700 text-white font-['Jost',sans-serif] font-bold text-lg py-4 rounded-lg transition-colors duration-300 shadow-lg hover:shadow-xl"
             >
-              Back to Internal Menu
+              View Sold Tickets
             </Link>
           </div>
 

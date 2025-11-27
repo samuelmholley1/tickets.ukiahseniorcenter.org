@@ -13,6 +13,7 @@ interface AirtableRecord {
     'Payment Method': string;
     'Check Number'?: string;
     'Amount Paid': number;
+    'Ticket Quantity'?: number;
     'Staff Initials': string;
   };
 }

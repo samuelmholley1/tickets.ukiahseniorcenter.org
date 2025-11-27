@@ -117,6 +117,7 @@ export async function POST(request: NextRequest) {
           'Payment Method': customer.paymentMethod === 'cash' ? 'Cash' : 'Check',
           'Check Number': customer.checkNumber || '',
           'Amount Paid': christmasTotal,
+          'Ticket Quantity': quantities.christmasMember + quantities.christmasNonMember,
           'Staff Initials': customer.staffInitials,
         },
       };
@@ -183,6 +184,7 @@ export async function POST(request: NextRequest) {
           'Payment Method': customer.paymentMethod === 'cash' ? 'Cash' : 'Check',
           'Check Number': customer.checkNumber || '',
           'Amount Paid': nyeTotal,
+          'Ticket Quantity': quantities.nyeMember + quantities.nyeNonMember,
           'Staff Initials': customer.staffInitials,
         },
       };

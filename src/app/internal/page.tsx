@@ -248,12 +248,18 @@ export default function UnifiedSalesPage() {
 
               {/* Donation Section */}
               {ticketSubtotal > 0 && (
-                <div style={{ marginTop: 'var(--space-4)' }}>
-                  <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-3">
-                    Would the customer like to make a donation today? *
+                <div style={{ 
+                  marginTop: 'var(--space-4)', 
+                  padding: 'var(--space-4)', 
+                  background: 'rgba(220, 53, 69, 0.04)',
+                  border: '2px solid rgba(220, 53, 69, 0.2)',
+                  borderRadius: '12px'
+                }}>
+                  <label className="block font-['Jost',sans-serif] font-bold text-gray-800 text-xl mb-3">
+                    💝 Would the customer like to make a donation today? *
                   </label>
-                  <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
-                    <label className="flex items-center cursor-pointer">
+                  <div style={{ display: 'flex', gap: 'var(--space-4)', marginBottom: 'var(--space-3)' }}>
+                    <label className="flex items-center cursor-pointer px-4 py-2 rounded-lg hover:bg-white/50 transition-colors">
                       <input
                         type="radio"
                         name="donation"
@@ -261,9 +267,9 @@ export default function UnifiedSalesPage() {
                         onChange={() => { setWantsDonation(false); setDonationAmount(''); }}
                         className="mr-2 w-5 h-5"
                       />
-                      <span className="font-['Bitter',serif] text-lg">No</span>
+                      <span className="font-['Bitter',serif] text-lg font-semibold">No, thank you</span>
                     </label>
-                    <label className="flex items-center cursor-pointer">
+                    <label className="flex items-center cursor-pointer px-4 py-2 rounded-lg hover:bg-white/50 transition-colors">
                       <input
                         type="radio"
                         name="donation"
@@ -271,12 +277,17 @@ export default function UnifiedSalesPage() {
                         onChange={() => setWantsDonation(true)}
                         className="mr-2 w-5 h-5"
                       />
-                      <span className="font-['Bitter',serif] text-lg">Yes</span>
+                      <span className="font-['Bitter',serif] text-lg font-semibold text-[#dc3545]">Yes, I&apos;d like to donate</span>
                     </label>
                   </div>
 
                   {wantsDonation && (
-                    <div>
+                    <div style={{ 
+                      marginTop: 'var(--space-3)', 
+                      padding: 'var(--space-3)', 
+                      background: 'white',
+                      borderRadius: '8px'
+                    }}>
                       <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">
                         Donation Amount *
                       </label>
@@ -288,7 +299,7 @@ export default function UnifiedSalesPage() {
                         value={donationAmount}
                         onChange={(e) => setDonationAmount(e.target.value)}
                         placeholder="0.00"
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif] text-lg"
+                        className="w-full px-4 py-3 border-2 border-[#dc3545] rounded-lg focus:border-[#c82333] focus:outline-none font-['Bitter',serif] text-lg"
                         required
                       />
                     </div>

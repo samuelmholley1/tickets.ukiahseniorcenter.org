@@ -118,6 +118,8 @@ export async function POST(request: NextRequest) {
           'Check Number': customer.checkNumber || '',
           'Amount Paid': christmasTotal,
           'Ticket Quantity': quantities.christmasMember + quantities.christmasNonMember,
+          'Christmas Member Tickets': quantities.christmasMember,
+          'Christmas Non-Member Tickets': quantities.christmasNonMember,
           'Staff Initials': customer.staffInitials,
         },
       };
@@ -185,6 +187,8 @@ export async function POST(request: NextRequest) {
           'Check Number': customer.checkNumber || '',
           'Amount Paid': nyeTotal,
           'Ticket Quantity': quantities.nyeMember + quantities.nyeNonMember,
+          'NYE Member Tickets': quantities.nyeMember,
+          'NYE Non-Member Tickets': quantities.nyeNonMember,
           'Staff Initials': customer.staffInitials,
         },
       };

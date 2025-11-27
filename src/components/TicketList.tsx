@@ -8,6 +8,7 @@ interface TicketRecord {
   createdTime: string;
   event: string;
   fields: {
+    'Transaction ID'?: string;
     'First Name': string;
     'Last Name': string;
     'Email': string;
@@ -201,6 +202,7 @@ export function TicketList({ autoRefresh = false }: TicketListProps) {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: '#f8f9fa', borderBottom: '2px solid #dee2e6' }}>
+                  <th className="font-['Jost',sans-serif] font-bold text-left text-[#427d78]" style={{ padding: 'var(--space-3)' }}>Transaction ID</th>
                   <th className="font-['Jost',sans-serif] font-bold text-left text-[#427d78]" style={{ padding: 'var(--space-3)' }}>Date/Time</th>
                   {eventFilter === 'all' && (
                     <th className="font-['Jost',sans-serif] font-bold text-left text-[#427d78]" style={{ padding: 'var(--space-3)' }}>Event</th>
@@ -217,13 +219,16 @@ export function TicketList({ autoRefresh = false }: TicketListProps) {
               <tbody>
                 {records.length === 0 ? (
                   <tr>
-                    <td colSpan={eventFilter === 'all' ? 9 : 8} className="text-center text-gray-500 font-['Bitter',serif]" style={{ padding: 'var(--space-4)' }}>
+                    <td colSpan={eventFilter === 'all' ? 10 : 9} className="text-center text-gray-500 font-['Bitter',serif]" style={{ padding: 'var(--space-4)' }}>
                       No tickets found
                     </td>
                   </tr>
                 ) : (
                   records.map((record) => (
                     <tr key={record.id} style={{ borderBottom: '1px solid #dee2e6' }}>
+                      <td className="font-['Bitter',serif] text-xs" style={{ padding: 'var(--space-3)', whiteSpace: 'nowrap', fontFamily: 'monospace' }}>
+                        {record.fields['Transaction ID'] || '-'}
+                      </td>
                       <td className="font-['Bitter',serif] text-sm" style={{ padding: 'var(--space-3)', whiteSpace: 'nowrap' }}>
                         {formatDate(record.createdTime)}
                       </td>

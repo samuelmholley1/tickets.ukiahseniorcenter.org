@@ -24,8 +24,16 @@ interface RequestBody {
   customer: CustomerInfo;
 }
 
+// Generate a unique transaction ID
+function generateTransactionId(): string {
+  return `TXN-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
+}
+
 export async function POST(request: NextRequest) {
   try {
+    // Generate unique transaction ID for this sale
+    const transactionId = generateTransactionId();
+    
     // Validate environment variables
     if (!process.env.AIRTABLE_API_KEY) {
       throw new Error('AIRTABLE_API_KEY is not configured');
@@ -110,6 +118,7 @@ export async function POST(request: NextRequest) {
 
       const christmasPayload = {
         fields: {
+          'Transaction ID': transactionId,
           'First Name': customer.firstName,
           'Last Name': customer.lastName,
           'Email': customer.email,
@@ -179,6 +188,7 @@ export async function POST(request: NextRequest) {
 
       const nyePayload = {
         fields: {
+          'Transaction ID': transactionId,
           'First Name': customer.firstName,
           'Last Name': customer.lastName,
           'Email': customer.email,

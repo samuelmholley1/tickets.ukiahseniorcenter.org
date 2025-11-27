@@ -91,7 +91,12 @@ function PrintTicketsContent() {
         maxWidth: '8.5in',
         margin: '0 auto'
       }}>
-      {tickets.map((ticket, index) => (
+      {tickets.map((ticket, index) => {
+        const isNYE = ticket.eventName.includes('New Year');
+        const borderColor = isNYE ? '#7c3aed' : '#427d78';
+        const accentColor = isNYE ? '#7c3aed' : '#427d78';
+        
+        return (
         <div
           key={index}
           style={{
@@ -101,8 +106,10 @@ function PrintTicketsContent() {
             overflow: 'hidden',
             padding: '16px',
             fontSize: '9px',
-            background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
-            border: '3px solid #427d78',
+            background: isNYE 
+              ? 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)'
+              : 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+            border: `3px solid ${borderColor}`,
             borderRadius: '8px',
             boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
             display: 'flex',
@@ -111,16 +118,18 @@ function PrintTicketsContent() {
           }}
         >
           {/* Header with Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '2px solid #427d78', paddingBottom: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: `2px solid ${borderColor}`, paddingBottom: '8px' }}>
             <Image
               src="/logo.png"
               alt="Ukiah Senior Center"
               width={50}
               height={50}
-              style={{ flexShrink: 0 }}
+              quality={100}
+              style={{ flexShrink: 0, imageRendering: 'high-quality' }}
+              priority
             />
             <div style={{ flex: 1, textAlign: 'left' }}>
-              <h3 style={{ fontFamily: 'Jost, sans-serif', fontWeight: 'bold', color: '#427d78', fontSize: '14px', marginBottom: '2px', lineHeight: '1.1' }}>
+              <h3 style={{ fontFamily: 'Jost, sans-serif', fontWeight: 'bold', color: accentColor, fontSize: '14px', marginBottom: '2px', lineHeight: '1.1' }}>
                 {ticket.eventName}
               </h3>
               <div style={{ fontFamily: 'Bitter, serif', color: '#374151', fontSize: '9px', lineHeight: '1.3' }}>
@@ -134,28 +143,29 @@ function PrintTicketsContent() {
           <div style={{ flex: 1, paddingTop: '8px', paddingBottom: '4px' }}>
             <div style={{ fontFamily: 'Bitter, serif', fontSize: '10px', lineHeight: '1.5' }}>
               <div style={{ marginBottom: '3px' }}>
-                <strong style={{ color: '#427d78' }}>Name:</strong>{' '}
+                <strong style={{ color: accentColor }}>Name:</strong>{' '}
                 <span>{ticket.customerName} #{ticket.ticketNumber}</span>
               </div>
               <div style={{ marginBottom: '3px' }}>
-                <strong style={{ color: '#427d78' }}>Phone:</strong>{' '}
+                <strong style={{ color: accentColor }}>Phone:</strong>{' '}
                 <span>{ticket.customerPhone}</span>
               </div>
               <div>
-                <strong style={{ color: '#427d78' }}>Email:</strong>{' '}
+                <strong style={{ color: accentColor }}>Email:</strong>{' '}
                 <span>{ticket.customerEmail}</span>
               </div>
             </div>
           </div>
 
           {/* Footer */}
-          <div style={{ textAlign: 'center', borderTop: '2px solid #427d78', paddingTop: '4px' }}>
+          <div style={{ textAlign: 'center', borderTop: `2px solid ${borderColor}`, paddingTop: '4px' }}>
             <p style={{ fontFamily: 'Bitter, serif', color: '#6b7280', fontSize: '8px', lineHeight: '1.2', fontWeight: '600' }}>
               Bartlett Event Center • 495 Leslie St, Ukiah, CA 95482 • (707) 462-4343
             </p>
           </div>
         </div>
-      ))}
+        );
+      })}
       </div>
 
       <style jsx global>{`

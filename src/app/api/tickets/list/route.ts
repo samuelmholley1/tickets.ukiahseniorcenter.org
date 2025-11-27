@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
       }
 
       const christmasResponse = await fetch(
-        `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_CHRISTMAS_TICKETS_TABLE_ID}?sort%5B0%5D%5Bfield%5D=Created&sort%5B0%5D%5Bdirection%5D=desc`,
+        `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_CHRISTMAS_TICKETS_TABLE_ID}`,
         {
           headers: {
             'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
       }
 
       const nyeResponse = await fetch(
-        `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_NYE_TICKETS_TABLE_ID}?sort%5B0%5D%5Bfield%5D=Created&sort%5B0%5D%5Bdirection%5D=desc`,
+        `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_NYE_TICKETS_TABLE_ID}`,
         {
           headers: {
             'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,

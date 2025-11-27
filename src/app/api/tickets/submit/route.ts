@@ -72,14 +72,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Maximum 50 tickets per order' }, { status: 400 });
     }
 
-    // Sanitize string inputs
-    customer.firstName = customer.firstName.trim();
-    customer.lastName = customer.lastName.trim();
-    customer.email = customer.email.trim().toLowerCase();
-    customer.phone = customer.phone.trim();
-    customer.staffInitials = customer.staffInitials.trim();
+    // Validate check number if payment method is check
+    if (customer.paymentMethod === 'check' && !customer.checkNumber?.trim()) {
+      return NextResponse.json({ error: 'Check number is required for check payments' }, { status: 400 });
+    }
+
+    // Sanitize string inputs with length limits (Airtable has limits)
+    customer.firstName = customer.firstName.trim().substring(0, 100);
+    customer.lastName = customer.lastName.trim().substring(0, 100);
+    customer.email = customer.email.trim().toLowerCase().substring(0, 255);
+    customer.phone = customer.phone.trim().substring(0, 50);
+    customer.staffInitials = customer.staffInitials.trim().substring(0, 50);
     if (customer.checkNumber) {
-      customer.checkNumber = customer.checkNumber.trim();
+      customer.checkNumber = customer.checkNumber.trim().substring(0, 50);
     }
 
     const CHRISTMAS_MEMBER = 15;
@@ -103,6 +108,21 @@ export async function POST(request: NextRequest) {
         christmasTicketInfo.push(`${quantities.christmasNonMember} Non-Member ($${CHRISTMAS_NON_MEMBER} ea)`);
       }
 
+      const christmasPayload = {
+        fields: {
+          'First Name': customer.firstName,
+          'Last Name': customer.lastName,
+          'Email': customer.email,
+          'Phone': customer.phone,
+          'Payment Method': customer.paymentMethod === 'cash' ? 'Cash' : 'Check',
+          'Check Number': customer.checkNumber || '',
+          'Amount Paid': christmasTotal,
+          'Staff Initials': customer.staffInitials,
+        },
+      };
+
+      console.log('Submitting to Christmas table:', JSON.stringify(christmasPayload, null, 2));
+
       const christmasResponse = await fetch(
         `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_CHRISTMAS_TICKETS_TABLE_ID}`,
         {
@@ -111,28 +131,33 @@ export async function POST(request: NextRequest) {
             'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            fields: {
-              'First Name': customer.firstName,
-              'Last Name': customer.lastName,
-              'Email': customer.email,
-              'Phone': customer.phone,
-              'Payment Method': customer.paymentMethod === 'cash' ? 'Cash' : 'Check',
-              'Check Number': customer.checkNumber || '',
-              'Amount Paid': christmasTotal,
-              'Staff Initials': customer.staffInitials,
-            },
-          }),
+          body: JSON.stringify(christmasPayload),
         }
       );
 
       if (!christmasResponse.ok) {
         const errorText = await christmasResponse.text();
         console.error('Christmas Airtable API Error:', errorText);
-        throw new Error(`Christmas table error (${christmasResponse.status}): ${errorText}`);
+        console.error('Payload sent:', JSON.stringify(christmasPayload, null, 2));
+        
+        // Try to parse error for better message
+        let detailedError = errorText;
+        try {
+          const errorJson = JSON.parse(errorText);
+          if (errorJson.error?.message) {
+            detailedError = errorJson.error.message;
+          }
+        } catch (e) {
+          // Use raw error text
+        }
+        
+        throw new Error(`Christmas table error (${christmasResponse.status}): ${detailedError}`);
       }
 
-      results.push({ event: 'Christmas Drive-Thru', total: christmasTotal });
+      const christmasData = await christmasResponse.json();
+      console.log('Christmas record created:', christmasData.id);
+      
+      results.push({ event: 'Christmas Drive-Thru', total: christmasTotal, recordId: christmasData.id });
     }
 
     // Submit to NYE table if any NYE tickets selected
@@ -149,6 +174,21 @@ export async function POST(request: NextRequest) {
         nyeTicketInfo.push(`${quantities.nyeNonMember} Non-Member ($${NYE_NON_MEMBER} ea)`);
       }
 
+      const nyePayload = {
+        fields: {
+          'First Name': customer.firstName,
+          'Last Name': customer.lastName,
+          'Email': customer.email,
+          'Phone': customer.phone,
+          'Payment Method': customer.paymentMethod === 'cash' ? 'Cash' : 'Check',
+          'Check Number': customer.checkNumber || '',
+          'Amount Paid': nyeTotal,
+          'Staff Initials': customer.staffInitials,
+        },
+      };
+
+      console.log('Submitting to NYE table:', JSON.stringify(nyePayload, null, 2));
+
       const nyeResponse = await fetch(
         `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_NYE_TICKETS_TABLE_ID}`,
         {
@@ -157,28 +197,38 @@ export async function POST(request: NextRequest) {
             'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            fields: {
-              'First Name': customer.firstName,
-              'Last Name': customer.lastName,
-              'Email': customer.email,
-              'Phone': customer.phone,
-              'Payment Method': customer.paymentMethod === 'cash' ? 'Cash' : 'Check',
-              'Check Number': customer.checkNumber || '',
-              'Amount Paid': nyeTotal,
-              'Staff Initials': customer.staffInitials,
-            },
-          }),
+          body: JSON.stringify(nyePayload),
         }
       );
 
       if (!nyeResponse.ok) {
         const errorText = await nyeResponse.text();
         console.error('NYE Airtable API Error:', errorText);
-        throw new Error(`NYE table error (${nyeResponse.status}): ${errorText}`);
+        console.error('Payload sent:', JSON.stringify(nyePayload, null, 2));
+        
+        // Try to parse error for better message
+        let detailedError = errorText;
+        try {
+          const errorJson = JSON.parse(errorText);
+          if (errorJson.error?.message) {
+            detailedError = errorJson.error.message;
+          }
+        } catch (e) {
+          // Use raw error text
+        }
+        
+        // If Christmas succeeded but NYE failed, log warning
+        if (christmasTotal > 0) {
+          console.error('CRITICAL: Christmas record created but NYE failed. Customer may have partial order.');
+        }
+        
+        throw new Error(`NYE table error (${nyeResponse.status}): ${detailedError}`);
       }
 
-      results.push({ event: 'NYE Gala Dance', total: nyeTotal });
+      const nyeData = await nyeResponse.json();
+      console.log('NYE record created:', nyeData.id);
+      
+      results.push({ event: 'NYE Gala Dance', total: nyeTotal, recordId: nyeData.id });
     }
 
     return NextResponse.json({ 

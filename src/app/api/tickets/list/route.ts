@@ -40,7 +40,8 @@ function checkRateLimit(ip: string): boolean {
 export async function GET(request: NextRequest) {
   try {
     // Rate limiting
-    const ip = request.ip || request.headers.get('x-forwarded-for') || 'unknown';
+    const forwarded = request.headers.get('x-forwarded-for');
+    const ip = forwarded ? forwarded.split(',')[0] : request.headers.get('x-real-ip') || 'unknown';
     if (!checkRateLimit(ip)) {
       return NextResponse.json({ error: 'Rate limit exceeded. Please try again later.' }, { status: 429 });
     }

@@ -33,7 +33,6 @@ export default function UnifiedSalesPage() {
   });
 
   const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
   // Pricing

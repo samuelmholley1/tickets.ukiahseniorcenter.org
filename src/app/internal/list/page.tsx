@@ -33,6 +33,7 @@ export default function TicketListPage() {
 
   useEffect(() => {
     fetchTickets();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventFilter]);
 
   const fetchTickets = async () => {

@@ -17,8 +17,34 @@ interface AirtableRecord {
   };
 }
 
+// Simple in-memory rate limiting (resets on deployment)
+const rateLimit = new Map<string, { count: number; resetTime: number }>();
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const limit = rateLimit.get(ip);
+  
+  if (!limit || now > limit.resetTime) {
+    rateLimit.set(ip, { count: 1, resetTime: now + 60000 }); // 60 seconds
+    return true;
+  }
+  
+  if (limit.count >= 30) { // Max 30 requests per minute
+    return false;
+  }
+  
+  limit.count++;
+  return true;
+}
+
 export async function GET(request: NextRequest) {
   try {
+    // Rate limiting
+    const ip = request.ip || request.headers.get('x-forwarded-for') || 'unknown';
+    if (!checkRateLimit(ip)) {
+      return NextResponse.json({ error: 'Rate limit exceeded. Please try again later.' }, { status: 429 });
+    }
+
     // Validate environment variables
     if (!process.env.AIRTABLE_API_KEY) {
       throw new Error('AIRTABLE_API_KEY is not configured');
@@ -29,6 +55,11 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const event = searchParams.get('event') || 'all';
+
+    // Validate event parameter
+    if (!['christmas', 'nye', 'all'].includes(event)) {
+      return NextResponse.json({ error: 'Invalid event parameter' }, { status: 400 });
+    }
 
     const records: Array<AirtableRecord & { event: string }> = [];
 

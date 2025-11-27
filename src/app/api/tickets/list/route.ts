@@ -13,6 +13,8 @@ interface AirtableRecord {
     'Phone': string;
     'Payment Method': string;
     'Check Number'?: string;
+    'Ticket Subtotal'?: number;
+    'Donation Amount'?: number;
     'Amount Paid': number;
     'Ticket Quantity'?: number;
     'Christmas Member Tickets'?: number;

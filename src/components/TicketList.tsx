@@ -221,12 +221,13 @@ export function TicketList({ autoRefresh = false }: TicketListProps) {
                   <div style={{ 
                     display: 'flex', 
                     justifyContent: 'space-between', 
-                    alignItems: 'center',
+                    alignItems: 'flex-start',
                     marginBottom: 'var(--space-3)',
                     paddingBottom: 'var(--space-3)',
-                    borderBottom: '2px solid #f8f9fa'
+                    borderBottom: '2px solid #f8f9fa',
+                    gap: 'var(--space-3)'
                   }}>
-                    <div>
+                    <div style={{ flex: 1 }}>
                       <div className="font-['Jost',sans-serif] font-bold text-xl text-gray-900">
                         {record.fields['First Name']} {record.fields['Last Name']}
                       </div>
@@ -235,8 +236,29 @@ export function TicketList({ autoRefresh = false }: TicketListProps) {
                         {eventFilter === 'all' && ` • ${record.event}`}
                       </div>
                     </div>
-                    <div className="font-['Jost',sans-serif] font-bold text-2xl text-[#427d78]">
-                      ${record.fields['Amount Paid'].toFixed(2)}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                      <button
+                        onClick={() => {
+                          const params = new URLSearchParams({
+                            firstName: record.fields['First Name'],
+                            lastName: record.fields['Last Name'],
+                            email: record.fields['Email'],
+                            phone: record.fields['Phone'],
+                            christmasMember: (record.fields['Christmas Member Tickets'] || 0).toString(),
+                            christmasNonMember: (record.fields['Christmas Non-Member Tickets'] || 0).toString(),
+                            nyeMember: (record.fields['NYE Member Tickets'] || 0).toString(),
+                            nyeNonMember: (record.fields['NYE Non-Member Tickets'] || 0).toString()
+                          });
+                          window.open(`/ticket/print?${params.toString()}`, '_blank');
+                        }}
+                        className="bg-[#427d78] hover:bg-[#5eb3a1] text-white font-['Jost',sans-serif] font-bold text-sm px-4 py-2 rounded-lg transition-colors"
+                        style={{ whiteSpace: 'nowrap' }}
+                      >
+                        🎟️ Print Tickets
+                      </button>
+                      <div className="font-['Jost',sans-serif] font-bold text-2xl text-[#427d78]">
+                        ${record.fields['Amount Paid'].toFixed(2)}
+                      </div>
                     </div>
                   </div>
                   

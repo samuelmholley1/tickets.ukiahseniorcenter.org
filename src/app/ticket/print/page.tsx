@@ -125,7 +125,7 @@ function PrintTicketsContent() {
               width={50}
               height={50}
               quality={100}
-              style={{ flexShrink: 0, imageRendering: 'high-quality' }}
+              style={{ flexShrink: 0 }}
               priority
             />
             <div style={{ flex: 1, textAlign: 'left' }}>

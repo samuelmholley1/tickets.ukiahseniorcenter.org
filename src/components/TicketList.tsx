@@ -29,11 +29,7 @@ interface TicketRecord {
 
 type EventFilter = 'christmas' | 'nye' | 'all';
 
-interface TicketListProps {
-  autoRefresh?: boolean;
-}
-
-export function TicketList({ autoRefresh = false }: TicketListProps) {
+export function TicketList() {
   const [eventFilter, setEventFilter] = useState<EventFilter>('all');
   const [records, setRecords] = useState<TicketRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,6 +56,7 @@ export function TicketList({ autoRefresh = false }: TicketListProps) {
 
   useEffect(() => {
     fetchTickets();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventFilter]);
 
   const formatDate = (dateString: string) => {

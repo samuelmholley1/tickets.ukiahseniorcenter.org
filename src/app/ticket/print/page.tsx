@@ -81,15 +81,22 @@ function PrintTicketsContent() {
   }
 
   return (
-    <div style={{ padding: '20px' }}>
+    <div style={{ padding: '0', background: 'white' }}>
+      <div style={{ 
+        display: 'grid',
+        gridTemplateColumns: 'repeat(2, 3.5in)',
+        gridTemplateRows: 'repeat(5, 2in)',
+        gap: '0.25in',
+        padding: '0.5in',
+        maxWidth: '8.5in',
+        margin: '0 auto'
+      }}>
       {tickets.map((ticket, index) => (
         <div
           key={index}
           style={{
             width: '3.5in',
             height: '2in',
-            marginInline: 'auto',
-            marginBottom: '20px',
             position: 'relative',
             overflow: 'hidden',
             padding: '16px',
@@ -97,11 +104,10 @@ function PrintTicketsContent() {
             background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
             border: '3px solid #427d78',
             borderRadius: '8px',
-            boxShadow: '0 4px 12px rgba(66, 125, 120, 0.15)',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'space-between',
-            pageBreakAfter: index < tickets.length - 1 ? 'always' : 'auto'
+            justifyContent: 'space-between'
           }}
         >
           {/* Header with Logo */}
@@ -145,21 +151,28 @@ function PrintTicketsContent() {
           {/* Footer */}
           <div style={{ textAlign: 'center', borderTop: '2px solid #427d78', paddingTop: '4px' }}>
             <p style={{ fontFamily: 'Bitter, serif', color: '#6b7280', fontSize: '8px', lineHeight: '1.2', fontWeight: '600' }}>
-              Ukiah Senior Center • 499 Leslie St, Ukiah, CA 95482 • (707) 462-4343
+              Bartlett Event Center • 495 Leslie St, Ukiah, CA 95482 • (707) 462-4343
             </p>
           </div>
         </div>
       ))}
+      </div>
 
       <style jsx global>{`
+        * {
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
         @media print {
-          body { 
+          html, body { 
             padding: 0; 
             margin: 0; 
+            width: 100%;
+            height: 100%;
           }
           @page { 
-            size: 3.5in 2in;
-            margin: 0.25in; 
+            size: letter portrait;
+            margin: 0.5in; 
           }
         }
       `}</style>

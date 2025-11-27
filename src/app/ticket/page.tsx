@@ -287,7 +287,7 @@ export default function TicketGenerator() {
                   {/* Footer */}
                   <div style={{ textAlign: 'center', borderTop: '2px solid #427d78', paddingTop: '4px' }}>
                     <p className="font-['Bitter',serif] text-gray-600" style={{ fontSize: '8px', lineHeight: '1.2', fontWeight: '600' }}>
-                      Ukiah Senior Center • 499 Leslie St, Ukiah, CA 95482 • (707) 462-4343
+                      Bartlett Event Center • 495 Leslie St, Ukiah, CA 95482 • (707) 462-4343
                     </p>
                   </div>
                 </div>

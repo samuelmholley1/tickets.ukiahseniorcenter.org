@@ -91,7 +91,8 @@ export function TicketList({ autoRefresh = false }: TicketListProps) {
   };
 
   const totalAmount = records.reduce((sum, record) => sum + record.fields['Amount Paid'], 0);
-  const totalTickets = records.length;
+  const totalTickets = records.reduce((sum, record) => sum + (record.fields['Ticket Quantity'] || 0), 0);
+  const totalTransactions = records.length;
 
   return (
     <div style={{ marginTop: 'var(--space-6)' }}>
@@ -148,10 +149,18 @@ export function TicketList({ autoRefresh = false }: TicketListProps) {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-3)', textAlign: 'center' }}>
             <div>
               <div className="text-white/80 font-['Bitter',serif] text-sm" style={{ marginBottom: 'var(--space-1)' }}>
-                Total Sales
+                Total Tickets
               </div>
               <div className="text-white font-['Jost',sans-serif] font-bold text-3xl">
                 {totalTickets}
+              </div>
+            </div>
+            <div>
+              <div className="text-white/80 font-['Bitter',serif] text-sm" style={{ marginBottom: 'var(--space-1)' }}>
+                Total Transactions
+              </div>
+              <div className="text-white font-['Jost',sans-serif] font-bold text-3xl">
+                {totalTransactions}
               </div>
             </div>
             <div>

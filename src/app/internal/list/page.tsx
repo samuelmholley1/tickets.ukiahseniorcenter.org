@@ -18,6 +18,7 @@ interface TicketRecord {
     'Payment Method': string;
     'Check Number'?: string;
     'Amount Paid': number;
+    'Ticket Quantity'?: number;
     'Staff Initials': string;
   };
 }
@@ -77,7 +78,7 @@ export default function TicketListPage() {
           {/* Back Button */}
           <div style={{ marginBottom: 'var(--space-3)' }}>
             <Link 
-              href="/internal/sales"
+              href="/internal"
               className="inline-flex items-center gap-2 text-[#427d78] hover:text-[#5eb3a1] font-['Jost',sans-serif] font-bold transition-colors"
             >
               ← Back to Sales Form
@@ -188,6 +189,7 @@ export default function TicketListPage() {
                       <th className="font-['Jost',sans-serif] font-bold text-left text-[#427d78]" style={{ padding: 'var(--space-3)' }}>Email</th>
                       <th className="font-['Jost',sans-serif] font-bold text-left text-[#427d78]" style={{ padding: 'var(--space-3)' }}>Phone</th>
                       <th className="font-['Jost',sans-serif] font-bold text-left text-[#427d78]" style={{ padding: 'var(--space-3)' }}>Payment</th>
+                      <th className="font-['Jost',sans-serif] font-bold text-right text-[#427d78]" style={{ padding: 'var(--space-3)' }}>Qty</th>
                       <th className="font-['Jost',sans-serif] font-bold text-right text-[#427d78]" style={{ padding: 'var(--space-3)' }}>Amount</th>
                       <th className="font-['Jost',sans-serif] font-bold text-left text-[#427d78]" style={{ padding: 'var(--space-3)' }}>Staff</th>
                     </tr>
@@ -195,7 +197,7 @@ export default function TicketListPage() {
                   <tbody>
                     {records.length === 0 ? (
                       <tr>
-                        <td colSpan={eventFilter === 'all' ? 8 : 7} className="text-center text-gray-500 font-['Bitter',serif]" style={{ padding: 'var(--space-4)' }}>
+                        <td colSpan={eventFilter === 'all' ? 9 : 8} className="text-center text-gray-500 font-['Bitter',serif]" style={{ padding: 'var(--space-4)' }}>
                           No tickets found
                         </td>
                       </tr>
@@ -222,6 +224,9 @@ export default function TicketListPage() {
                           <td className="font-['Bitter',serif] text-sm" style={{ padding: 'var(--space-3)' }}>
                             {record.fields['Payment Method']}
                             {record.fields['Check Number'] && ` #${record.fields['Check Number']}`}
+                          </td>
+                          <td className="font-['Jost',sans-serif] font-bold text-right" style={{ padding: 'var(--space-3)' }}>
+                            {record.fields['Ticket Quantity'] || 0}
                           </td>
                           <td className="font-['Jost',sans-serif] font-bold text-right" style={{ padding: 'var(--space-3)' }}>
                             ${record.fields['Amount Paid'].toFixed(2)}

@@ -187,8 +187,8 @@ export function ZeffyModal({ isOpen, onClose, eventTitle, zeffyUrl }: ZeffyModal
           </div>
         </div>
 
-        {/* Iframe Container - Scrollable */}
-        <div className="relative flex-1 bg-gray-50" style={{ minHeight: '600px' }}>
+        {/* Iframe Container - Fixed height to prevent scrolling */}
+        <div className="relative bg-gray-50" style={{ position: 'relative', overflow: 'hidden', height: '1400px', width: '100%' }}>
           {isLoading && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="flex flex-col items-center space-y-4">
@@ -200,8 +200,8 @@ export function ZeffyModal({ isOpen, onClose, eventTitle, zeffyUrl }: ZeffyModal
           {hasLoaded && (
             <iframe
               src={zeffyUrl}
-              className="w-full h-full border-0"
-              style={{ minHeight: '600px' }}
+              className="border-0"
+              style={{ position: 'absolute', border: 0, top: 0, left: 0, bottom: 0, right: 0, width: '100%', height: '100%' }}
               title={`Zeffy ticketing form for ${eventTitle}`}
               onLoad={() => setIsLoading(false)}
               allow="payment"

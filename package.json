@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "next": "15.5.3",
+    "nodemailer": "^6.9.8",
+    "puppeteer": "^21.7.0",
     "react": "19.1.0",
     "react-dom": "19.1.0"
   },
@@ -21,6 +23,7 @@
     "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20.19.25",
+    "@types/nodemailer": "^6.4.14",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

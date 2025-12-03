@@ -7,8 +7,6 @@ export async function POST(request: NextRequest) {
     const {
       firstName,
       lastName,
-      email,
-      phone,
       christmasMember = 0,
       christmasNonMember = 0,
       nyeMember = 0,
@@ -188,7 +186,7 @@ export async function POST(request: NextRequest) {
 
     await browser.close();
 
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(new Uint8Array(pdfBuffer), {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': 'attachment; filename="tickets.pdf"',

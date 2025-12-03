@@ -118,42 +118,63 @@ function PrintTicketsContent() {
           }}
         >
           {/* Header with Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: `2px solid ${borderColor}`, paddingBottom: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', borderBottom: `2px solid ${borderColor}`, paddingBottom: '6px' }}>
             <Image
               src="/logo.png"
               alt="Ukiah Senior Center"
-              width={50}
-              height={50}
+              width={45}
+              height={45}
               quality={100}
               style={{ flexShrink: 0 }}
               priority
             />
             <div style={{ flex: 1, textAlign: 'left' }}>
-              <h3 style={{ fontFamily: 'Jost, sans-serif', fontWeight: 'bold', color: accentColor, fontSize: '14px', marginBottom: '2px', lineHeight: '1.1' }}>
-                {ticket.eventName}
+              <h3 style={{ fontFamily: 'Jost, sans-serif', fontWeight: 'bold', color: accentColor, fontSize: '12px', marginBottom: '3px', lineHeight: '1.1' }}>
+                {isNYE ? 'New Year\'s Eve Gala Dance' : 'Christmas Prime Rib Meal'}
               </h3>
-              <div style={{ fontFamily: 'Bitter, serif', color: '#374151', fontSize: '9px', lineHeight: '1.3' }}>
-                <div style={{ fontWeight: 'bold', marginBottom: '1px' }}>{ticket.eventDate}</div>
-                <div style={{ fontWeight: 'bold' }}>{ticket.eventTime}</div>
+              <div style={{ fontFamily: 'Bitter, serif', color: '#1f2937', fontSize: '8px', lineHeight: '1.3', fontWeight: '600' }}>
+                <div style={{ marginBottom: '2px' }}>{isNYE ? 'Wednesday, Dec 31, 2025' : 'Tuesday, Dec 23, 2025'}</div>
+                {isNYE ? (
+                  <>
+                    <div style={{ marginBottom: '1px' }}>Doors: 6:00 PM • Dance: 7:00-10:00 PM</div>
+                    <div style={{ fontSize: '7px', color: '#dc2626', fontWeight: 'bold' }}>Ball Drop: 9:00 PM (NY Time!)</div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ marginBottom: '1px', color: '#dc2626', fontWeight: 'bold' }}>PICKUP: 12:00-12:30 PM</div>
+                    <div style={{ fontSize: '7px' }}>Drive-Thru Only • Stay in Vehicle</div>
+                  </>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Customer Info */}
-          <div style={{ flex: 1, paddingTop: '8px', paddingBottom: '4px' }}>
-            <div style={{ fontFamily: 'Bitter, serif', fontSize: '10px', lineHeight: '1.5' }}>
-              <div style={{ marginBottom: '3px' }}>
-                <strong style={{ color: accentColor }}>Name:</strong>{' '}
-                <span>{ticket.customerName} #{ticket.ticketNumber}</span>
-              </div>
-              <div style={{ marginBottom: '3px' }}>
-                <strong style={{ color: accentColor }}>Phone:</strong>{' '}
-                <span>{ticket.customerPhone}</span>
-              </div>
-              <div>
-                <strong style={{ color: accentColor }}>Email:</strong>{' '}
-                <span>{ticket.customerEmail}</span>
-              </div>
+          {/* Event Details */}
+          <div style={{ flex: 1, paddingTop: '6px', paddingBottom: '4px', fontSize: '7.5px', fontFamily: 'Bitter, serif', lineHeight: '1.4' }}>
+            {isNYE ? (
+              <>
+                <div style={{ marginBottom: '3px' }}>
+                  <strong style={{ color: accentColor }}>INCLUDES:</strong> Appetizers, Hors d'oeuvres & Dessert
+                </div>
+                <div style={{ marginBottom: '3px' }}>
+                  <strong style={{ color: accentColor }}>MUSIC:</strong> Beatz Werkin Band
+                </div>
+                <div style={{ marginBottom: '3px' }}>
+                  <strong style={{ color: accentColor }}>ATTIRE:</strong> Flashy Attire!
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ marginBottom: '3px' }}>
+                  <strong style={{ color: accentColor }}>MENU:</strong> Prime Rib w/ Horseradish, Garlic Mashed Potatoes, Vegetable, Caesar Salad, Garlic Bread, Cheesecake
+                </div>
+                <div style={{ marginBottom: '2px', color: '#dc2626', fontWeight: 'bold', fontSize: '8px' }}>
+                  ⚠️ Arrive within 12:00-12:30 PM window
+                </div>
+              </>
+            )}
+            <div style={{ marginTop: '4px', paddingTop: '4px', borderTop: `1px solid ${borderColor}` }}>
+              <strong style={{ color: accentColor }}>Guest:</strong> {ticket.customerName} <strong>#{ticket.ticketNumber}</strong>
             </div>
           </div>
 

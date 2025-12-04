@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
       doc.setFontSize(7);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(31, 41, 55);
-      doc.text(isNYE ? 'Wednesday • Dec 31, 2025' : 'Tuesday • Dec 23, 2025', x + 0.15, y + 0.3);
+      doc.text(isNYE ? 'Wednesday • December 31, 2025' : 'Tuesday • December 23, 2025', x + 0.15, y + 0.3);
 
       if (isNYE) {
         doc.text('Doors: 6:00 PM • Dance: 7:00-10:00 PM', x + 0.15, y + 0.36);

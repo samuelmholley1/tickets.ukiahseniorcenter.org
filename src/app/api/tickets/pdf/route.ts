@@ -1,9 +1,20 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { jsPDF } from 'jspdf';
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
-    const customerName = 'Mendocino Book Company';
+    const body = await request.json();
+    const {
+      firstName,
+      lastName,
+      christmasMember = 0,
+      christmasNonMember = 0,
+      nyeMember = 0,
+      nyeNonMember = 0,
+    } = body;
+
+    // Build the ticket print HTML
+    const customerName = `${firstName} ${lastName}`;
     const tickets: Array<{
       eventName: string;
       isNYE: boolean;
@@ -11,23 +22,25 @@ export async function POST() {
       totalTickets: number;
     }> = [];
 
-    // Generate 20 Christmas tickets
-    for (let i = 0; i < 20; i++) {
+    // Generate Christmas tickets
+    const totalChristmas = christmasMember + christmasNonMember;
+    for (let i = 0; i < totalChristmas; i++) {
       tickets.push({
         eventName: 'Christmas Prime Rib Meal',
         isNYE: false,
         ticketNumber: i + 1,
-        totalTickets: 20,
+        totalTickets: totalChristmas,
       });
     }
 
-    // Generate 20 NYE tickets
-    for (let i = 0; i < 20; i++) {
+    // Generate NYE tickets
+    const totalNYE = nyeMember + nyeNonMember;
+    for (let i = 0; i < totalNYE; i++) {
       tickets.push({
         eventName: 'New Year\'s Eve Gala Dance',
         isNYE: true,
         ticketNumber: i + 1,
-        totalTickets: 20,
+        totalTickets: totalNYE,
       });
     }
 
@@ -70,7 +83,7 @@ export async function POST() {
       doc.setFontSize(7);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(31, 41, 55);
-      doc.text(isNYE ? 'Wednesday • Dec 31, 2025' : 'Tuesday • Dec 23, 2025', x + 0.15, y + 0.3);
+      doc.text(isNYE ? 'Wednesday • December 31, 2025' : 'Tuesday • December 23, 2025', x + 0.15, y + 0.3);
 
       if (isNYE) {
         doc.text('Doors: 6:00 PM • Dance: 7:00-10:00 PM', x + 0.15, y + 0.36);
@@ -120,23 +133,19 @@ export async function POST() {
         doc.text('MENU:', x + 0.15, detailY);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(0, 0, 0);
-        doc.text('Prime Rib w/ Horseradish, Garlic Mashed', x + 0.45, detailY);
+        const menuText = 'Prime Rib w/ Horseradish, Garlic Mashed Potatoes,';
+        doc.text(menuText, x + 0.4, detailY);
+        doc.text('Vegetable, Caesar Salad, Garlic Bread, Cheesecake', x + 0.15, detailY + 0.08);
 
-        detailY += 0.1;
-        doc.text('Potatoes, Vegetable, Caesar Salad,', x + 0.45, detailY);
-
-        detailY += 0.1;
-        doc.text('Garlic Bread, Cheesecake', x + 0.45, detailY);
-
-        detailY += 0.15;
-        doc.setFontSize(6);
-        doc.setTextColor(220, 38, 38);
+        detailY += 0.2;
+        doc.setFontSize(7);
         doc.setFont('helvetica', 'bold');
-        doc.text('⚠ Arrive within 12:00-12:30 PM window', x + 0.15, detailY);
+        doc.setTextColor(220, 38, 38);
+        doc.text('⚠️ Arrive within 12:00-12:30 PM window', x + 0.15, detailY);
       }
 
-      // Guest section with border
-      const guestY = y + height - 0.5;
+      // Guest info section with border
+      const guestY = y + height - 0.45;
       doc.setDrawColor(...borderColor);
       doc.setLineWidth(0.005);
       doc.line(x + 0.15, guestY, x + width - 0.15, guestY);
@@ -156,54 +165,39 @@ export async function POST() {
       doc.line(x + 0.1, footerY, x + width - 0.1, footerY);
 
       doc.setFontSize(6);
-      doc.setFont('helvetica', 'normal');
+      doc.setFont('helvetica', 'bold');
       doc.setTextColor(107, 114, 128);
       const footerText = 'Bartlett Event Center • 495 Leslie St, Ukiah, CA 95482 • (707) 462-4343';
-      const textWidth = doc.getTextWidth(footerText);
-      const centerX = x + (width / 2) - (textWidth / 2);
-      doc.text(footerText, centerX, footerY + 0.12);
+      const footerWidth = doc.getTextWidth(footerText);
+      doc.text(footerText, x + (width - footerWidth) / 2, footerY + 0.12);
     };
 
-    // Layout: 2 columns, 5 rows per page (10 tickets per page)
-    const cols = 2;
-    const rows = 5;
-    const ticketsPerPage = cols * rows;
-    const startX = 0.75; // 0.75" from left
-    const startY = 0.5;  // 0.5" from top
-    const gapX = 0.25;   // Gap between columns
-    const gapY = 0.25;   // Gap between rows
-
-    tickets.forEach((ticket, index) => {
-      // Add new page if needed
-      if (index > 0 && index % ticketsPerPage === 0) {
-        doc.addPage();
+    // Layout tickets in 2x5 grid
+    let ticketIndex = 0;
+    for (let row = 0; row < 5; row++) {
+      for (let col = 0; col < 2; col++) {
+        if (ticketIndex < tickets.length) {
+          const x = 0.5 + col * 3.75; // 0.5" margin + 3.5" width + 0.25" gap
+          const y = 0.5 + row * 2.25;  // 0.5" margin + 2" height + 0.25" gap
+          drawTicket(tickets[ticketIndex], x, y);
+          ticketIndex++;
+        }
       }
-
-      // Calculate position
-      const posInPage = index % ticketsPerPage;
-      const col = posInPage % cols;
-      const row = Math.floor(posInPage / cols);
-
-      const x = startX + col * (3.5 + gapX);
-      const y = startY + row * (2 + gapY);
-
-      drawTicket(ticket, x, y);
-    });
+    }
 
     // Generate PDF buffer
-    const pdfBuffer = doc.output('arraybuffer');
+    const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
 
-    // Return PDF as response
-    return new NextResponse(new Uint8Array(pdfBuffer), {
+    return new NextResponse(pdfBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="Mendocino-Book-Company-Tickets-${Date.now()}.pdf"`,
+        'Content-Disposition': 'attachment; filename="tickets.pdf"',
       },
     });
   } catch (error) {
-    console.error('Error generating bookstore PDF:', error);
+    console.error('Error generating PDF:', error);
     return NextResponse.json(
-      { error: 'Failed to generate PDF', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Failed to generate PDF' },
       { status: 500 }
     );
   }

@@ -154,7 +154,7 @@ function PrintTicketsContent() {
             {isNYE ? (
               <>
                 <div style={{ marginBottom: '3px' }}>
-                  <strong style={{ color: accentColor }}>INCLUDES:</strong> Appetizers, Hors d'oeuvres & Dessert
+                  <strong style={{ color: accentColor }}>INCLUDES:</strong> Appetizers, Hors d&apos;oeuvres & Dessert
                 </div>
                 <div style={{ marginBottom: '3px' }}>
                   <strong style={{ color: accentColor }}>MUSIC:</strong> Beatz Werkin Band

@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
           if (errorJson.error?.message) {
             detailedError = errorJson.error.message;
           }
-        } catch (e) {
+        } catch {
           // Use raw error text
         }
         

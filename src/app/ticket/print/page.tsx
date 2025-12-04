@@ -2,7 +2,6 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Image from 'next/image';
 
 interface TicketInfo {
   eventName: string;
@@ -119,21 +118,19 @@ function PrintTicketsContent() {
         >
           {/* Header with Logo */}
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', borderBottom: `2px solid ${borderColor}`, paddingBottom: '6px' }}>
-            <Image
+            <img
               src="/logo.png"
               alt="Ukiah Senior Center"
-              width={45}
-              height={45}
-              quality={100}
-              style={{ flexShrink: 0 }}
-              priority
+              width="45"
+              height="45"
+              style={{ flexShrink: 0, imageRendering: 'high-quality', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
             />
             <div style={{ flex: 1, textAlign: 'left' }}>
               <h3 style={{ fontFamily: 'Jost, sans-serif', fontWeight: 'bold', color: accentColor, fontSize: '12px', marginBottom: '3px', lineHeight: '1.1' }}>
                 {isNYE ? 'New Year\'s Eve Gala Dance' : 'Christmas Prime Rib Meal'}
               </h3>
               <div style={{ fontFamily: 'Bitter, serif', color: '#1f2937', fontSize: '8px', lineHeight: '1.3', fontWeight: '600' }}>
-                <div style={{ marginBottom: '2px' }}>{isNYE ? 'Wednesday, Dec 31, 2025' : 'Tuesday, Dec 23, 2025'}</div>
+                <div style={{ marginBottom: '2px' }}>{isNYE ? 'Wednesday • December 31, 2025' : 'Tuesday • December 23, 2025'}</div>
                 {isNYE ? (
                   <>
                     <div style={{ marginBottom: '1px' }}>Doors: 6:00 PM • Dance: 7:00-10:00 PM</div>

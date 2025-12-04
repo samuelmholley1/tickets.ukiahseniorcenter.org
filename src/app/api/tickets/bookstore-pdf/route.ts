@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import jsPDF from 'jspdf';
+import { NextResponse } from 'next/server';
+import { jsPDF } from 'jspdf';
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     const customerName = 'Mendocino Book Company';
     const tickets: Array<{

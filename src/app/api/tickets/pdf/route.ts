@@ -7,8 +7,6 @@ export async function POST(request: NextRequest) {
     const {
       firstName,
       lastName,
-      email,
-      phone,
       christmasMember = 0,
       christmasNonMember = 0,
       nyeMember = 0,

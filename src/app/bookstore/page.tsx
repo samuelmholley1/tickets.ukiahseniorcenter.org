@@ -67,11 +67,11 @@ export default function BookstorePage() {
                 </li>
                 <li style={{ paddingLeft: '1.5rem', position: 'relative' }}>
                   <span style={{ position: 'absolute', left: 0, color: '#7c3aed', fontWeight: 'bold' }}>🎉</span>
-                  20 New Year's Eve Gala Dance tickets
+                  20 New Year&apos;s Eve Gala Dance tickets
                 </li>
               </ul>
               <p className="font-['Bitter',serif] text-[#666]" style={{ marginTop: 'var(--space-2)', fontSize: '0.875rem', fontStyle: 'italic' }}>
-                All tickets will be labeled "Mendocino Book Company #1" through "#20" for each event.
+                All tickets will be labeled &quot;Mendocino Book Company #1&quot; through &quot;#20&quot; for each event.
               </p>
             </div>
 

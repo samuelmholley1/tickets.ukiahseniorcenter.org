@@ -127,7 +127,7 @@ function PrintTicketsContent() {
             />
             <div style={{ flex: 1, textAlign: 'left' }}>
               <h3 style={{ fontFamily: 'Jost, sans-serif', fontWeight: 'bold', color: accentColor, fontSize: '12px', marginBottom: '3px', lineHeight: '1.1' }}>
-                {isNYE ? 'New Year\'s Eve Gala Dance' : 'Christmas Prime Rib Meal'}
+                {isNYE ? 'New Year&apos;s Eve Gala Dance' : 'Christmas Prime Rib Meal'}
               </h3>
               <div style={{ fontFamily: 'Bitter, serif', color: '#1f2937', fontSize: '8px', lineHeight: '1.3', fontWeight: '600' }}>
                 <div style={{ marginBottom: '2px' }}>{isNYE ? 'Wednesday • December 31, 2025' : 'Tuesday • December 23, 2025'}</div>

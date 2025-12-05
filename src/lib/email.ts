@@ -13,6 +13,12 @@ interface EmailParams {
 }
 
 export async function sendEmail({ to, subject, html, attachments }: EmailParams) {
+  // Check if credentials are configured
+  if (!process.env.EMAIL_PASSWORD) {
+    console.error('EMAIL_PASSWORD environment variable is not set');
+    return { success: false, error: new Error('Email service not configured - missing EMAIL_PASSWORD') };
+  }
+
   // Create transporter using Microsoft 365 SMTP
   const transporter = nodemailer.createTransport({
     host: 'smtp.office365.com',

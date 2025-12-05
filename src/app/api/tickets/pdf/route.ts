@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...borderColor);
-      const guestText = `${customerName} #${ticket.ticketNumber}`;
+      const guestText = `Guest: ${customerName} #${ticket.ticketNumber}`;
       doc.text(guestText, textCenterX, guestY, { align: 'center' });
 
       // Footer - 8pt centered

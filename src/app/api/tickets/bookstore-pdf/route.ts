@@ -81,7 +81,7 @@ export async function POST() {
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...accentColor);
-      const title = isNYE ? "New Year's Eve Gala" : 'Christmas Drive-Through';
+      const title = isNYE ? "New Year's Eve Gala" : 'Christmas Drive-Thru';
       doc.text(title, textCenterX, y + 0.35, { align: 'center' });
 
       // Date and time - LARGE ON SAME LINE, centered in text area
@@ -118,21 +118,21 @@ export async function POST() {
         doc.text('Ball Drops at 9 PM', textCenterX, y + 1.21, { align: 'center' });
       } else {
         doc.text('Prime Rib, Fixings, & Dessert', textCenterX, y + 0.85, { align: 'center' });
-        doc.text('Pick Up: 12:00-12:30 PM', textCenterX, y + 1.05, { align: 'center' });
+        doc.text('Pick Up: 12:00-12:30 PM', textCenterX, y + 1.03, { align: 'center' });
       }
 
-      // Guest name - LARGE, centered in text area
+      // Guest name - LARGE, centered in text area - BETTER SPACING
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...accentColor);
-      doc.text(`${customerName} #${ticket.ticketNumber}`, textCenterX, y + 1.35, { align: 'center' });
+      doc.text(`${customerName} #${ticket.ticketNumber}`, textCenterX, y + 1.3, { align: 'center' });
 
       // Location - bottom
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(80, 80, 80);
-      doc.text('Bartlett Event Center', x + width / 2, y + 1.7, { align: 'center' });
-      doc.text('495 Leslie St • (707) 462-4343 ext 209', x + width / 2, y + 1.85, { align: 'center' });
+      doc.text('Bartlett Event Center', x + width / 2, y + 1.65, { align: 'center' });
+      doc.text('495 Leslie St • (707) 462-4343 ext 209', x + width / 2, y + 1.8, { align: 'center' });
     };
 
     // Layout tickets in 2x4 grid (8 per page) - optimized for 8.5x11

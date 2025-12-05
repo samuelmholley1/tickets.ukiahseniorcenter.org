@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...borderColor);
-      const title = isNYE ? "New Year's Eve Gala" : 'Christmas Drive-Through';
+      const title = isNYE ? "New Year's Eve Gala" : 'Christmas Drive-Thru';
       doc.text(title, textCenterX, textY, { align: 'center' });
 
       textY += 0.25;

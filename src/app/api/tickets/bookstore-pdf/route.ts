@@ -98,11 +98,22 @@ export async function POST() {
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(0, 0, 0);
       if (isNYE) {
-        doc.text('Appetizers & Dessert', textCenterX, y + 0.85, { align: 'center' });
-        doc.text('Music by ', textCenterX - 0.25, y + 1.03, { align: 'right' });
+        // Music by Beatz Werkin - centered with italic band name
+        const musicText = 'Music by ';
+        const bandText = 'Beatz Werkin';
+        const musicWidth = doc.getTextWidth(musicText);
         doc.setFont('helvetica', 'italic');
-        doc.text('Beatz Werkin', textCenterX - 0.24, y + 1.03, { align: 'left' });
+        const bandWidth = doc.getTextWidth(bandText);
         doc.setFont('helvetica', 'normal');
+        const totalWidth = musicWidth + bandWidth;
+        const startX = textCenterX - (totalWidth / 2);
+        
+        doc.text(musicText, startX, y + 0.85);
+        doc.setFont('helvetica', 'italic');
+        doc.text(bandText, startX + musicWidth, y + 0.85);
+        doc.setFont('helvetica', 'normal');
+        
+        doc.text('Appetizers & Dessert', textCenterX, y + 1.03, { align: 'center' });
         doc.setFontSize(9);
         doc.text('Ball Drops at 9 PM', textCenterX, y + 1.21, { align: 'center' });
       } else {

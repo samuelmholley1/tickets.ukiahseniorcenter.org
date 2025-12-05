@@ -81,7 +81,7 @@ export async function POST() {
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...accentColor);
-      const title = isNYE ? "New Year's Eve Gala" : 'Christmas Prime Rib';
+      const title = isNYE ? "New Year's Eve Gala" : 'Christmas Drive-Through';
       doc.text(title, textCenterX, y + 0.35, { align: 'center' });
 
       // Date and time - LARGE ON SAME LINE, centered in text area
@@ -99,10 +99,15 @@ export async function POST() {
       doc.setTextColor(0, 0, 0);
       if (isNYE) {
         doc.text('Appetizers & Dessert', textCenterX, y + 0.85, { align: 'center' });
-        doc.text('Beatz Werkin Band', textCenterX, y + 1.05, { align: 'center' });
+        doc.text('Music by ', textCenterX - 0.25, y + 1.03, { align: 'right' });
+        doc.setFont('helvetica', 'italic');
+        doc.text('Beatz Werkin', textCenterX - 0.24, y + 1.03, { align: 'left' });
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.text('Ball Drops at 9 PM', textCenterX, y + 1.21, { align: 'center' });
       } else {
         doc.text('Pick Up: 12:00-12:30 PM', textCenterX, y + 0.85, { align: 'center' });
-        doc.text('Drive-Thru Only', textCenterX, y + 1.05, { align: 'center' });
+        doc.text('Stay in Vehicle', textCenterX, y + 1.05, { align: 'center' });
       }
 
       // Guest name - LARGE, centered in text area

@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...borderColor);
-      const title = isNYE ? "New Year's Eve Gala" : 'Christmas Prime Rib';
+      const title = isNYE ? "New Year's Eve Gala" : 'Christmas Drive-Through';
       doc.text(title, textCenterX, textY, { align: 'center' });
 
       textY += 0.25;
@@ -110,18 +110,26 @@ export async function POST(request: NextRequest) {
 
       textY += 0.25;
 
-      // Key info line 1 - 10pt centered in text area
+      // Key info lines - 10pt centered in text area
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(0, 0, 0);
-      const info1 = isNYE ? 'Appetizers & Dessert' : 'Pick Up: 12:00-12:30 PM';
-      doc.text(info1, textCenterX, textY, { align: 'center' });
-
-      textY += 0.2;
-
-      // Key info line 2 - 10pt centered in text area
-      const info2 = isNYE ? 'Beatz Werkin Band' : 'Drive-Thru Only';
-      doc.text(info2, textCenterX, textY, { align: 'center' });
+      
+      if (isNYE) {
+        doc.text('Appetizers & Dessert', textCenterX, textY, { align: 'center' });
+        textY += 0.18;
+        doc.text('Music by ', textCenterX - 0.25, textY, { align: 'right' });
+        doc.setFont('helvetica', 'italic');
+        doc.text('Beatz Werkin', textCenterX - 0.24, textY, { align: 'left' });
+        doc.setFont('helvetica', 'normal');
+        textY += 0.18;
+        doc.setFontSize(9);
+        doc.text('Ball Drops at 9 PM', textCenterX, textY, { align: 'center' });
+      } else {
+        doc.text('Pick Up: 12:00-12:30 PM', textCenterX, textY, { align: 'center' });
+        textY += 0.2;
+        doc.text('Stay in Vehicle', textCenterX, textY, { align: 'center' });
+      }
 
       // Guest Name - 11pt centered in text area
       const guestY = y + height - 0.45;

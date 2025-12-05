@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
 import { jsPDF } from 'jspdf';
+import fs from 'fs';
+import path from 'path';
 
 export async function POST() {
   try {
+    // Load logo
+    const logoPath = path.join(process.cwd(), 'public', 'logo.png');
+    const logoBuffer = fs.readFileSync(logoPath);
+    const logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
     const customerName = 'Mendocino Book Company';
     const tickets: Array<{
       eventName: string;
@@ -54,6 +60,13 @@ export async function POST() {
       doc.setDrawColor(...borderColor);
       doc.setLineWidth(0.02);
       doc.roundedRect(x, y, width, height, 0.05, 0.05);
+
+      // Logo - top left
+      try {
+        doc.addImage(logoBase64, 'PNG', x + 0.15, y + 0.15, 0.35, 0.35);
+      } catch (e) {
+        console.error('Error adding logo:', e);
+      }
 
       // Event title - LARGE
       doc.setFontSize(14);

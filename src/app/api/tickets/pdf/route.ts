@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jsPDF } from 'jspdf';
+import fs from 'fs';
+import path from 'path';
 
 export async function POST(request: NextRequest) {
   try {
+    // Load logo
+    const logoPath = path.join(process.cwd(), 'public', 'logo.png');
+    const logoBuffer = fs.readFileSync(logoPath);
+    const logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
     const body = await request.json();
     const {
       firstName,
@@ -65,6 +71,13 @@ export async function POST(request: NextRequest) {
       doc.setDrawColor(...borderColor);
       doc.setLineWidth(0.015);
       doc.roundedRect(x, y, width, height, 0.05, 0.05);
+
+      // Logo - top left
+      try {
+        doc.addImage(logoBase64, 'PNG', x + 0.15, y + 0.15, 0.35, 0.35);
+      } catch (e) {
+        console.error('Error adding logo:', e);
+      }
 
       let textY = y + 0.35;
 

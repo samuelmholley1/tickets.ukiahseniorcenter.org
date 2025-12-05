@@ -141,16 +141,21 @@ export async function POST(request: NextRequest) {
       doc.text(footer, x + (width - footerWidth) / 2, footerY);
     };
 
-    // Layout tickets in 2x5 grid
+    // Layout tickets in 2x4 grid (8 per page) - optimized for 8.5x11
+    // Available height: 11" - 1" margins = 10"
+    // 4 tickets at 2" + 3 gaps at 0.2" = 8.6"
     let ticketIndex = 0;
-    for (let row = 0; row < 5; row++) {
-      for (let col = 0; col < 2; col++) {
-        if (ticketIndex < tickets.length) {
-          const x = 0.5 + col * 3.75;
-          const y = 0.5 + row * 2.25;
-          drawTicket(tickets[ticketIndex], x, y);
-          ticketIndex++;
-        }
+    const ticketsPerPage = 8;
+    for (let pageIndex = 0; pageIndex < Math.ceil(tickets.length / ticketsPerPage); pageIndex++) {
+      if (pageIndex > 0) doc.addPage();
+      
+      for (let i = 0; i < ticketsPerPage && ticketIndex < tickets.length; i++) {
+        const row = Math.floor(i / 2);
+        const col = i % 2;
+        const x = 0.5 + col * 3.75;
+        const y = 0.5 + row * 2.2; // Reduced gap from 2.25 to 2.2
+        drawTicket(tickets[ticketIndex], x, y);
+        ticketIndex++;
       }
     }
 

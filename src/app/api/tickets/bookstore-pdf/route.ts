@@ -119,14 +119,14 @@ export async function POST() {
       doc.text('495 Leslie St • (707) 462-4343 ext 209', x + width / 2, y + 1.85, { align: 'center' });
     };
 
-    // Layout tickets in 2x5 grid (10 per page)
+    // Layout tickets in 2x4 grid (8 per page) - optimized for 8.5x11
     const cols = 2;
-    const rows = 5;
+    const rows = 4;
     const ticketsPerPage = cols * rows;
     const startX = 0.75;
     const startY = 0.5;
     const gapX = 0.25;
-    const gapY = 0.25;
+    const gapY = 0.2; // Reduced from 0.25 to 0.2
 
     tickets.forEach((ticket, index) => {
       // Add new page if needed

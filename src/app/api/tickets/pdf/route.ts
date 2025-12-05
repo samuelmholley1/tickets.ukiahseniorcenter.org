@@ -13,7 +13,6 @@ export async function POST(request: NextRequest) {
       nyeNonMember = 0,
     } = body;
 
-    // Build the ticket print HTML
     const customerName = `${firstName} ${lastName}`;
     const tickets: Array<{
       eventName: string;
@@ -37,7 +36,7 @@ export async function POST(request: NextRequest) {
     const totalNYE = nyeMember + nyeNonMember;
     for (let i = 0; i < totalNYE; i++) {
       tickets.push({
-        eventName: 'New Year\'s Eve Gala Dance',
+        eventName: 'New Year&apos;s Eve Gala',
         isNYE: true,
         ticketNumber: i + 1,
         totalTickets: totalNYE,
@@ -51,15 +50,14 @@ export async function POST(request: NextRequest) {
       format: 'letter',
     });
 
-    // Helper function to draw a ticket
+    // Helper function to draw a senior-friendly ticket
     const drawTicket = (ticket: typeof tickets[0], x: number, y: number) => {
       const width = 3.5;
       const height = 2;
       const isNYE = ticket.isNYE;
-      const borderColor: [number, number, number] = isNYE ? [124, 58, 237] : [66, 125, 120]; // RGB
-      const accentColor: [number, number, number] = isNYE ? [124, 58, 237] : [66, 125, 120];
+      const borderColor: [number, number, number] = isNYE ? [124, 58, 237] : [66, 125, 120];
 
-      // Background (light tint)
+      // Background
       doc.setFillColor(isNYE ? 250 : 255, isNYE ? 245 : 255, isNYE ? 255 : 255);
       doc.rect(x, y, width, height, 'F');
 
@@ -68,108 +66,62 @@ export async function POST(request: NextRequest) {
       doc.setLineWidth(0.015);
       doc.roundedRect(x, y, width, height, 0.05, 0.05);
 
-      // Header section with border
-      doc.setDrawColor(...borderColor);
-      doc.setLineWidth(0.01);
-      doc.line(x + 0.1, y + 0.4, x + width - 0.1, y + 0.4);
+      let textY = y + 0.35;
 
-      // Event title
+      // Event Title - 14pt centered
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...borderColor);
+      const title = isNYE ? "New Year's Eve Gala" : 'Christmas Prime Rib';
+      const titleWidth = doc.getTextWidth(title);
+      doc.text(title, x + (width - titleWidth) / 2, textY);
+
+      textY += 0.25;
+
+      // Date & Time - 11pt centered on same line
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(31, 41, 55);
+      const dateTime = isNYE 
+        ? 'Wednesday, Dec 31 • 7:00-10:00 PM'
+        : 'Tuesday, Dec 23 • 12:00-12:30 PM';
+      const dateWidth = doc.getTextWidth(dateTime);
+      doc.text(dateTime, x + (width - dateWidth) / 2, textY);
+
+      textY += 0.25;
+
+      // Key info line 1 - 10pt centered
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(0, 0, 0);
+      const info1 = isNYE ? 'Appetizers & Dessert' : 'Pick Up Window 12:00-12:30';
+      const info1Width = doc.getTextWidth(info1);
+      doc.text(info1, x + (width - info1Width) / 2, textY);
+
+      textY += 0.2;
+
+      // Key info line 2 - 10pt centered
+      const info2 = isNYE ? 'Beatz Werkin Band' : 'Drive-Thru Only';
+      const info2Width = doc.getTextWidth(info2);
+      doc.text(info2, x + (width - info2Width) / 2, textY);
+
+      // Guest Name - 11pt centered
+      const guestY = y + height - 0.45;
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...accentColor);
-      doc.text(isNYE ? "New Year's Eve Gala Dance" : 'Christmas Prime Rib Meal', x + 0.15, y + 0.2);
+      doc.setTextColor(...borderColor);
+      const guestText = `${customerName} #${ticket.ticketNumber}`;
+      const guestWidth = doc.getTextWidth(guestText);
+      doc.text(guestText, x + (width - guestWidth) / 2, guestY);
 
-      // Date and time
-      doc.setFontSize(7);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(31, 41, 55);
-      doc.text(isNYE ? 'Wednesday • December 31, 2025' : 'Tuesday • December 23, 2025', x + 0.15, y + 0.3);
-
-      if (isNYE) {
-        doc.text('Doors: 6:00 PM • Dance: 7:00-10:00 PM', x + 0.15, y + 0.36);
-        doc.setTextColor(220, 38, 38);
-        doc.setFontSize(6);
-        doc.text('Ball Drop: 9:00 PM (NY Time!)', x + 0.15, y + 0.41);
-      } else {
-        doc.setTextColor(220, 38, 38);
-        doc.text('PICKUP: 12:00-12:30 PM', x + 0.15, y + 0.36);
-        doc.setTextColor(31, 41, 55);
-        doc.setFontSize(6);
-        doc.text('Drive-Thru Only • Stay in Vehicle', x + 0.15, y + 0.41);
-      }
-
-      // Event details section
-      let detailY = y + 0.55;
-      doc.setFontSize(6.5);
+      // Footer - 8pt centered
+      const footerY = y + height - 0.2;
+      doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
-      doc.setTextColor(0, 0, 0);
-
-      if (isNYE) {
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...accentColor);
-        doc.text('INCLUDES:', x + 0.15, detailY);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(0, 0, 0);
-        doc.text("Appetizers, Hors d'oeuvres & Dessert", x + 0.55, detailY);
-
-        detailY += 0.12;
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...accentColor);
-        doc.text('MUSIC:', x + 0.15, detailY);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(0, 0, 0);
-        doc.text('Beatz Werkin Band', x + 0.45, detailY);
-
-        detailY += 0.12;
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...accentColor);
-        doc.text('ATTIRE:', x + 0.15, detailY);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(0, 0, 0);
-        doc.text('Flashy Attire!', x + 0.45, detailY);
-      } else {
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...accentColor);
-        doc.text('MENU:', x + 0.15, detailY);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(0, 0, 0);
-        const menuText = 'Prime Rib w/ Horseradish, Garlic Mashed Potatoes,';
-        doc.text(menuText, x + 0.4, detailY);
-        doc.text('Vegetable, Caesar Salad, Garlic Bread, Cheesecake', x + 0.15, detailY + 0.08);
-
-        detailY += 0.2;
-        doc.setFontSize(7);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(220, 38, 38);
-        doc.text('⚠️ Arrive within 12:00-12:30 PM window', x + 0.15, detailY);
-      }
-
-      // Guest info section with border
-      const guestY = y + height - 0.45;
-      doc.setDrawColor(...borderColor);
-      doc.setLineWidth(0.005);
-      doc.line(x + 0.15, guestY, x + width - 0.15, guestY);
-
-      doc.setFontSize(7);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...accentColor);
-      doc.text('Guest:', x + 0.15, guestY + 0.12);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(0, 0, 0);
-      doc.text(`${customerName} #${ticket.ticketNumber}`, x + 0.45, guestY + 0.12);
-
-      // Footer section with border
-      const footerY = y + height - 0.25;
-      doc.setDrawColor(...borderColor);
-      doc.setLineWidth(0.01);
-      doc.line(x + 0.1, footerY, x + width - 0.1, footerY);
-
-      doc.setFontSize(6);
-      doc.setFont('helvetica', 'bold');
       doc.setTextColor(107, 114, 128);
-      const footerText = 'Bartlett Event Center • 495 Leslie St, Ukiah, CA 95482 • (707) 462-4343';
-      const footerWidth = doc.getTextWidth(footerText);
-      doc.text(footerText, x + (width - footerWidth) / 2, footerY + 0.12);
+      const footer = '495 Leslie St, Ukiah • (707) 462-4343';
+      const footerWidth = doc.getTextWidth(footer);
+      doc.text(footer, x + (width - footerWidth) / 2, footerY);
     };
 
     // Layout tickets in 2x5 grid
@@ -177,8 +129,8 @@ export async function POST(request: NextRequest) {
     for (let row = 0; row < 5; row++) {
       for (let col = 0; col < 2; col++) {
         if (ticketIndex < tickets.length) {
-          const x = 0.5 + col * 3.75; // 0.5" margin + 3.5" width + 0.25" gap
-          const y = 0.5 + row * 2.25;  // 0.5" margin + 2" height + 0.25" gap
+          const x = 0.5 + col * 3.75;
+          const y = 0.5 + row * 2.25;
           drawTicket(tickets[ticketIndex], x, y);
           ticketIndex++;
         }

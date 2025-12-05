@@ -90,7 +90,7 @@ export async function POST() {
       doc.setTextColor(0, 0, 0);
       const dateTime = isNYE 
         ? 'Wednesday, Dec 31 • 6:00 PM' 
-        : 'Tuesday, Dec 23 • 12:00-12:30 PM';
+        : 'Tuesday, December 23';
       doc.text(dateTime, textCenterX, y + 0.6, { align: 'center' });
 
       // Important info - LARGE, centered in text area
@@ -101,7 +101,7 @@ export async function POST() {
         doc.text('Appetizers & Dessert', textCenterX, y + 0.85, { align: 'center' });
         doc.text('Beatz Werkin Band', textCenterX, y + 1.05, { align: 'center' });
       } else {
-        doc.text('Pick Up Window 12:00-12:30', textCenterX, y + 0.85, { align: 'center' });
+        doc.text('Pick Up: 12:00-12:30 PM', textCenterX, y + 0.85, { align: 'center' });
         doc.text('Drive-Thru Only', textCenterX, y + 1.05, { align: 'center' });
       }
 

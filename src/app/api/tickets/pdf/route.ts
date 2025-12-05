@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
       doc.setTextColor(31, 41, 55);
       const dateTime = isNYE 
         ? 'Wednesday, Dec 31 • 7:00-10:00 PM'
-        : 'Tuesday, Dec 23 • 12:00-12:30 PM';
+        : 'Tuesday, December 23';
       doc.text(dateTime, textCenterX, textY, { align: 'center' });
 
       textY += 0.25;
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(0, 0, 0);
-      const info1 = isNYE ? 'Appetizers & Dessert' : 'Pick Up Window 12:00-12:30';
+      const info1 = isNYE ? 'Appetizers & Dessert' : 'Pick Up: 12:00-12:30 PM';
       doc.text(info1, textCenterX, textY, { align: 'center' });
 
       textY += 0.2;

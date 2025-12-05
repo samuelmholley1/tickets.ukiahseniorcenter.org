@@ -106,8 +106,9 @@ export async function POST() {
         doc.setFontSize(9);
         doc.text('Ball Drops at 9 PM', textCenterX, y + 1.21, { align: 'center' });
       } else {
-        doc.text('Pick Up: 12:00-12:30 PM', textCenterX, y + 0.85, { align: 'center' });
-        doc.text('Stay in Vehicle', textCenterX, y + 1.05, { align: 'center' });
+        doc.text('Prime Rib, Fixings, & Dessert', textCenterX, y + 0.85, { align: 'center' });
+        doc.text('Pick Up: 12:00-12:30 PM', textCenterX, y + 1.03, { align: 'center' });
+        doc.text('Stay in Vehicle', textCenterX, y + 1.21, { align: 'center' });
       }
 
       // Guest name - LARGE, centered in text area

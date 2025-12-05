@@ -72,60 +72,64 @@ export async function POST(request: NextRequest) {
       doc.setLineWidth(0.015);
       doc.roundedRect(x, y, width, height, 0.05, 0.05);
 
-      // Logo - top left
+      // Logo - 30% width on left side
+      const logoWidth = width * 0.3;
+      const logoHeight = logoWidth; // Keep square
+      const logoX = x + 0.1;
+      const logoY = y + (height - logoHeight) / 2; // Vertically centered
       try {
-        doc.addImage(logoBase64, 'PNG', x + 0.15, y + 0.15, 0.35, 0.35);
+        doc.addImage(logoBase64, 'PNG', logoX, logoY, logoWidth, logoHeight);
       } catch (e) {
         console.error('Error adding logo:', e);
       }
 
+      // Text area - right 70%
+      const textStartX = x + logoWidth + 0.15;
+      const textWidth = width * 0.7 - 0.25;
+      const textCenterX = textStartX + textWidth / 2;
+      
       let textY = y + 0.35;
 
-      // Event Title - 14pt centered
+      // Event Title - 14pt centered in text area
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...borderColor);
       const title = isNYE ? "New Year's Eve Gala" : 'Christmas Prime Rib';
-      const titleWidth = doc.getTextWidth(title);
-      doc.text(title, x + (width - titleWidth) / 2, textY);
+      doc.text(title, textCenterX, textY, { align: 'center' });
 
       textY += 0.25;
 
-      // Date & Time - 11pt centered on same line
+      // Date & Time - 11pt centered in text area
       doc.setFontSize(11);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(31, 41, 55);
       const dateTime = isNYE 
         ? 'Wednesday, Dec 31 • 7:00-10:00 PM'
         : 'Tuesday, Dec 23 • 12:00-12:30 PM';
-      const dateWidth = doc.getTextWidth(dateTime);
-      doc.text(dateTime, x + (width - dateWidth) / 2, textY);
+      doc.text(dateTime, textCenterX, textY, { align: 'center' });
 
       textY += 0.25;
 
-      // Key info line 1 - 10pt centered
+      // Key info line 1 - 10pt centered in text area
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(0, 0, 0);
       const info1 = isNYE ? 'Appetizers & Dessert' : 'Pick Up Window 12:00-12:30';
-      const info1Width = doc.getTextWidth(info1);
-      doc.text(info1, x + (width - info1Width) / 2, textY);
+      doc.text(info1, textCenterX, textY, { align: 'center' });
 
       textY += 0.2;
 
-      // Key info line 2 - 10pt centered
+      // Key info line 2 - 10pt centered in text area
       const info2 = isNYE ? 'Beatz Werkin Band' : 'Drive-Thru Only';
-      const info2Width = doc.getTextWidth(info2);
-      doc.text(info2, x + (width - info2Width) / 2, textY);
+      doc.text(info2, textCenterX, textY, { align: 'center' });
 
-      // Guest Name - 11pt centered
+      // Guest Name - 11pt centered in text area
       const guestY = y + height - 0.45;
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...borderColor);
       const guestText = `${customerName} #${ticket.ticketNumber}`;
-      const guestWidth = doc.getTextWidth(guestText);
-      doc.text(guestText, x + (width - guestWidth) / 2, guestY);
+      doc.text(guestText, textCenterX, guestY, { align: 'center' });
 
       // Footer - 8pt centered
       const footerY = y + height - 0.2;

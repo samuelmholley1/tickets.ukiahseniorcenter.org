@@ -61,46 +61,55 @@ export async function POST() {
       doc.setLineWidth(0.02);
       doc.roundedRect(x, y, width, height, 0.05, 0.05);
 
-      // Logo - top left
+      // Logo - 30% width on left side
+      const logoWidth = width * 0.3;
+      const logoHeight = logoWidth; // Keep square
+      const logoX = x + 0.1;
+      const logoY = y + (height - logoHeight) / 2; // Vertically centered
       try {
-        doc.addImage(logoBase64, 'PNG', x + 0.15, y + 0.15, 0.35, 0.35);
+        doc.addImage(logoBase64, 'PNG', logoX, logoY, logoWidth, logoHeight);
       } catch (e) {
         console.error('Error adding logo:', e);
       }
 
-      // Event title - LARGE
+      // Text area - right 70%
+      const textStartX = x + logoWidth + 0.15;
+      const textWidth = width * 0.7 - 0.25;
+      const textCenterX = textStartX + textWidth / 2;
+
+      // Event title - LARGE, centered in text area
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...accentColor);
       const title = isNYE ? "New Year's Eve Gala" : 'Christmas Prime Rib';
-      doc.text(title, x + width / 2, y + 0.35, { align: 'center' });
+      doc.text(title, textCenterX, y + 0.35, { align: 'center' });
 
-      // Date and time - LARGE ON SAME LINE
+      // Date and time - LARGE ON SAME LINE, centered in text area
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(0, 0, 0);
       const dateTime = isNYE 
         ? 'Wednesday, Dec 31 • 6:00 PM' 
         : 'Tuesday, Dec 23 • 12:00-12:30 PM';
-      doc.text(dateTime, x + width / 2, y + 0.6, { align: 'center' });
+      doc.text(dateTime, textCenterX, y + 0.6, { align: 'center' });
 
-      // Important info - LARGE
+      // Important info - LARGE, centered in text area
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(0, 0, 0);
       if (isNYE) {
-        doc.text('Appetizers & Dessert', x + width / 2, y + 0.85, { align: 'center' });
-        doc.text('Beatz Werkin Band', x + width / 2, y + 1.05, { align: 'center' });
+        doc.text('Appetizers & Dessert', textCenterX, y + 0.85, { align: 'center' });
+        doc.text('Beatz Werkin Band', textCenterX, y + 1.05, { align: 'center' });
       } else {
-        doc.text('Pick Up Window 12:00-12:30', x + width / 2, y + 0.85, { align: 'center' });
-        doc.text('Drive-Thru Only', x + width / 2, y + 1.05, { align: 'center' });
+        doc.text('Pick Up Window 12:00-12:30', textCenterX, y + 0.85, { align: 'center' });
+        doc.text('Drive-Thru Only', textCenterX, y + 1.05, { align: 'center' });
       }
 
-      // Guest name - LARGE
+      // Guest name - LARGE, centered in text area
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...accentColor);
-      doc.text(`${customerName} #${ticket.ticketNumber}`, x + width / 2, y + 1.4, { align: 'center' });
+      doc.text(`${customerName} #${ticket.ticketNumber}`, textCenterX, y + 1.4, { align: 'center' });
 
       // Location - bottom
       doc.setFontSize(8);

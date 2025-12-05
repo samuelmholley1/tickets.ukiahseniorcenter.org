@@ -43,8 +43,8 @@ export async function POST() {
       const width = 3.5;
       const height = 2;
       const isNYE = ticket.isNYE;
-      const borderColor = isNYE ? [124, 58, 237] : [66, 125, 120]; // RGB
-      const accentColor = isNYE ? [124, 58, 237] : [66, 125, 120];
+      const borderColor: [number, number, number] = isNYE ? [124, 58, 237] : [66, 125, 120]; // RGB
+      const accentColor: [number, number, number] = isNYE ? [124, 58, 237] : [66, 125, 120];
 
       // Background (light tint)
       doc.setFillColor(isNYE ? 250 : 255, isNYE ? 245 : 255, isNYE ? 255 : 255);

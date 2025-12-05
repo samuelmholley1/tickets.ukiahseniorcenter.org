@@ -72,9 +72,9 @@ export async function POST() {
         console.error('Error adding logo:', e);
       }
 
-      // Text area - right 70%
-      const textStartX = x + logoWidth + 0.15;
-      const textWidth = width * 0.7 - 0.25;
+      // Text area - right 70% with better spacing
+      const textStartX = x + logoWidth + 0.2;
+      const textWidth = width * 0.7 - 0.3;
       const textCenterX = textStartX + textWidth / 2;
 
       // Event title - LARGE, centered in text area
@@ -118,15 +118,14 @@ export async function POST() {
         doc.text('Ball Drops at 9 PM', textCenterX, y + 1.21, { align: 'center' });
       } else {
         doc.text('Prime Rib, Fixings, & Dessert', textCenterX, y + 0.85, { align: 'center' });
-        doc.text('Pick Up: 12:00-12:30 PM', textCenterX, y + 1.03, { align: 'center' });
-        doc.text('Stay in Vehicle', textCenterX, y + 1.21, { align: 'center' });
+        doc.text('Pick Up: 12:00-12:30 PM', textCenterX, y + 1.05, { align: 'center' });
       }
 
       // Guest name - LARGE, centered in text area
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...accentColor);
-      doc.text(`${customerName} #${ticket.ticketNumber}`, textCenterX, y + 1.4, { align: 'center' });
+      doc.text(`${customerName} #${ticket.ticketNumber}`, textCenterX, y + 1.35, { align: 'center' });
 
       // Location - bottom
       doc.setFontSize(8);

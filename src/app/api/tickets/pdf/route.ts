@@ -83,9 +83,9 @@ export async function POST(request: NextRequest) {
         console.error('Error adding logo:', e);
       }
 
-      // Text area - right 70%
-      const textStartX = x + logoWidth + 0.15;
-      const textWidth = width * 0.7 - 0.25;
+      // Text area - right 70% with better spacing
+      const textStartX = x + logoWidth + 0.2;
+      const textWidth = width * 0.7 - 0.3;
       const textCenterX = textStartX + textWidth / 2;
       
       let textY = y + 0.35;
@@ -138,10 +138,8 @@ export async function POST(request: NextRequest) {
         doc.text('Ball Drops at 9 PM', textCenterX, textY, { align: 'center' });
       } else {
         doc.text('Prime Rib, Fixings, & Dessert', textCenterX, textY, { align: 'center' });
-        textY += 0.18;
+        textY += 0.2;
         doc.text('Pick Up: 12:00-12:30 PM', textCenterX, textY, { align: 'center' });
-        textY += 0.18;
-        doc.text('Stay in Vehicle', textCenterX, textY, { align: 'center' });
       }
 
       // Guest Name - 11pt centered in text area

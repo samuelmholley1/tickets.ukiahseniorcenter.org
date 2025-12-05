@@ -123,7 +123,7 @@ function PrintTicketsContent() {
               alt="Ukiah Senior Center"
               width="45"
               height="45"
-              style={{ flexShrink: 0, imageRendering: 'high-quality', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
+              style={{ flexShrink: 0, WebkitPrintColorAdjust: 'exact' as any, printColorAdjust: 'exact' as any }}
             />
             <div style={{ flex: 1, textAlign: 'left' }}>
               <h3 style={{ fontFamily: 'Jost, sans-serif', fontWeight: 'bold', color: accentColor, fontSize: '12px', marginBottom: '3px', lineHeight: '1.1' }}>

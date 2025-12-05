@@ -94,7 +94,7 @@ export async function POST() {
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(80, 80, 80);
       doc.text('Bartlett Event Center', x + width / 2, y + 1.7, { align: 'center' });
-      doc.text('495 Leslie St • (707) 462-4343', x + width / 2, y + 1.85, { align: 'center' });
+      doc.text('495 Leslie St • (707) 462-4343 ext 209', x + width / 2, y + 1.85, { align: 'center' });
     };
 
     // Layout tickets in 2x5 grid (10 per page)

@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(107, 114, 128);
-      const footer = '495 Leslie St, Ukiah • (707) 462-4343';
+      const footer = '495 Leslie St, Ukiah • (707) 462-4343 ext 209';
       const footerWidth = doc.getTextWidth(footer);
       doc.text(footer, x + (width - footerWidth) / 2, footerY);
     };

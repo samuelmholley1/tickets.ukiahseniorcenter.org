@@ -18,10 +18,22 @@ export default function BookstoreInfoPage() {
           justifyContent: 'space-between',
           pageBreakAfter: 'avoid'
         }}>
+          <div style={{ textAlign: 'center', marginBottom: '10px' }}>
+            <img 
+              src="/logo.png" 
+              alt="Ukiah Senior Center" 
+              style={{ 
+                width: '120px',
+                height: 'auto',
+                display: 'inline-block'
+              }} 
+            />
+          </div>
+          
           <h1 style={{
             fontSize: '42px',
             fontWeight: 'bold',
-            margin: '0 0 15px 0',
+            margin: '0 0 10px 0',
             textAlign: 'center',
             textTransform: 'uppercase',
             letterSpacing: '1px'
@@ -37,7 +49,7 @@ export default function BookstoreInfoPage() {
               Prime Rib Meal • Drive-Thru Pickup
             </p>
             <p style={{ margin: '5px 0' }}>
-              <strong>Member $20 • Non-Member $30</strong>
+              <strong>$20</strong>
             </p>
           </div>
           
@@ -58,10 +70,22 @@ export default function BookstoreInfoPage() {
           justifyContent: 'space-between',
           pageBreakAfter: 'avoid'
         }}>
+          <div style={{ textAlign: 'center', marginBottom: '10px' }}>
+            <img 
+              src="/logo.png" 
+              alt="Ukiah Senior Center" 
+              style={{ 
+                width: '120px',
+                height: 'auto',
+                display: 'inline-block'
+              }} 
+            />
+          </div>
+          
           <h1 style={{
             fontSize: '42px',
             fontWeight: 'bold',
-            margin: '0 0 15px 0',
+            margin: '0 0 10px 0',
             textAlign: 'center',
             textTransform: 'uppercase',
             letterSpacing: '1px'
@@ -77,7 +101,7 @@ export default function BookstoreInfoPage() {
               Dance • Beatz Werkin Band • Ball Drop 9PM
             </p>
             <p style={{ margin: '5px 0' }}>
-              <strong>Member $20 • Non-Member $30</strong>
+              <strong>$45</strong>
             </p>
           </div>
           

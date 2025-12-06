@@ -2,137 +2,98 @@
 
 export default function BookstoreInfoPage() {
   return (
-    <div style={{
-      padding: '40px',
-      maxWidth: '800px',
-      margin: '0 auto',
-      fontFamily: 'Arial, sans-serif',
-      backgroundColor: '#ffffff',
-      color: '#000000'
-    }}>
-      <h1 style={{
-        fontSize: '36px',
-        fontWeight: 'bold',
-        marginBottom: '40px',
-        textAlign: 'center',
-        borderBottom: '3px solid #000',
-        paddingBottom: '20px'
-      }}>
-        Ukiah Senior Center Events
-      </h1>
-
-      {/* Christmas Drive-Thru Section */}
-      <div style={{ marginBottom: '60px' }}>
-        <h2 style={{
-          fontSize: '28px',
-          fontWeight: 'bold',
-          marginBottom: '20px',
-          textTransform: 'uppercase'
-        }}>
-          Christmas Drive-Thru
-        </h2>
+    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+      {/* Cards Container */}
+      <div style={{ display: 'flex', gap: '30px', flexWrap: 'wrap' }}>
         
-        <div style={{ fontSize: '18px', lineHeight: '1.8' }}>
-          <p style={{ marginBottom: '15px' }}>
-            <strong>Date:</strong> Tuesday, December 23, 2025
-          </p>
-          <p style={{ marginBottom: '15px' }}>
-            <strong>Time:</strong> Pick Up 12:00-12:30 PM
-          </p>
-          <p style={{ marginBottom: '15px' }}>
-            <strong>Format:</strong> Drive-Thru Only (Stay in Vehicle)
-          </p>
-          <p style={{ marginBottom: '15px' }}>
-            <strong>Menu:</strong> Prime Rib, Fixings, & Dessert
-          </p>
-          <p style={{ marginBottom: '15px' }}>
-            <strong>Location:</strong> Bartlett Event Center<br />
-            495 Leslie St, Ukiah, CA 95482
-          </p>
-          <p style={{ marginBottom: '15px' }}>
-            <strong>Price:</strong><br />
-            • Members: $20<br />
-            • Non-Members: $30
-          </p>
-          <p style={{ marginBottom: '15px', fontWeight: 'bold' }}>
-            ⚠️ IMPORTANT: Must arrive between 12:00-12:30 PM window
+        {/* Christmas Card */}
+        <div style={{
+          width: '5in',
+          height: '3in',
+          border: '3px solid #000',
+          padding: '15px',
+          backgroundColor: '#fff',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          pageBreakAfter: 'avoid'
+        }}>
+          <h1 style={{
+            fontSize: '42px',
+            fontWeight: 'bold',
+            margin: '0 0 15px 0',
+            textAlign: 'center',
+            textTransform: 'uppercase',
+            letterSpacing: '1px'
+          }}>
+            CHRISTMAS<br/>DRIVE-THRU
+          </h1>
+          
+          <div style={{ fontSize: '16px', lineHeight: '1.4' }}>
+            <p style={{ margin: '5px 0', fontWeight: 'bold' }}>
+              Tuesday, December 23 • 12:00-12:30 PM
+            </p>
+            <p style={{ margin: '5px 0' }}>
+              Prime Rib Meal • Drive-Thru Pickup
+            </p>
+            <p style={{ margin: '5px 0' }}>
+              <strong>Member $20 • Non-Member $30</strong>
+            </p>
+          </div>
+          
+          <p style={{ fontSize: '12px', margin: '0', textAlign: 'center' }}>
+            (707) 462-4343 ext 209
           </p>
         </div>
-      </div>
 
-      {/* New Year's Eve Gala Section */}
-      <div style={{ marginBottom: '60px' }}>
-        <h2 style={{
-          fontSize: '28px',
-          fontWeight: 'bold',
-          marginBottom: '20px',
-          textTransform: 'uppercase'
+        {/* NYE Card */}
+        <div style={{
+          width: '5in',
+          height: '3in',
+          border: '3px solid #000',
+          padding: '15px',
+          backgroundColor: '#fff',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          pageBreakAfter: 'avoid'
         }}>
-          New Year&apos;s Eve Gala Dance
-        </h2>
-        
-        <div style={{ fontSize: '18px', lineHeight: '1.8' }}>
-          <p style={{ marginBottom: '15px' }}>
-            <strong>Date:</strong> Wednesday, December 31, 2025
-          </p>
-          <p style={{ marginBottom: '15px' }}>
-            <strong>Time:</strong><br />
-            • Doors Open: 6:00 PM<br />
-            • Dance: 7:00-10:00 PM<br />
-            • Ball Drop: 9:00 PM (NY Time!)
-          </p>
-          <p style={{ marginBottom: '15px' }}>
-            <strong>Music:</strong> Beatz Werkin Band (Live)
-          </p>
-          <p style={{ marginBottom: '15px' }}>
-            <strong>Food:</strong> Appetizers & Dessert
-          </p>
-          <p style={{ marginBottom: '15px' }}>
-            <strong>Attire:</strong> Flashy Attire Encouraged!
-          </p>
-          <p style={{ marginBottom: '15px' }}>
-            <strong>Location:</strong> Bartlett Event Center<br />
-            495 Leslie St, Ukiah, CA 95482
-          </p>
-          <p style={{ marginBottom: '15px' }}>
-            <strong>Price:</strong><br />
-            • Members: $20<br />
-            • Non-Members: $30
+          <h1 style={{
+            fontSize: '42px',
+            fontWeight: 'bold',
+            margin: '0 0 15px 0',
+            textAlign: 'center',
+            textTransform: 'uppercase',
+            letterSpacing: '1px'
+          }}>
+            NEW YEAR&apos;S<br/>EVE GALA
+          </h1>
+          
+          <div style={{ fontSize: '16px', lineHeight: '1.4' }}>
+            <p style={{ margin: '5px 0', fontWeight: 'bold' }}>
+              Wednesday, December 31 • 6:00-10:00 PM
+            </p>
+            <p style={{ margin: '5px 0' }}>
+              Dance • Beatz Werkin Band • Ball Drop 9PM
+            </p>
+            <p style={{ margin: '5px 0' }}>
+              <strong>Member $20 • Non-Member $30</strong>
+            </p>
+          </div>
+          
+          <p style={{ fontSize: '12px', margin: '0', textAlign: 'center' }}>
+            (707) 462-4343 ext 209
           </p>
         </div>
-      </div>
-
-      {/* Contact Information */}
-      <div style={{
-        borderTop: '3px solid #000',
-        paddingTop: '30px',
-        textAlign: 'center'
-      }}>
-        <h3 style={{
-          fontSize: '24px',
-          fontWeight: 'bold',
-          marginBottom: '15px'
-        }}>
-          Questions?
-        </h3>
-        <p style={{ fontSize: '20px', marginBottom: '10px' }}>
-          <strong>Ukiah Senior Center</strong>
-        </p>
-        <p style={{ fontSize: '18px', marginBottom: '5px' }}>
-          (707) 462-4343 ext 209
-        </p>
-        <p style={{ fontSize: '16px' }}>
-          495 Leslie St, Ukiah, CA 95482
-        </p>
       </div>
 
       {/* Print Button */}
-      <div style={{ textAlign: 'center', marginTop: '40px' }}>
+      <div style={{ textAlign: 'center', marginTop: '30px' }}>
         <button
           onClick={() => window.print()}
           style={{
-            padding: '15px 40px',
-            fontSize: '18px',
+            padding: '12px 30px',
+            fontSize: '16px',
             fontWeight: 'bold',
             backgroundColor: '#000',
             color: '#fff',
@@ -141,7 +102,7 @@ export default function BookstoreInfoPage() {
             borderRadius: '5px'
           }}
         >
-          Print This Page
+          Print Cards
         </button>
       </div>
 
@@ -153,6 +114,12 @@ export default function BookstoreInfoPage() {
           body {
             print-color-adjust: exact;
             -webkit-print-color-adjust: exact;
+            margin: 0;
+            padding: 0;
+          }
+          @page {
+            size: landscape;
+            margin: 0.5in;
           }
         }
       `}</style>

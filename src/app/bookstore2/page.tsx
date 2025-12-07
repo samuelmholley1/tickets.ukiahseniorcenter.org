@@ -40,15 +40,15 @@ export default function BookstoreInfoPage() {
             </h1>
           </div>
           
-          <div style={{ fontSize: '16px', lineHeight: '1.4' }}>
-            <p style={{ margin: '5px 0', fontWeight: 'bold' }}>
+          <div style={{ lineHeight: '1.3' }}>
+            <p style={{ margin: '8px 0', fontWeight: 'bold', fontSize: '22px' }}>
               Tuesday, December 23 • 12:00-12:30 PM
             </p>
-            <p style={{ margin: '5px 0' }}>
+            <p style={{ margin: '5px 0', fontSize: '16px' }}>
               Prime Rib Meal • Drive-Thru Pickup
             </p>
-            <p style={{ margin: '5px 0' }}>
-              <strong>$20</strong>
+            <p style={{ margin: '8px 0', fontSize: '32px', fontWeight: 'bold' }}>
+              $20
             </p>
           </div>
           
@@ -91,15 +91,15 @@ export default function BookstoreInfoPage() {
             </h1>
           </div>
           
-          <div style={{ fontSize: '16px', lineHeight: '1.4' }}>
-            <p style={{ margin: '5px 0', fontWeight: 'bold' }}>
+          <div style={{ lineHeight: '1.3' }}>
+            <p style={{ margin: '8px 0', fontWeight: 'bold', fontSize: '22px' }}>
               Wednesday, December 31 • 6:00-10:00 PM
             </p>
-            <p style={{ margin: '5px 0' }}>
+            <p style={{ margin: '5px 0', fontSize: '16px' }}>
               Dance • Beatz Werkin Band • Ball Drop 9PM
             </p>
-            <p style={{ margin: '5px 0' }}>
-              <strong>$45</strong>
+            <p style={{ margin: '8px 0', fontSize: '32px', fontWeight: 'bold' }}>
+              $45
             </p>
           </div>
           

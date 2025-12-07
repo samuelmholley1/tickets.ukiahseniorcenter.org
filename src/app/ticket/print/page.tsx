@@ -178,7 +178,7 @@ function PrintTicketsContent() {
           {/* Footer */}
           <div style={{ textAlign: 'center', borderTop: `2px solid ${borderColor}`, paddingTop: '4px' }}>
             <p style={{ fontFamily: 'Bitter, serif', color: '#6b7280', fontSize: '8px', lineHeight: '1.2', fontWeight: '600' }}>
-              Bartlett Event Center • 495 Leslie St, Ukiah, CA 95482 • (707) 462-4343
+              Bartlett Event Center • 495 Leslie St, Ukiah, CA 95482 • (707) 462-4343 ext 209
             </p>
           </div>
         </div>

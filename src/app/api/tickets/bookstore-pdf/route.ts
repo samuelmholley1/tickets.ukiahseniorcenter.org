@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
 import { jsPDF } from 'jspdf';
+import fs from 'fs';
+import path from 'path';
 
 export async function POST() {
   try {
+    // Load logo
+    const logoPath = path.join(process.cwd(), 'public', 'logo.png');
+    const logoBuffer = fs.readFileSync(logoPath);
+    const logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
     const customerName = 'Mendocino Book Company';
     const tickets: Array<{
       eventName: string;
@@ -11,21 +17,21 @@ export async function POST() {
       totalTickets: number;
     }> = [];
 
-    // Generate 20 Christmas tickets
+    // Generate 20 NYE tickets first
     for (let i = 0; i < 20; i++) {
       tickets.push({
-        eventName: 'Christmas Prime Rib Meal',
-        isNYE: false,
+        eventName: 'New Year\'s Eve Gala Dance',
+        isNYE: true,
         ticketNumber: i + 1,
         totalTickets: 20,
       });
     }
 
-    // Generate 20 NYE tickets
+    // Then 20 Christmas tickets
     for (let i = 0; i < 20; i++) {
       tickets.push({
-        eventName: 'New Year\'s Eve Gala Dance',
-        isNYE: true,
+        eventName: 'Christmas Prime Rib Meal',
+        isNYE: false,
         ticketNumber: i + 1,
         totalTickets: 20,
       });
@@ -38,140 +44,108 @@ export async function POST() {
       format: 'letter',
     });
 
-    // Helper function to draw a ticket
+    // Helper function to draw a ticket - SIMPLIFIED for senior-friendly reading
     const drawTicket = (ticket: typeof tickets[0], x: number, y: number) => {
       const width = 3.5;
       const height = 2;
       const isNYE = ticket.isNYE;
-      const borderColor: [number, number, number] = isNYE ? [124, 58, 237] : [66, 125, 120]; // RGB
+      const borderColor: [number, number, number] = isNYE ? [124, 58, 237] : [66, 125, 120];
       const accentColor: [number, number, number] = isNYE ? [124, 58, 237] : [66, 125, 120];
 
-      // Background (light tint)
+      // Background
       doc.setFillColor(isNYE ? 250 : 255, isNYE ? 245 : 255, isNYE ? 255 : 255);
       doc.rect(x, y, width, height, 'F');
 
       // Border
       doc.setDrawColor(...borderColor);
-      doc.setLineWidth(0.015);
+      doc.setLineWidth(0.02);
       doc.roundedRect(x, y, width, height, 0.05, 0.05);
 
-      // Header section with border
-      doc.setDrawColor(...borderColor);
-      doc.setLineWidth(0.01);
-      doc.line(x + 0.1, y + 0.4, x + width - 0.1, y + 0.4);
+      // Logo - 30% width on left side
+      const logoWidth = width * 0.3;
+      const logoHeight = logoWidth; // Keep square
+      const logoX = x + 0.1;
+      const logoY = y + (height - logoHeight) / 2; // Vertically centered
+      try {
+        doc.addImage(logoBase64, 'PNG', logoX, logoY, logoWidth, logoHeight);
+      } catch (e) {
+        console.error('Error adding logo:', e);
+      }
 
-      // Event title
+      // Text area - right 70% with better spacing
+      const textStartX = x + logoWidth + 0.2;
+      const textWidth = width * 0.7 - 0.3;
+      const textCenterX = textStartX + textWidth / 2;
+
+      // Event title - LARGE, centered in text area
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...accentColor);
+      const title = isNYE ? "New Year's Eve Gala" : 'Christmas Drive-Thru';
+      doc.text(title, textCenterX, y + 0.35, { align: 'center' });
+
+      // Date and time - LARGE ON SAME LINE, centered in text area
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 0, 0);
+      const dateTime = isNYE 
+        ? 'Wednesday, Dec 31 • 6:00 PM' 
+        : 'Tuesday, December 23';
+      doc.text(dateTime, textCenterX, y + 0.6, { align: 'center' });
+
+      // Important info - LARGE, centered in text area
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(0, 0, 0);
+      if (isNYE) {
+        // Music by Beatz Werkin - centered with italic band name
+        const musicText = 'Music by ';
+        const bandText = 'Beatz Werkin';
+        const musicWidth = doc.getTextWidth(musicText);
+        doc.setFont('helvetica', 'italic');
+        const bandWidth = doc.getTextWidth(bandText);
+        doc.setFont('helvetica', 'normal');
+        const totalWidth = musicWidth + bandWidth;
+        const startX = textCenterX - (totalWidth / 2);
+        
+        doc.text(musicText, startX, y + 0.85);
+        doc.setFont('helvetica', 'italic');
+        doc.text(bandText, startX + musicWidth, y + 0.85);
+        doc.setFont('helvetica', 'normal');
+        
+        doc.text('Appetizers & Dessert', textCenterX, y + 1.03, { align: 'center' });
+        doc.setFontSize(9);
+        doc.text('Ball Drops at 9 PM', textCenterX, y + 1.21, { align: 'center' });
+      } else {
+        doc.text('Prime Rib, Fixings, & Dessert', textCenterX, y + 0.85, { align: 'center' });
+        doc.text('Pick Up: 12:00-12:30 PM', textCenterX, y + 1.03, { align: 'center' });
+      }
+
+      // Guest name - anchored from bottom like customer PDF
+      const guestY = y + height - 0.5;
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...accentColor);
-      doc.text(isNYE ? "New Year's Eve Gala Dance" : 'Christmas Prime Rib Meal', x + 0.15, y + 0.2);
+      doc.text(`${customerName} #${ticket.ticketNumber}`, textCenterX, guestY, { align: 'center' });
 
-      // Date and time
-      doc.setFontSize(7);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(31, 41, 55);
-      doc.text(isNYE ? 'Wednesday • Dec 31, 2025' : 'Tuesday • Dec 23, 2025', x + 0.15, y + 0.3);
-
-      if (isNYE) {
-        doc.text('Doors: 6:00 PM • Dance: 7:00-10:00 PM', x + 0.15, y + 0.36);
-        doc.setTextColor(220, 38, 38);
-        doc.setFontSize(6);
-        doc.text('Ball Drop: 9:00 PM (NY Time!)', x + 0.15, y + 0.41);
-      } else {
-        doc.setTextColor(220, 38, 38);
-        doc.text('PICKUP: 12:00-12:30 PM', x + 0.15, y + 0.36);
-        doc.setTextColor(31, 41, 55);
-        doc.setFontSize(6);
-        doc.text('Drive-Thru Only • Stay in Vehicle', x + 0.15, y + 0.41);
-      }
-
-      // Event details section
-      let detailY = y + 0.55;
-      doc.setFontSize(6.5);
+      // Location - bottom
+      const footerY1 = y + height - 0.3;
+      const footerY2 = y + height - 0.15;
+      doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
-      doc.setTextColor(0, 0, 0);
-
-      if (isNYE) {
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...accentColor);
-        doc.text('INCLUDES:', x + 0.15, detailY);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(0, 0, 0);
-        doc.text("Appetizers, Hors d'oeuvres & Dessert", x + 0.55, detailY);
-
-        detailY += 0.12;
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...accentColor);
-        doc.text('MUSIC:', x + 0.15, detailY);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(0, 0, 0);
-        doc.text('Beatz Werkin Band', x + 0.45, detailY);
-
-        detailY += 0.12;
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...accentColor);
-        doc.text('ATTIRE:', x + 0.15, detailY);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(0, 0, 0);
-        doc.text('Flashy Attire!', x + 0.45, detailY);
-      } else {
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...accentColor);
-        doc.text('MENU:', x + 0.15, detailY);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(0, 0, 0);
-        doc.text('Prime Rib w/ Horseradish, Garlic Mashed', x + 0.45, detailY);
-
-        detailY += 0.1;
-        doc.text('Potatoes, Vegetable, Caesar Salad,', x + 0.45, detailY);
-
-        detailY += 0.1;
-        doc.text('Garlic Bread, Cheesecake', x + 0.45, detailY);
-
-        detailY += 0.15;
-        doc.setFontSize(6);
-        doc.setTextColor(220, 38, 38);
-        doc.setFont('helvetica', 'bold');
-        doc.text('⚠ Arrive within 12:00-12:30 PM window', x + 0.15, detailY);
-      }
-
-      // Guest section with border
-      const guestY = y + height - 0.5;
-      doc.setDrawColor(...borderColor);
-      doc.setLineWidth(0.005);
-      doc.line(x + 0.15, guestY, x + width - 0.15, guestY);
-
-      doc.setFontSize(7);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...accentColor);
-      doc.text('Guest:', x + 0.15, guestY + 0.12);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(0, 0, 0);
-      doc.text(`${customerName} #${ticket.ticketNumber}`, x + 0.45, guestY + 0.12);
-
-      // Footer section with border
-      const footerY = y + height - 0.25;
-      doc.setDrawColor(...borderColor);
-      doc.setLineWidth(0.01);
-      doc.line(x + 0.1, footerY, x + width - 0.1, footerY);
-
-      doc.setFontSize(6);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(107, 114, 128);
-      const footerText = 'Bartlett Event Center • 495 Leslie St, Ukiah, CA 95482 • (707) 462-4343';
-      const textWidth = doc.getTextWidth(footerText);
-      const centerX = x + (width / 2) - (textWidth / 2);
-      doc.text(footerText, centerX, footerY + 0.12);
+      doc.setTextColor(80, 80, 80);
+      doc.text('Bartlett Event Center', textCenterX, footerY1, { align: 'center' });
+      doc.text('495 Leslie St • (707) 462-4343 ext 209', textCenterX, footerY2, { align: 'center' });
     };
 
-    // Layout: 2 columns, 5 rows per page (10 tickets per page)
+    // Layout tickets in 2x4 grid (8 per page) - optimized for 8.5x11
     const cols = 2;
-    const rows = 5;
+    const rows = 4;
     const ticketsPerPage = cols * rows;
-    const startX = 0.75; // 0.75" from left
-    const startY = 0.5;  // 0.5" from top
-    const gapX = 0.25;   // Gap between columns
-    const gapY = 0.25;   // Gap between rows
+    const startX = 0.75;
+    const startY = 0.5;
+    const gapX = 0.25;
+    const gapY = 0.2; // Reduced from 0.25 to 0.2
 
     tickets.forEach((ticket, index) => {
       // Add new page if needed

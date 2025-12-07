@@ -43,7 +43,7 @@ export default function UnifiedSalesPage() {
   const CHRISTMAS_MEMBER = 15;
   const CHRISTMAS_NON_MEMBER = 20;
   const NYE_MEMBER = 35;
-  const NYE_NON_MEMBER = 40;
+  const NYE_NON_MEMBER = 45;
 
   // Calculate totals
   const christmasTotal = 

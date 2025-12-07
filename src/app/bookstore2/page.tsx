@@ -18,28 +18,27 @@ export default function BookstoreInfoPage() {
           justifyContent: 'space-between',
           pageBreakAfter: 'avoid'
         }}>
-          <div style={{ textAlign: 'center', marginBottom: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '10px' }}>
             <img 
               src="/logo.png" 
               alt="Ukiah Senior Center" 
               style={{ 
-                width: '120px',
+                width: '90px',
                 height: 'auto',
-                display: 'inline-block'
+                flexShrink: 0
               }} 
             />
+            <h1 style={{
+              fontSize: '38px',
+              fontWeight: 'bold',
+              margin: '0',
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              lineHeight: '1.1'
+            }}>
+              CHRISTMAS<br/>DRIVE-THRU
+            </h1>
           </div>
-          
-          <h1 style={{
-            fontSize: '42px',
-            fontWeight: 'bold',
-            margin: '0 0 10px 0',
-            textAlign: 'center',
-            textTransform: 'uppercase',
-            letterSpacing: '1px'
-          }}>
-            CHRISTMAS<br/>DRIVE-THRU
-          </h1>
           
           <div style={{ fontSize: '16px', lineHeight: '1.4' }}>
             <p style={{ margin: '5px 0', fontWeight: 'bold' }}>
@@ -70,28 +69,27 @@ export default function BookstoreInfoPage() {
           justifyContent: 'space-between',
           pageBreakAfter: 'avoid'
         }}>
-          <div style={{ textAlign: 'center', marginBottom: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '10px' }}>
             <img 
               src="/logo.png" 
               alt="Ukiah Senior Center" 
               style={{ 
-                width: '120px',
+                width: '90px',
                 height: 'auto',
-                display: 'inline-block'
+                flexShrink: 0
               }} 
             />
+            <h1 style={{
+              fontSize: '38px',
+              fontWeight: 'bold',
+              margin: '0',
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              lineHeight: '1.1'
+            }}>
+              NEW YEAR&apos;S<br/>EVE GALA
+            </h1>
           </div>
-          
-          <h1 style={{
-            fontSize: '42px',
-            fontWeight: 'bold',
-            margin: '0 0 10px 0',
-            textAlign: 'center',
-            textTransform: 'uppercase',
-            letterSpacing: '1px'
-          }}>
-            NEW YEAR&apos;S<br/>EVE GALA
-          </h1>
           
           <div style={{ fontSize: '16px', lineHeight: '1.4' }}>
             <p style={{ margin: '5px 0', fontWeight: 'bold' }}>

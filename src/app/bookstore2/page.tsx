@@ -47,7 +47,7 @@ export default function BookstoreInfoPage() {
           
           <div style={{ lineHeight: '1.4' }}>
             <p style={{ margin: '8px 0', fontWeight: 'bold', fontSize: '24px' }}>
-              Tuesday, December 23 • 12:00-12:30 PM
+              Tues, December 23 • 12pm-12:30pm
             </p>
             <p style={{ margin: '8px 0', fontSize: '20px' }}>
               Prime Rib Meal • Drive-Thru Pickup
@@ -100,7 +100,7 @@ export default function BookstoreInfoPage() {
           
           <div style={{ lineHeight: '1.4' }}>
             <p style={{ margin: '8px 0', fontWeight: 'bold', fontSize: '24px' }}>
-              Wednesday, December 31 • 6:00-10:00 PM
+              Wed, December 31 • 6pm-10pm
             </p>
             <p style={{ margin: '8px 0', fontSize: '20px' }}>
               Dance • Beatz Werkin Band • Ball Drop 9PM

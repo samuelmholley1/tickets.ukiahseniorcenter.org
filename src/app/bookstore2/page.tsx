@@ -18,42 +18,43 @@ export default function BookstoreInfoPage() {
           justifyContent: 'space-between',
           pageBreakAfter: 'avoid'
         }}>
-          <div style={{ textAlign: 'center', marginBottom: '10px' }}>
-            <img 
-              src="/logo.png" 
-              alt="Ukiah Senior Center" 
-              style={{ 
-                width: '120px',
-                height: 'auto',
-                display: 'inline-block'
-              }} 
-            />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '15px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+              <img 
+                src="/logo.png" 
+                alt="Ukiah Senior Center" 
+                style={{ 
+                  width: '90px',
+                  height: 'auto',
+                  flexShrink: 0
+                }} 
+              />
+              <h1 style={{
+                fontSize: '38px',
+                fontWeight: 'bold',
+                margin: '0',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                lineHeight: '1.1'
+              }}>
+                CHRISTMAS<br/>DRIVE-THRU
+              </h1>
+            </div>
+            <div style={{ fontSize: '48px', fontWeight: 'bold', color: '#000' }}>
+              $20
+            </div>
           </div>
           
-          <h1 style={{
-            fontSize: '42px',
-            fontWeight: 'bold',
-            margin: '0 0 10px 0',
-            textAlign: 'center',
-            textTransform: 'uppercase',
-            letterSpacing: '1px'
-          }}>
-            CHRISTMAS<br/>DRIVE-THRU
-          </h1>
-          
-          <div style={{ fontSize: '16px', lineHeight: '1.4' }}>
-            <p style={{ margin: '5px 0', fontWeight: 'bold' }}>
+          <div style={{ lineHeight: '1.4' }}>
+            <p style={{ margin: '8px 0', fontWeight: 'bold', fontSize: '24px' }}>
               Tuesday, December 23 • 12:00-12:30 PM
             </p>
-            <p style={{ margin: '5px 0' }}>
+            <p style={{ margin: '8px 0', fontSize: '20px' }}>
               Prime Rib Meal • Drive-Thru Pickup
-            </p>
-            <p style={{ margin: '5px 0' }}>
-              <strong>$20</strong>
             </p>
           </div>
           
-          <p style={{ fontSize: '12px', margin: '0', textAlign: 'center' }}>
+          <p style={{ fontSize: '16px', margin: '0', textAlign: 'center', fontWeight: 'bold' }}>
             (707) 462-4343 ext 209
           </p>
         </div>
@@ -70,42 +71,43 @@ export default function BookstoreInfoPage() {
           justifyContent: 'space-between',
           pageBreakAfter: 'avoid'
         }}>
-          <div style={{ textAlign: 'center', marginBottom: '10px' }}>
-            <img 
-              src="/logo.png" 
-              alt="Ukiah Senior Center" 
-              style={{ 
-                width: '120px',
-                height: 'auto',
-                display: 'inline-block'
-              }} 
-            />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '15px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+              <img 
+                src="/logo.png" 
+                alt="Ukiah Senior Center" 
+                style={{ 
+                  width: '90px',
+                  height: 'auto',
+                  flexShrink: 0
+                }} 
+              />
+              <h1 style={{
+                fontSize: '38px',
+                fontWeight: 'bold',
+                margin: '0',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                lineHeight: '1.1'
+              }}>
+                NEW YEAR&apos;S<br/>EVE GALA
+              </h1>
+            </div>
+            <div style={{ fontSize: '48px', fontWeight: 'bold', color: '#000' }}>
+              $45
+            </div>
           </div>
           
-          <h1 style={{
-            fontSize: '42px',
-            fontWeight: 'bold',
-            margin: '0 0 10px 0',
-            textAlign: 'center',
-            textTransform: 'uppercase',
-            letterSpacing: '1px'
-          }}>
-            NEW YEAR&apos;S<br/>EVE GALA
-          </h1>
-          
-          <div style={{ fontSize: '16px', lineHeight: '1.4' }}>
-            <p style={{ margin: '5px 0', fontWeight: 'bold' }}>
+          <div style={{ lineHeight: '1.4' }}>
+            <p style={{ margin: '8px 0', fontWeight: 'bold', fontSize: '24px' }}>
               Wednesday, December 31 • 6:00-10:00 PM
             </p>
-            <p style={{ margin: '5px 0' }}>
+            <p style={{ margin: '8px 0', fontSize: '20px' }}>
               Dance • Beatz Werkin Band • Ball Drop 9PM
-            </p>
-            <p style={{ margin: '5px 0' }}>
-              <strong>$45</strong>
             </p>
           </div>
           
-          <p style={{ fontSize: '12px', margin: '0', textAlign: 'center' }}>
+          <p style={{ fontSize: '16px', margin: '0', textAlign: 'center', fontWeight: 'bold' }}>
             (707) 462-4343 ext 209
           </p>
         </div>

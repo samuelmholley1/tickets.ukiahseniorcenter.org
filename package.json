@@ -16,7 +16,7 @@
   "dependencies": {
     "jspdf": "^2.5.2",
     "next": "15.2.6",
-    "nodemailer": "^6.9.8",
+    "nodemailer": "^6.10.1",
     "react": "19.1.0",
     "react-dom": "19.1.0"
   },

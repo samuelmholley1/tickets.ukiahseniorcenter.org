@@ -43,6 +43,7 @@ export async function sendEmail({ to, subject, html, attachments }: EmailParams)
   const mailOptions = {
     from: '"Ukiah Senior Center Tickets" <cashier@seniorctr.org>',
     to,
+    cc: ['cashier@seniorctr.org', 'activities@ukiahseniorcenter.org'],
     replyTo: 'cashier@seniorctr.org',
     subject,
     html,

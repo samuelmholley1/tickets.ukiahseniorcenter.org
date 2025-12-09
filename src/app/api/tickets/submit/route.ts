@@ -263,6 +263,43 @@ export async function POST(request: NextRequest) {
       results.push({ event: 'NYE Gala Dance', total: nyeTotal, recordId: nyeData.id });
     }
 
+    // Send email receipt automatically if email is provided
+    if (customer.email && customer.email.length > 0) {
+      console.log('[submit] Sending email receipt to:', customer.email);
+      try {
+        const emailResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/tickets/send-receipt`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            transactionId,
+            firstName: customer.firstName,
+            lastName: customer.lastName,
+            email: customer.email,
+            phone: customer.phone,
+            christmasMember: quantities.christmasMember,
+            christmasNonMember: quantities.christmasNonMember,
+            nyeMember: quantities.nyeMember,
+            nyeNonMember: quantities.nyeNonMember,
+            ticketSubtotal: christmasTotal + nyeTotal,
+            donationAmount: donation,
+            grandTotal: christmasTotal + nyeTotal + donation,
+            paymentMethod: customer.paymentMethod,
+            staffInitials: customer.staffInitials,
+          }),
+        });
+        
+        if (emailResponse.ok) {
+          console.log('[submit] Email receipt sent successfully');
+        } else {
+          const emailError = await emailResponse.json();
+          console.error('[submit] Email receipt failed:', emailError);
+        }
+      } catch (emailErr) {
+        console.error('[submit] Error sending email receipt:', emailErr);
+        // Don't fail the whole transaction if email fails
+      }
+    }
+
     return NextResponse.json({ 
       success: true, 
       transactionId,

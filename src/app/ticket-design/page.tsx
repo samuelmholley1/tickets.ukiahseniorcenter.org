@@ -140,7 +140,7 @@ export default function TicketDesignPage() {
               Design Notes
             </h2>
             <div className="font-['Bitter',serif] text-[#666] space-y-2" style={{ lineHeight: '1.6' }}>
-              <p><strong>Ticket Size:</strong> 3.5" × 2" (2 per row, 4 rows = 8 per page)</p>
+              <p><strong>Ticket Size:</strong> 3.5&quot; × 2&quot; (2 per row, 4 rows = 8 per page)</p>
               <p><strong>Logo:</strong> 30% width on left, vertically centered</p>
               <p><strong>Fonts:</strong></p>
               <ul className="ml-6">

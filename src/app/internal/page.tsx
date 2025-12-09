@@ -14,7 +14,6 @@ interface TicketQuantities {
 }
 
 export default function UnifiedSalesPage() {
-  const router = useRouter();
   const [quantities, setQuantities] = useState<TicketQuantities>({
     christmasMember: 0,
     christmasNonMember: 0,

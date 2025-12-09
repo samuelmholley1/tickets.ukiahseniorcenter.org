@@ -14,8 +14,10 @@ interface CustomerInfo {
   lastName: string;
   email: string;
   phone: string;
-  paymentMethod: 'cash' | 'check';
+  paymentMethod: 'cash' | 'check' | 'cashCheckSplit';
   checkNumber?: string;
+  cashAmount?: string;
+  checkAmount?: string;
   staffInitials: string;
 }
 
@@ -81,9 +83,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Maximum 50 tickets per order' }, { status: 400 });
     }
 
-    // Validate check number if payment method is check
-    if (customer.paymentMethod === 'check' && !customer.checkNumber?.trim()) {
+    // Validate check number if payment method is check or cash & check
+    if ((customer.paymentMethod === 'check' || customer.paymentMethod === 'cashCheckSplit') && !customer.checkNumber?.trim()) {
       return NextResponse.json({ error: 'Check number is required for check payments' }, { status: 400 });
+    }
+
+    // Validate cash & check amounts if split payment
+    if (customer.paymentMethod === 'cashCheckSplit') {
+      const cashAmt = parseFloat(customer.cashAmount || '0');
+      const checkAmt = parseFloat(customer.checkAmount || '0');
+      
+      if (cashAmt <= 0 || checkAmt <= 0) {
+        return NextResponse.json({ error: 'Both cash and check amounts must be greater than zero for split payments' }, { status: 400 });
+      }
     }
 
     // Validate donation amount
@@ -132,6 +144,19 @@ export async function POST(request: NextRequest) {
         christmasTicketInfo.push(`${quantities.christmasNonMember} Non-Member ($${CHRISTMAS_NON_MEMBER} ea)`);
       }
 
+      // Build payment method display text and notes
+      let paymentMethodText = 'Cash';
+      let paymentNotes = '';
+      
+      if (customer.paymentMethod === 'check') {
+        paymentMethodText = 'Check';
+      } else if (customer.paymentMethod === 'cashCheckSplit') {
+        paymentMethodText = 'Cash & Check';
+        const cashAmt = parseFloat(customer.cashAmount || '0');
+        const checkAmt = parseFloat(customer.checkAmount || '0');
+        paymentNotes = `Cash: $${cashAmt.toFixed(2)}, Check: $${checkAmt.toFixed(2)}`;
+      }
+
       const christmasPayload = {
         fields: {
           'Transaction ID': transactionId,
@@ -139,8 +164,9 @@ export async function POST(request: NextRequest) {
           'Last Name': customer.lastName,
           'Email': customer.email,
           'Phone': customer.phone,
-          'Payment Method': customer.paymentMethod === 'cash' ? 'Cash' : 'Check',
+          'Payment Method': paymentMethodText,
           'Check Number': customer.checkNumber || '',
+          'Payment Notes': paymentNotes,
           'Ticket Subtotal': christmasTotal,
           'Donation Amount': donationGoesToChristmas ? donation : 0,
           'Amount Paid': donationGoesToChristmas ? christmasTotal + donation : christmasTotal,
@@ -200,6 +226,19 @@ export async function POST(request: NextRequest) {
         nyeTicketInfo.push(`${quantities.nyeNonMember} Non-Member ($${NYE_NON_MEMBER} ea)`);
       }
 
+      // Build payment method display text and notes
+      let paymentMethodText = 'Cash';
+      let paymentNotes = '';
+      
+      if (customer.paymentMethod === 'check') {
+        paymentMethodText = 'Check';
+      } else if (customer.paymentMethod === 'cashCheckSplit') {
+        paymentMethodText = 'Cash & Check';
+        const cashAmt = parseFloat(customer.cashAmount || '0');
+        const checkAmt = parseFloat(customer.checkAmount || '0');
+        paymentNotes = `Cash: $${cashAmt.toFixed(2)}, Check: $${checkAmt.toFixed(2)}`;
+      }
+
       const nyePayload = {
         fields: {
           'Transaction ID': transactionId,
@@ -207,8 +246,9 @@ export async function POST(request: NextRequest) {
           'Last Name': customer.lastName,
           'Email': customer.email,
           'Phone': customer.phone,
-          'Payment Method': customer.paymentMethod === 'cash' ? 'Cash' : 'Check',
+          'Payment Method': paymentMethodText,
           'Check Number': customer.checkNumber || '',
+          'Payment Notes': paymentNotes,
           'Ticket Subtotal': nyeTotal,
           'Donation Amount': !donationGoesToChristmas ? donation : 0,
           'Amount Paid': !donationGoesToChristmas ? nyeTotal + donation : nyeTotal,

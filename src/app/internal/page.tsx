@@ -26,8 +26,10 @@ export default function UnifiedSalesPage() {
     lastName: '',
     email: '',
     phone: '',
-    paymentMethod: 'cash' as 'cash' | 'check',
+    paymentMethod: 'cash' as 'cash' | 'check' | 'cashCheckSplit',
     checkNumber: '',
+    cashAmount: '',
+    checkAmount: '',
     staffInitials: ''
   });
 
@@ -121,6 +123,8 @@ export default function UnifiedSalesPage() {
         phone: '',
         paymentMethod: 'cash',
         checkNumber: '',
+        cashAmount: '',
+        checkAmount: '',
         staffInitials: formData.staffInitials // Keep staff initials
       });
       setWantsDonation(false);
@@ -452,24 +456,78 @@ export default function UnifiedSalesPage() {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--space-3)' }}>
-                <div>
-                  <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">
-                    Payment Method *
-                  </label>
-                  <select
-                    required
-                    value={formData.paymentMethod}
-                    onChange={(e) => setFormData({...formData, paymentMethod: e.target.value as 'cash' | 'check', checkNumber: e.target.value === 'cash' ? '' : formData.checkNumber})}
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
-                  >
-                    <option value="cash">Cash</option>
-                    <option value="check">Check</option>
-                  </select>
-                </div>
+              <div style={{ marginBottom: 'var(--space-3)' }}>
+                <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">
+                  Payment Method *
+                </label>
+                <select
+                  required
+                  value={formData.paymentMethod}
+                  onChange={(e) => setFormData({
+                    ...formData, 
+                    paymentMethod: e.target.value as 'cash' | 'check' | 'cashCheckSplit',
+                    checkNumber: e.target.value === 'cash' ? '' : formData.checkNumber,
+                    cashAmount: e.target.value !== 'cashCheckSplit' ? '' : formData.cashAmount,
+                    checkAmount: e.target.value !== 'cashCheckSplit' ? '' : formData.checkAmount
+                  })}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
+                >
+                  <option value="cash">Cash</option>
+                  <option value="check">Check</option>
+                  <option value="cashCheckSplit">Cash & Check</option>
+                </select>
+              </div>
 
-                {formData.paymentMethod === 'check' && (
-                  <div>
+              {formData.paymentMethod === 'check' && (
+                <div style={{ marginBottom: 'var(--space-3)' }}>
+                  <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">
+                    Check Number *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.checkNumber}
+                    onChange={(e) => setFormData({...formData, checkNumber: e.target.value})}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
+                  />
+                </div>
+              )}
+
+              {formData.paymentMethod === 'cashCheckSplit' && (
+                <>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
+                    <div>
+                      <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">
+                        Cash Amount *
+                      </label>
+                      <input
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        required
+                        value={formData.cashAmount}
+                        onChange={(e) => setFormData({...formData, cashAmount: e.target.value})}
+                        placeholder="0.00"
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">
+                        Check Amount *
+                      </label>
+                      <input
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        required
+                        value={formData.checkAmount}
+                        onChange={(e) => setFormData({...formData, checkAmount: e.target.value})}
+                        placeholder="0.00"
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
+                      />
+                    </div>
+                  </div>
+                  <div style={{ marginBottom: 'var(--space-3)' }}>
                     <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">
                       Check Number *
                     </label>
@@ -481,24 +539,24 @@ export default function UnifiedSalesPage() {
                       className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
                     />
                   </div>
-                )}
+                </>
+              )}
 
-                <div>
-                  <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">
-                    Staff Initials/Name * 
-                    <span className="text-xs text-gray-500" style={{ fontWeight: 'normal', display: 'block', marginTop: '4px' }}>
-                      (Who processed this sale? Shows in records below)
-                    </span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.staffInitials}
-                    onChange={(e) => setFormData({...formData, staffInitials: e.target.value})}
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
-                    placeholder="e.g., JD or Jane"
-                  />
-                </div>
+              <div>
+                <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">
+                  Staff Initials/Name * 
+                  <span className="text-xs text-gray-500" style={{ fontWeight: 'normal', display: 'block', marginTop: '4px' }}>
+                    (Who processed this sale? Shows in records below)
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.staffInitials}
+                  onChange={(e) => setFormData({...formData, staffInitials: e.target.value})}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
+                  placeholder="e.g., JD or Jane"
+                />
               </div>
             </div>
 

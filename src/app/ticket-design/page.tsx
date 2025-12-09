@@ -131,7 +131,7 @@ export default function TicketDesignPage() {
               <li>• Vertical spacing between title, date, and details</li>
               <li>• Guest name position at bottom</li>
               <li>• Footer position and spacing</li>
-              <li>• Overall balance within 3.5" x 2" ticket</li>
+              <li>• Overall balance within 3.5&quot; x 2&quot; ticket</li>
             </ul>
           </div>
 

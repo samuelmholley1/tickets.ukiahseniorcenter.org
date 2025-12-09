@@ -124,10 +124,16 @@ export function generateReceiptEmail(data: TicketReceiptData): string {
           background: #ffffff;
         }
         .header {
-          background: #427d78;
-          color: white;
-          padding: 30px 20px;
+          background: #fafbff;
+          padding: 40px 20px;
           text-align: center;
+          border-bottom: 3px solid #427d78;
+        }
+        .logo {
+          width: 120px;
+          height: 120px;
+          margin: 0 auto 20px;
+          display: block;
         }
         .content {
           padding: 30px 20px;
@@ -139,7 +145,7 @@ export function generateReceiptEmail(data: TicketReceiptData): string {
           color: #000000;
         }
         .info-box {
-          background: #f5f5f5;
+          background: #fafbff;
           padding: 20px;
           margin: 20px 0;
           border: 2px solid #427d78;
@@ -168,7 +174,7 @@ export function generateReceiptEmail(data: TicketReceiptData): string {
           background: #7c3aed;
         }
         .event-items {
-          background: #f5f5f5;
+          background: #fafbff;
           border: 2px solid #427d78;
           padding: 15px;
           margin-bottom: 20px;
@@ -232,7 +238,8 @@ export function generateReceiptEmail(data: TicketReceiptData): string {
     <body>
       <div class="container">
         <div class="header">
-          <h1>Your Ukiah Senior Center Tickets</h1>
+          <img src="https://tickets.ukiahseniorcenter.org/logo.png" alt="Ukiah Senior Center" class="logo" />
+          <h1 style="color: #427d78; margin: 0;">Your Ukiah Senior Center Tickets</h1>
         </div>
 
         <div class="content">

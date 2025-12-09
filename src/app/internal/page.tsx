@@ -33,6 +33,8 @@ export default function UnifiedSalesPage() {
     staffInitials: ''
   });
 
+  const [vegetarianMeals, setVegetarianMeals] = useState(0);
+
   const [wantsDonation, setWantsDonation] = useState(false);
   const [donationAmount, setDonationAmount] = useState('');
 
@@ -101,7 +103,8 @@ export default function UnifiedSalesPage() {
         body: JSON.stringify({
           quantities,
           customer: formData,
-          donation: wantsDonation ? parseFloat(donationAmount) : 0
+          donation: wantsDonation ? parseFloat(donationAmount) : 0,
+          vegetarianMeals
         })
       });
 
@@ -139,6 +142,7 @@ export default function UnifiedSalesPage() {
         checkAmount: '',
         staffInitials: formData.staffInitials // Keep staff initials
       });
+      setVegetarianMeals(0);
       setWantsDonation(false);
       setDonationAmount('');
       
@@ -261,6 +265,32 @@ export default function UnifiedSalesPage() {
                     />
                   </div>
                 </div>
+
+                {/* Vegetarian Meal Option */}
+                {(quantities.christmasMember + quantities.christmasNonMember) > 0 && (
+                  <div style={{ marginTop: 'var(--space-3)', padding: 'var(--space-3)', background: '#e8f5e9', border: '2px solid #4caf50', borderRadius: '8px' }}>
+                    <label className="block font-['Bitter',serif] text-gray-800 font-medium mb-2">
+                      🌱 Vegetarian Meals (Eggplant instead of Prime Rib)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max={quantities.christmasMember + quantities.christmasNonMember}
+                      value={vegetarianMeals}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 0;
+                        const maxVeg = quantities.christmasMember + quantities.christmasNonMember;
+                        setVegetarianMeals(Math.min(val, maxVeg));
+                      }}
+                      className="w-full px-4 py-3 border-2 border-[#4caf50] rounded-lg focus:border-[#388e3c] focus:outline-none font-['Bitter',serif] text-lg"
+                      placeholder="0"
+                    />
+                    <p className="text-sm text-gray-600 font-['Bitter',serif]" style={{ marginTop: '8px' }}>
+                      Max: {quantities.christmasMember + quantities.christmasNonMember} (total Christmas tickets)
+                    </p>
+                  </div>
+                )}
+
                 {christmasTotal > 0 && (
                   <div style={{ marginTop: 'var(--space-2)', textAlign: 'right' }}>
                     <span className="font-['Jost',sans-serif] font-bold text-[#427d78] text-lg">

@@ -25,6 +25,7 @@ interface RequestBody {
   quantities: TicketQuantities;
   customer: CustomerInfo;
   donation?: number;
+  vegetarianMeals?: number;
 }
 
 // Generate a unique transaction ID
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body: RequestBody = await request.json();
-    const { quantities, customer, donation = 0 } = body;
+    const { quantities, customer, donation = 0, vegetarianMeals = 0 } = body;
 
     // Input validation
     if (!customer.firstName?.trim() || !customer.lastName?.trim()) {
@@ -173,6 +174,7 @@ export async function POST(request: NextRequest) {
           'Ticket Quantity': quantities.christmasMember + quantities.christmasNonMember,
           'Christmas Member Tickets': quantities.christmasMember,
           'Christmas Non-Member Tickets': quantities.christmasNonMember,
+          'Vegetarian Meals': vegetarianMeals,
           'Staff Initials': customer.staffInitials,
         },
       };

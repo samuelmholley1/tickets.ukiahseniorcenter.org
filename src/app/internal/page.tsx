@@ -189,7 +189,7 @@ export default function UnifiedSalesPage() {
                 </p>
               </div>
             </div>
-          )}
+          ) : null}
 
           {/* Error Message */}
           {error && (

@@ -107,6 +107,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid donation amount' }, { status: 400 });
     }
 
+    // Validate vegetarian meals count
+    const totalChristmasTickets = quantities.christmasMember + quantities.christmasNonMember;
+    if (vegetarianMeals < 0 || vegetarianMeals > totalChristmasTickets) {
+      return NextResponse.json({ error: 'Invalid vegetarian meals count' }, { status: 400 });
+    }
+
     // Sanitize string inputs with length limits (Airtable has limits)
     customer.firstName = customer.firstName.trim().substring(0, 100);
     customer.lastName = customer.lastName.trim().substring(0, 100);

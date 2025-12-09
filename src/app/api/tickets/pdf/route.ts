@@ -97,18 +97,18 @@ export async function POST(request: NextRequest) {
       const title = isNYE ? "New Year's Eve Gala" : 'Christmas Drive-Thru';
       doc.text(title, textCenterX, textY, { align: 'center' });
 
-      textY += 0.22;
+      textY += 0.20;
 
-      // Date & Time - 12pt centered in text area
-      doc.setFontSize(12);
+      // Date & Time - 11pt centered in text area
+      doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(0, 0, 0);
       const dateTime = isNYE 
-        ? 'Wed, Dec 31 • 7-10pm'
-        : 'Tues, Dec 23';
+        ? 'Wed Dec 31, 7-10pm'
+        : 'Tues Dec 23, 12-12:30pm';
       doc.text(dateTime, textCenterX, textY, { align: 'center' });
 
-      textY += 0.20;
+      textY += 0.18;
 
       // Key info lines - 10pt centered in text area
       doc.setFontSize(10);
@@ -137,9 +137,9 @@ export async function POST(request: NextRequest) {
         doc.setFontSize(9);
         doc.text('Ball Drops at 9pm', textCenterX, textY, { align: 'center' });
       } else {
-        doc.text('Prime Rib, Fixings, & Dessert', textCenterX, textY, { align: 'center' });
-        textY += 0.18;
-        doc.text('Pick Up: 12-12:30pm', textCenterX, textY, { align: 'center' });
+        doc.text('Prime Rib & Dessert', textCenterX, textY, { align: 'center' });
+        textY += 0.16;
+        doc.text('Drive-Thru Pickup', textCenterX, textY, { align: 'center' });
       }
 
       // Guest Name - 10pt centered in text area

@@ -79,6 +79,18 @@ export default function UnifiedSalesPage() {
       return;
     }
 
+    // Validate split payment totals match
+    if (formData.paymentMethod === 'cashCheckSplit') {
+      const cashAmt = parseFloat(formData.cashAmount || '0');
+      const checkAmt = parseFloat(formData.checkAmount || '0');
+      const splitTotal = cashAmt + checkAmt;
+      
+      if (Math.abs(splitTotal - grandTotal) > 0.01) {
+        setError(`Payment amounts don't match total due. Cash ($${cashAmt.toFixed(2)}) + Check ($${checkAmt.toFixed(2)}) = $${splitTotal.toFixed(2)}, but total due is $${grandTotal.toFixed(2)}`);
+        return;
+      }
+    }
+
     setSubmitting(true);
     setError('');
 
@@ -527,6 +539,52 @@ export default function UnifiedSalesPage() {
                       />
                     </div>
                   </div>
+
+                  {/* Split Payment Reconciliation Display */}
+                  {(() => {
+                    const cashAmt = parseFloat(formData.cashAmount || '0');
+                    const checkAmt = parseFloat(formData.checkAmount || '0');
+                    const splitTotal = cashAmt + checkAmt;
+                    const isReconciled = Math.abs(splitTotal - grandTotal) < 0.01;
+                    const difference = splitTotal - grandTotal;
+                    
+                    return (
+                      <div style={{ marginBottom: 'var(--space-3)', padding: 'var(--space-3)', background: isReconciled ? '#d4edda' : '#fff3cd', borderRadius: '8px', border: `2px solid ${isReconciled ? '#28a745' : '#ffc107'}` }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-2)' }}>
+                          <span className="font-['Bitter',serif] font-bold">
+                            Cash + Check Total:
+                          </span>
+                          <span className="font-['Jost',sans-serif] font-bold text-xl">
+                            ${splitTotal.toFixed(2)}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-2)' }}>
+                          <span className="font-['Bitter',serif] font-bold">
+                            Amount Due:
+                          </span>
+                          <span className="font-['Jost',sans-serif] font-bold text-xl">
+                            ${grandTotal.toFixed(2)}
+                          </span>
+                        </div>
+                        <div style={{ paddingTop: 'var(--space-2)', borderTop: '2px solid rgba(0,0,0,0.1)' }}>
+                          {isReconciled ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#28a745' }}>
+                              <span style={{ fontSize: '1.5rem' }}>✅</span>
+                              <span className="font-['Jost',sans-serif] font-bold">Payment Reconciled</span>
+                            </div>
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#856404' }}>
+                              <span style={{ fontSize: '1.5rem' }}>⚠️</span>
+                              <span className="font-['Bitter',serif] font-bold">
+                                {difference > 0 ? `Over by $${difference.toFixed(2)}` : `Short by $${Math.abs(difference).toFixed(2)}`}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   <div style={{ marginBottom: 'var(--space-3)' }}>
                     <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">
                       Check Number *

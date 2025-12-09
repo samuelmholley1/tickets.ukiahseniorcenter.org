@@ -136,7 +136,6 @@ export default function UnifiedSalesPage() {
       return;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
       setSubmitting(false);
     }
   };
@@ -504,8 +503,13 @@ export default function UnifiedSalesPage() {
               disabled={submitting || totalTickets === 0}
               className="w-full bg-[#427d78] hover:bg-[#5eb3a1] text-white font-['Jost',sans-serif] font-bold text-xl py-4 rounded-lg transition-colors duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {submitting ? 'Processing...' : `Record Sale - $${grandTotal.toFixed(2)}`}
+              {submitting ? 'Recording sale & sending email...' : `Record Sale - $${grandTotal.toFixed(2)}`}
             </button>
+            {submitting && (
+              <p className="text-center text-gray-600 font-['Bitter',serif] text-sm" style={{ marginTop: 'var(--space-2)' }}>
+                This may take a few seconds while we send the email receipt
+              </p>
+            )}
           </form>
 
           {/* Embedded Ticket List */}

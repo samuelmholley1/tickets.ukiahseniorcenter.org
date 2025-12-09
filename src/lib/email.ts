@@ -13,13 +13,19 @@ interface EmailParams {
 }
 
 export async function sendEmail({ to, subject, html, attachments }: EmailParams) {
+  console.log('[email] sendEmail called with to:', to);
+  
   // Check if credentials are configured
   if (!process.env.EMAIL_PASSWORD) {
-    console.error('EMAIL_PASSWORD environment variable is not set');
+    console.error('[email] ERROR: EMAIL_PASSWORD environment variable is not set');
     return { success: false, error: new Error('Email service not configured - missing EMAIL_PASSWORD') };
   }
+  
+  console.log('[email] EMAIL_PASSWORD is set');
+  console.log('[email] EMAIL_USER:', process.env.EMAIL_USER || 'cashier@seniorctr.org');
 
   // Create transporter using Microsoft 365 SMTP
+  console.log('[email] Creating SMTP transporter for smtp.office365.com:587');
   const transporter = nodemailer.createTransport({
     host: 'smtp.office365.com',
     port: 587,
@@ -30,6 +36,7 @@ export async function sendEmail({ to, subject, html, attachments }: EmailParams)
     },
     tls: {
       ciphers: 'SSLv3',
+      rejectUnauthorized: false
     },
   });
 
@@ -41,13 +48,18 @@ export async function sendEmail({ to, subject, html, attachments }: EmailParams)
     html,
     attachments,
   };
+  
+  console.log('[email] Mail options prepared, attachments:', attachments?.length || 0);
 
   try {
+    console.log('[email] Sending email via SMTP...');
     const info = await transporter.sendMail(mailOptions);
-    console.log('Email sent successfully:', info.messageId);
+    console.log('[email] ✅ Email sent successfully! Message ID:', info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error('[email] ❌ Error sending email:', error);
+    console.error('[email] Error details:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('[email] Error stack:', error instanceof Error ? error.stack : 'No stack');
     return { success: false, error };
   }
 }

@@ -229,7 +229,7 @@ export function TicketList() {
                         {record.fields['First Name']} {record.fields['Last Name']}
                       </div>
                       <div className="font-['Bitter',serif] text-xs text-gray-500" style={{ marginTop: '4px' }}>
-                        {formatDate(record.createdTime)} • {record.fields['Staff Initials']}
+                        {formatDate(record.createdTime)} • Processed by: {record.fields['Staff Initials']}
                         {eventFilter === 'all' && ` • ${record.event}`}
                       </div>
                     </div>

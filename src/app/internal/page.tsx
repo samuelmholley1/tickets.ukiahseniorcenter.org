@@ -96,22 +96,38 @@ export default function UnifiedSalesPage() {
         throw new Error(errorData.error || 'Failed to submit ticket sale');
       }
 
-      const responseData = await response.json();
-
-      // Prepare data for success page
-      const saleData = {
-        transactionId: responseData.transactionId,
-        ...formData,
-        ...quantities,
-        christmasTotal,
-        nyeTotal,
-        grandTotal,
-        ticketSubtotal: christmasTotal + nyeTotal,
-        donationAmount: wantsDonation ? parseFloat(donationAmount) : 0,
-      };
-
-      // Redirect to success page with data
-      router.push(`/internal/success?data=${encodeURIComponent(JSON.stringify(saleData))}`);
+      // Show success message and refresh after 6 seconds
+      setError('');
+      setSubmitting(false);
+      
+      // Reset form
+      setQuantities({
+        christmasMember: 0,
+        christmasNonMember: 0,
+        nyeMember: 0,
+        nyeNonMember: 0,
+      });
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        paymentMethod: 'cash',
+        checkNumber: '',
+        staffInitials: formData.staffInitials // Keep staff initials
+      });
+      setWantsDonation(false);
+      setDonationAmount('');
+      
+      // Show success message
+      alert(`✅ Sale recorded successfully!\n\nEmail receipt sent to customer.\n\nScroll down to confirm your entry in the list below.`);
+      
+      // Refresh page after 6 seconds to show new entry in list
+      setTimeout(() => {
+        window.location.href = '/internal';
+      }, 6000);
+      
+      return;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -438,7 +454,10 @@ export default function UnifiedSalesPage() {
 
                 <div>
                   <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">
-                    Staff Initials/Name *
+                    Staff Initials/Name * 
+                    <span className="text-xs text-gray-500" style={{ fontWeight: 'normal', display: 'block', marginTop: '4px' }}>
+                      (Who processed this sale? Shows in records below)
+                    </span>
                   </label>
                   <input
                     type="text"
@@ -446,7 +465,7 @@ export default function UnifiedSalesPage() {
                     value={formData.staffInitials}
                     onChange={(e) => setFormData({...formData, staffInitials: e.target.value})}
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
-                    placeholder="e.g., JD"
+                    placeholder="e.g., JD or Jane"
                   />
                 </div>
               </div>

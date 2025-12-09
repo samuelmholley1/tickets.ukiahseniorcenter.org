@@ -97,10 +97,12 @@ export default function UnifiedSalesPage() {
       }
 
       // Show success message and refresh after 6 seconds
+      console.log('[internal] Submission successful, showing success page');
       setError('');
       setSubmitting(false);
       setShowSuccess(true);
       setCountdown(6);
+      console.log('[internal] Success state set to true');
       
       // Reset form
       setQuantities({
@@ -169,7 +171,7 @@ export default function UnifiedSalesPage() {
           </div>
 
           {/* Success Message with Countdown */}
-          {showSuccess && (
+          {showSuccess ? (
             <div className="bg-green-50 border-4 border-green-500 rounded-lg text-center" style={{ padding: 'var(--space-5)', marginBottom: 'var(--space-4)' }}>
               <div style={{ fontSize: '4rem', marginBottom: 'var(--space-3)' }}>✅</div>
               <h2 className="text-green-900 font-['Jost',sans-serif] font-bold text-3xl" style={{ marginBottom: 'var(--space-3)' }}>

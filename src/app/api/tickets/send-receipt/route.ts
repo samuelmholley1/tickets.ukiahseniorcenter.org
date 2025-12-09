@@ -105,8 +105,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, messageId: result.messageId });
     } else {
       console.error('[send-receipt] Email failed:', result.error);
+      const errorMessage = result.error instanceof Error ? result.error.message : 'Unknown error';
       return NextResponse.json(
-        { error: 'Failed to send email', details: result.error?.message || 'Unknown error' },
+        { error: 'Failed to send email', details: errorMessage },
         { status: 500 }
       );
     }

@@ -63,13 +63,13 @@ export async function POST(request: NextRequest) {
       const isNYE = ticket.isNYE;
       const borderColor: [number, number, number] = isNYE ? [124, 58, 237] : [66, 125, 120];
 
-      // Background
-      doc.setFillColor(isNYE ? 250 : 255, isNYE ? 245 : 255, isNYE ? 255 : 255);
+      // Background - pure white like bookstore cards
+      doc.setFillColor(255, 255, 255);
       doc.rect(x, y, width, height, 'F');
 
-      // Border
+      // Border - thicker like bookstore (3px)
       doc.setDrawColor(...borderColor);
-      doc.setLineWidth(0.015);
+      doc.setLineWidth(0.04); // ~3pt to match bookstore
       doc.roundedRect(x, y, width, height, 0.05, 0.05);
 
       // Logo - 30% width on left side
@@ -90,8 +90,8 @@ export async function POST(request: NextRequest) {
       
       let textY = y + 0.35;
 
-      // Event Title - 14pt centered in text area
-      doc.setFontSize(14);
+      // Event Title - 18pt centered in text area (matches bookstore ratio)
+      doc.setFontSize(18);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...borderColor);
       const title = isNYE ? "New Year's Eve Gala" : 'Christmas Drive-Thru';
@@ -99,10 +99,10 @@ export async function POST(request: NextRequest) {
 
       textY += 0.25;
 
-      // Date & Time - 11pt centered in text area
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(31, 41, 55);
+      // Date & Time - 14pt centered in text area (bold like bookstore)
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 0, 0);
       const dateTime = isNYE 
         ? 'Wednesday, Dec 31 • 7:00-10:00 PM'
         : 'Tuesday, December 23';
@@ -110,8 +110,8 @@ export async function POST(request: NextRequest) {
 
       textY += 0.25;
 
-      // Key info lines - 10pt centered in text area
-      doc.setFontSize(10);
+      // Key info lines - 12pt centered in text area
+      doc.setFontSize(12);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(0, 0, 0);
       
@@ -150,11 +150,11 @@ export async function POST(request: NextRequest) {
       const guestText = `${customerName} • ${ticket.ticketNumber} of ${ticket.totalTickets}`;
       doc.text(guestText, textCenterX, guestY, { align: 'center' });
 
-      // Footer - 8pt centered
+      // Footer - 10pt centered, black like bookstore
       const footerY = y + height - 0.2;
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(107, 114, 128);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 0, 0);
       const footer = '495 Leslie St, Ukiah • (707) 462-4343 ext 209';
       const footerWidth = doc.getTextWidth(footer);
       doc.text(footer, x + (width - footerWidth) / 2, footerY);

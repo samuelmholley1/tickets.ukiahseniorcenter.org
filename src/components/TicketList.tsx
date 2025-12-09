@@ -235,18 +235,30 @@ export function TicketList() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
                       <button
-                        onClick={() => {
-                          const params = new URLSearchParams({
-                            firstName: record.fields['First Name'],
-                            lastName: record.fields['Last Name'],
-                            email: record.fields['Email'],
-                            phone: record.fields['Phone'],
-                            christmasMember: (record.fields['Christmas Member Tickets'] || 0).toString(),
-                            christmasNonMember: (record.fields['Christmas Non-Member Tickets'] || 0).toString(),
-                            nyeMember: (record.fields['NYE Member Tickets'] || 0).toString(),
-                            nyeNonMember: (record.fields['NYE Non-Member Tickets'] || 0).toString()
-                          });
-                          window.open(`/ticket/print?${params.toString()}`, '_blank');
+                        onClick={async () => {
+                          try {
+                            const response = await fetch('/api/tickets/pdf', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                firstName: record.fields['First Name'],
+                                lastName: record.fields['Last Name'],
+                                christmasMember: record.fields['Christmas Member Tickets'] || 0,
+                                christmasNonMember: record.fields['Christmas Non-Member Tickets'] || 0,
+                                nyeMember: record.fields['NYE Member Tickets'] || 0,
+                                nyeNonMember: record.fields['NYE Non-Member Tickets'] || 0
+                              })
+                            });
+                            
+                            if (!response.ok) throw new Error('Failed to generate PDF');
+                            
+                            const blob = await response.blob();
+                            const url = URL.createObjectURL(blob);
+                            window.open(url, '_blank');
+                          } catch (error) {
+                            console.error('Error generating PDF:', error);
+                            alert('Failed to generate PDF tickets');
+                          }
                         }}
                         className="bg-[#427d78] hover:bg-[#5eb3a1] text-white font-['Jost',sans-serif] font-bold text-sm px-4 py-2 rounded-lg transition-colors"
                         style={{ whiteSpace: 'nowrap' }}

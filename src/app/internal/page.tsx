@@ -36,6 +36,8 @@ export default function UnifiedSalesPage() {
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [countdown, setCountdown] = useState(6);
 
   // Pricing
   const CHRISTMAS_MEMBER = 15;
@@ -97,6 +99,8 @@ export default function UnifiedSalesPage() {
       // Show success message and refresh after 6 seconds
       setError('');
       setSubmitting(false);
+      setShowSuccess(true);
+      setCountdown(6);
       
       // Reset form
       setQuantities({
@@ -117,13 +121,17 @@ export default function UnifiedSalesPage() {
       setWantsDonation(false);
       setDonationAmount('');
       
-      // Show success message
-      alert(`✅ Sale recorded successfully!\n\nEmail receipt sent to customer.\n\nScroll down to confirm your entry in the list below.`);
-      
-      // Refresh page after 6 seconds to show new entry in list
-      setTimeout(() => {
-        window.location.href = '/internal';
-      }, 6000);
+      // Countdown timer
+      const timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            window.location.href = '/internal';
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
       
       return;
     } catch (err) {
@@ -160,6 +168,27 @@ export default function UnifiedSalesPage() {
               Staff use only - Record cash or check ticket sales
             </p>
           </div>
+
+          {/* Success Message with Countdown */}
+          {showSuccess && (
+            <div className="bg-green-50 border-4 border-green-500 rounded-lg text-center" style={{ padding: 'var(--space-5)', marginBottom: 'var(--space-4)' }}>
+              <div style={{ fontSize: '4rem', marginBottom: 'var(--space-3)' }}>✅</div>
+              <h2 className="text-green-900 font-['Jost',sans-serif] font-bold text-3xl" style={{ marginBottom: 'var(--space-3)' }}>
+                Sale Recorded Successfully!
+              </h2>
+              <p className="text-green-800 font-['Bitter',serif] text-xl" style={{ marginBottom: 'var(--space-2)' }}>
+                Email receipt sent to customer
+              </p>
+              <p className="text-green-700 font-['Bitter',serif] text-lg" style={{ marginBottom: 'var(--space-3)' }}>
+                Scroll down to confirm your entry in the list below
+              </p>
+              <div className="bg-white border-2 border-green-500 rounded-lg" style={{ padding: 'var(--space-3)', display: 'inline-block' }}>
+                <p className="text-green-900 font-['Jost',sans-serif] font-bold text-2xl">
+                  Refreshing in {countdown} second{countdown !== 1 ? 's' : ''}...
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Error Message */}
           {error && (

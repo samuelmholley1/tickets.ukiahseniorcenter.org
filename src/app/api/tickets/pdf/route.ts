@@ -88,30 +88,30 @@ export async function POST(request: NextRequest) {
       const textWidth = width * 0.7 - 0.3;
       const textCenterX = textStartX + textWidth / 2;
       
-      let textY = y + 0.35;
+      let textY = y + 0.28;
 
-      // Event Title - 18pt centered in text area (matches bookstore ratio)
-      doc.setFontSize(18);
+      // Event Title - 16pt centered in text area (balanced for 2" height)
+      doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...borderColor);
       const title = isNYE ? "New Year's Eve Gala" : 'Christmas Drive-Thru';
       doc.text(title, textCenterX, textY, { align: 'center' });
 
-      textY += 0.25;
+      textY += 0.22;
 
-      // Date & Time - 14pt centered in text area (bold like bookstore)
-      doc.setFontSize(14);
+      // Date & Time - 12pt centered in text area
+      doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(0, 0, 0);
       const dateTime = isNYE 
-        ? 'Wednesday, Dec 31 • 7:00-10:00 PM'
-        : 'Tuesday, December 23';
+        ? 'Wed, Dec 31 • 7-10pm'
+        : 'Tues, Dec 23';
       doc.text(dateTime, textCenterX, textY, { align: 'center' });
 
-      textY += 0.25;
+      textY += 0.20;
 
-      // Key info lines - 12pt centered in text area
-      doc.setFontSize(12);
+      // Key info lines - 10pt centered in text area
+      doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(0, 0, 0);
       
@@ -131,28 +131,28 @@ export async function POST(request: NextRequest) {
         doc.text(bandText, startX + musicWidth, textY);
         doc.setFont('helvetica', 'normal');
         
-        textY += 0.18;
+        textY += 0.16;
         doc.text('Appetizers & Dessert', textCenterX, textY, { align: 'center' });
-        textY += 0.18;
+        textY += 0.16;
         doc.setFontSize(9);
-        doc.text('Ball Drops at 9 PM', textCenterX, textY, { align: 'center' });
+        doc.text('Ball Drops at 9pm', textCenterX, textY, { align: 'center' });
       } else {
         doc.text('Prime Rib, Fixings, & Dessert', textCenterX, textY, { align: 'center' });
-        textY += 0.2;
-        doc.text('Pick Up: 12:00-12:30 PM', textCenterX, textY, { align: 'center' });
+        textY += 0.18;
+        doc.text('Pick Up: 12-12:30pm', textCenterX, textY, { align: 'center' });
       }
 
-      // Guest Name - 11pt centered in text area
-      const guestY = y + height - 0.45;
-      doc.setFontSize(11);
+      // Guest Name - 10pt centered in text area
+      const guestY = y + height - 0.42;
+      doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...borderColor);
       const guestText = `${customerName} • ${ticket.ticketNumber} of ${ticket.totalTickets}`;
       doc.text(guestText, textCenterX, guestY, { align: 'center' });
 
-      // Footer - 10pt centered, black like bookstore
-      const footerY = y + height - 0.2;
-      doc.setFontSize(10);
+      // Footer - 8pt centered
+      const footerY = y + height - 0.22;
+      doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(0, 0, 0);
       const footer = '495 Leslie St, Ukiah • (707) 462-4343 ext 209';

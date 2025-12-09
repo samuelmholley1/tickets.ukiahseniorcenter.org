@@ -228,9 +228,13 @@ export function TicketList() {
                       <div className="font-['Jost',sans-serif] font-bold text-xl text-gray-900">
                         {record.fields['First Name']} {record.fields['Last Name']}
                       </div>
+                      {eventFilter === 'all' && (
+                        <div className="font-['Jost',sans-serif] text-sm font-bold" style={{ marginTop: '2px', color: record.event === 'Christmas Drive-Thru' ? '#427d78' : '#7c3aed' }}>
+                          {record.event}
+                        </div>
+                      )}
                       <div className="font-['Bitter',serif] text-xs text-gray-500" style={{ marginTop: '4px' }}>
                         {formatDate(record.createdTime)} • Processed by: {record.fields['Staff Initials']?.toUpperCase()}
-                        {eventFilter === 'all' && ` • ${record.event}`}
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>

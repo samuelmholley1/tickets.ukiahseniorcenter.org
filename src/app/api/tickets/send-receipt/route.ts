@@ -89,11 +89,11 @@ export async function POST(request: NextRequest) {
     
     const result = await sendEmail({
       to: email,
-      subject: `Your Ticket Receipt - ${transactionId}`,
+      subject: `Your Ukiah Senior Center Tickets - ${customerName}`,
       html: emailHTML,
       attachments: [
         {
-          filename: `tickets_${transactionId}.pdf`,
+          filename: `UkiahSeniorCenter_Tickets_${firstName}${lastName}.pdf`,
           content: pdfBuffer,
           contentType: 'application/pdf',
         },

@@ -84,7 +84,6 @@ interface TicketReceiptData {
 
 export function generateReceiptEmail(data: TicketReceiptData): string {
   const {
-    transactionId,
     customerName,
     customerEmail,
     customerPhone,
@@ -112,257 +111,198 @@ export function generateReceiptEmail(data: TicketReceiptData): string {
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <style>
         body {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-          line-height: 1.6;
-          color: #1a1a1a;
-          background-color: #f5f5f5;
+          font-family: Arial, Helvetica, sans-serif;
+          line-height: 1.8;
+          color: #000000;
+          background-color: #ffffff;
           margin: 0;
           padding: 0;
         }
         .container {
           max-width: 600px;
-          margin: 20px auto;
+          margin: 0 auto;
           background: #ffffff;
-          border-radius: 8px;
-          overflow: hidden;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
         .header {
-          background: linear-gradient(135deg, #427d78 0%, #2d5a56 100%);
+          background: #427d78;
           color: white;
-          padding: 40px 30px;
+          padding: 30px 20px;
           text-align: center;
-        }
-        .logo {
-          margin-bottom: 20px;
-        }
-        .logo img {
-          width: 120px;
-          height: auto;
-          border-radius: 8px;
-          display: block;
-          margin: 0 auto;
         }
         .content {
-          padding: 40px 30px;
+          padding: 30px 20px;
         }
-        .ticket-icon {
-          font-size: 56px;
-          margin-bottom: 16px;
-        }
-        .transaction-id {
-          background: #f0fdf4;
-          border: 2px solid #86efac;
-          padding: 12px 20px;
-          border-radius: 8px;
-          font-family: 'Courier New', monospace;
-          font-size: 16px;
+        .greeting {
+          font-size: 20px;
           font-weight: bold;
-          text-align: center;
-          margin: 24px 0;
-          color: #166534;
+          margin-bottom: 20px;
+          color: #000000;
         }
         .info-box {
-          background: #f8f9fa;
-          padding: 24px;
-          border-radius: 6px;
-          margin: 24px 0;
-          border-left: 4px solid #427d78;
+          background: #f5f5f5;
+          padding: 20px;
+          margin: 20px 0;
+          border: 2px solid #427d78;
         }
         .info-row {
-          display: flex;
-          justify-content: space-between;
-          padding: 10px 0;
-          border-bottom: 1px solid #e2e8f0;
-          font-size: 15px;
-        }
-        .info-row:last-child {
-          border-bottom: none;
+          padding: 8px 0;
+          font-size: 16px;
+          line-height: 1.8;
         }
         .info-label {
-          font-weight: 600;
-          color: #4a5568;
-        }
-        .info-value {
-          color: #1a1a1a;
-          text-align: right;
+          font-weight: bold;
+          color: #000000;
         }
         .items-section {
-          margin: 32px 0;
+          margin: 30px 0;
         }
         .event-header {
-          background: linear-gradient(135deg, #427d78 0%, #2d5a56 100%);
+          background: #427d78;
           color: white;
-          padding: 12px 20px;
-          border-radius: 6px 6px 0 0;
-          font-weight: 700;
-          font-size: 16px;
-          display: flex;
-          align-items: center;
-          gap: 10px;
+          padding: 15px;
+          font-weight: bold;
+          font-size: 18px;
+          margin-top: 20px;
         }
         .event-header.nye {
-          background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+          background: #7c3aed;
         }
         .event-items {
-          background: white;
+          background: #f5f5f5;
           border: 2px solid #427d78;
-          border-top: none;
-          border-radius: 0 0 6px 6px;
-          padding: 16px 20px;
+          padding: 15px;
           margin-bottom: 20px;
         }
         .event-items.nye {
           border-color: #7c3aed;
         }
         .item-row {
-          display: flex;
-          justify-content: space-between;
           padding: 8px 0;
-          font-size: 15px;
+          font-size: 16px;
+          line-height: 1.6;
         }
         .divider {
           border: none;
-          border-top: 2px solid #427d78;
-          margin: 20px 0;
+          border-top: 3px solid #000000;
+          margin: 25px 0;
         }
         .total-row {
-          display: flex;
-          justify-content: space-between;
-          padding: 12px 0;
-          font-size: 16px;
-          font-weight: 600;
+          padding: 10px 0;
+          font-size: 18px;
+          font-weight: bold;
         }
         .grand-total {
-          background: #f0fdf4;
-          padding: 16px 20px;
-          border-radius: 6px;
-          border: 2px solid #86efac;
-          margin: 24px 0;
+          background: #f5f5f5;
+          padding: 20px;
+          border: 3px solid #000000;
+          margin: 25px 0;
         }
         .grand-total-row {
-          display: flex;
-          justify-content: space-between;
-          font-size: 22px;
-          font-weight: 700;
-          color: #166534;
+          font-size: 24px;
+          font-weight: bold;
+          color: #000000;
         }
         .attachment-notice {
-          background: #eff6ff;
-          border: 2px solid #93c5fd;
+          background: #fffbeb;
+          border: 3px solid #f59e0b;
           padding: 20px;
-          border-radius: 8px;
           text-align: center;
-          margin: 24px 0;
+          margin: 25px 0;
         }
         .footer-text {
           text-align: center;
-          color: #718096;
-          font-size: 13px;
-          padding: 20px 30px;
-          border-top: 1px solid #e2e8f0;
+          color: #000000;
+          font-size: 14px;
+          padding: 20px;
+          border-top: 2px solid #cccccc;
         }
         h1 {
           margin: 0;
-          font-size: 26px;
-          font-weight: 700;
+          font-size: 24px;
+          font-weight: bold;
         }
-        .message-text {
-          font-size: 17px;
-          margin: 0 0 24px 0;
-          text-align: center;
-          color: #2d3748;
-          font-weight: 500;
+        h2 {
+          font-size: 20px;
+          font-weight: bold;
+          margin: 25px 0 15px 0;
+          color: #000000;
         }
       </style>
     </head>
     <body>
       <div class="container">
         <div class="header">
-          <div class="ticket-icon">🎟️</div>
-          <h1>Ticket Purchase Receipt</h1>
-          <p style="margin: 10px 0 0 0; opacity: 0.95; font-size: 16px;">Ukiah Senior Center</p>
+          <h1>Your Ukiah Senior Center Tickets</h1>
         </div>
 
         <div class="content">
-          <div class="transaction-id">
-            Transaction #${transactionId}
+          <div class="greeting">
+            Hello ${customerName},
           </div>
+
+          <p style="font-size: 16px; line-height: 1.8; margin: 20px 0;">
+            Thank you for your ticket purchase! Your tickets are attached to this email as a PDF file.
+          </p>
 
           <div class="info-box">
             <div class="info-row">
-              <span class="info-label">Customer:</span>
-              <span class="info-value">${customerName}</span>
+              <span class="info-label">Name:</span> ${customerName}
             </div>
             <div class="info-row">
-              <span class="info-label">Email:</span>
-              <span class="info-value">${customerEmail}</span>
+              <span class="info-label">Email:</span> ${customerEmail}
             </div>
             <div class="info-row">
-              <span class="info-label">Phone:</span>
-              <span class="info-value">${customerPhone}</span>
+              <span class="info-label">Phone:</span> ${customerPhone}
             </div>
             <div class="info-row">
-              <span class="info-label">Payment:</span>
-              <span class="info-value">${paymentMethod}</span>
+              <span class="info-label">Payment Method:</span> ${paymentMethod}
             </div>
             <div class="info-row">
-              <span class="info-label">Processed:</span>
-              <span class="info-value">${timestamp}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Staff:</span>
-              <span class="info-value">${staffInitials}</span>
+              <span class="info-label">Date:</span> ${timestamp}
             </div>
           </div>
 
           <div class="items-section">
-            <h2 style="font-size: 18px; margin-bottom: 16px; color: #1a1a1a;">Items Purchased</h2>
+            <h2>Your Tickets</h2>
 
             ${christmasTotal > 0 ? `
             <div class="event-header">
-              🎄 Christmas Drive-Thru Meal
+              Christmas Drive-Thru Meal
             </div>
             <div class="event-items">
               ${christmasMember > 0 ? `
               <div class="item-row">
-                <span>${christmasMember} Member Ticket${christmasMember > 1 ? 's' : ''} @ $15.00</span>
-                <span style="font-weight: 600;">$${(christmasMember * 15).toFixed(2)}</span>
+                ${christmasMember} Member Ticket${christmasMember > 1 ? 's' : ''} @ $15.00 each = <strong>$${(christmasMember * 15).toFixed(2)}</strong>
               </div>
               ` : ''}
               ${christmasNonMember > 0 ? `
               <div class="item-row">
-                <span>${christmasNonMember} Non-Member Ticket${christmasNonMember > 1 ? 's' : ''} @ $20.00</span>
-                <span style="font-weight: 600;">$${(christmasNonMember * 20).toFixed(2)}</span>
+                ${christmasNonMember} Non-Member Ticket${christmasNonMember > 1 ? 's' : ''} @ $20.00 each = <strong>$${(christmasNonMember * 20).toFixed(2)}</strong>
               </div>
               ` : ''}
-              <div class="item-row" style="border-top: 1px solid #e2e8f0; margin-top: 8px; padding-top: 12px; font-weight: 600; color: #427d78;">
-                <span>Christmas Subtotal:</span>
-                <span>$${christmasSubtotal.toFixed(2)}</span>
+              <div class="item-row" style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #427d78;">
+                <strong>Christmas Total: $${christmasSubtotal.toFixed(2)}</strong>
               </div>
             </div>
             ` : ''}
 
             ${nyeTotal > 0 ? `
             <div class="event-header nye">
-              🎉 New Year's Eve Gala Dance
+              New Year's Eve Gala Dance
             </div>
             <div class="event-items nye">
               ${nyeMember > 0 ? `
               <div class="item-row">
-                <span>${nyeMember} Member Ticket${nyeMember > 1 ? 's' : ''} @ $35.00</span>
-                <span style="font-weight: 600;">$${(nyeMember * 35).toFixed(2)}</span>
+                ${nyeMember} Member Ticket${nyeMember > 1 ? 's' : ''} @ $35.00 each = <strong>$${(nyeMember * 35).toFixed(2)}</strong>
               </div>
               ` : ''}
               ${nyeNonMember > 0 ? `
               <div class="item-row">
-                <span>${nyeNonMember} Non-Member Ticket${nyeNonMember > 1 ? 's' : ''} @ $45.00</span>
-                <span style="font-weight: 600;">$${(nyeNonMember * 45).toFixed(2)}</span>
+                ${nyeNonMember} Non-Member Ticket${nyeNonMember > 1 ? 's' : ''} @ $45.00 each = <strong>$${(nyeNonMember * 45).toFixed(2)}</strong>
               </div>
               ` : ''}
-              <div class="item-row" style="border-top: 1px solid #e2e8f0; margin-top: 8px; padding-top: 12px; font-weight: 600; color: #7c3aed;">
-                <span>NYE Subtotal:</span>
-                <span>$${nyeSubtotal.toFixed(2)}</span>
+              <div class="item-row" style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #7c3aed;">
+                <strong>NYE Total: $${nyeSubtotal.toFixed(2)}</strong>
               </div>
             </div>
             ` : ''}
@@ -370,48 +310,45 @@ export function generateReceiptEmail(data: TicketReceiptData): string {
 
           <hr class="divider">
 
-          <div class="total-row">
-            <span>Ticket Subtotal:</span>
-            <span>$${ticketSubtotal.toFixed(2)}</span>
+          <div class="total-row" style="font-size: 18px;">
+            Tickets: $${ticketSubtotal.toFixed(2)}
           </div>
           ${donationAmount > 0 ? `
-          <div class="total-row" style="color: #dc2626;">
-            <span>Donation (Thank you! ❤️):</span>
-            <span>$${donationAmount.toFixed(2)}</span>
+          <div class="total-row" style="font-size: 18px;">
+            Donation (Thank you!): $${donationAmount.toFixed(2)}
           </div>
           ` : ''}
 
           <div class="grand-total">
             <div class="grand-total-row">
-              <span>TOTAL PAID:</span>
-              <span>$${grandTotal.toFixed(2)}</span>
+              TOTAL PAID: $${grandTotal.toFixed(2)}
             </div>
           </div>
 
           <div class="attachment-notice">
-            <div style="font-size: 40px; margin-bottom: 12px;">📎</div>
-            <div style="font-size: 17px; font-weight: 600; color: #1e40af; margin-bottom: 6px;">
-              Your Tickets Are Attached
+            <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px; color: #000000;">
+              YOUR TICKETS ARE ATTACHED TO THIS EMAIL
             </div>
-            <div style="font-size: 14px; color: #4b5563;">
-              Open the PDF attachment to view and print your tickets.<br/>
-              Each ticket includes event details and your confirmation number.
+            <div style="font-size: 16px; color: #000000; line-height: 1.6;">
+              Open the PDF file attached to this email.<br/>
+              Print your tickets at home or show them on your phone.
             </div>
           </div>
 
-          <div style="background: #fef3c7; border: 2px solid #fbbf24; padding: 16px; border-radius: 8px; text-align: center; margin: 24px 0;">
-            <div style="font-size: 14px; color: #92400e; line-height: 1.6;">
-              <strong>Questions or Need Help?</strong><br/>
-              Call us at <strong>(707) 462-4343 ext. 209</strong><br/>
-              Or reply to this email
+          <div style="background: #f5f5f5; border: 2px solid #000000; padding: 20px; text-align: center; margin: 25px 0;">
+            <div style="font-size: 16px; color: #000000; line-height: 1.8;">
+              <strong>Questions?</strong><br/>
+              Call: (707) 462-4343 ext. 209<br/>
+              Email: cashier@seniorctr.org
             </div>
           </div>
         </div>
 
         <div class="footer-text">
           <strong>Ukiah Senior Center</strong><br/>
-          Bartlett Event Center • 495 Leslie Street, Ukiah, CA 95482<br/>
-          (707) 462-4343 • cashier@seniorctr.org
+          495 Leslie Street, Ukiah, CA 95482<br/>
+          Phone: (707) 462-4343<br/>
+          Email: cashier@seniorctr.org
         </div>
       </div>
     </body>

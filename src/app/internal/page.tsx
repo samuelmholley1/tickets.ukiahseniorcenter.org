@@ -104,6 +104,9 @@ export default function UnifiedSalesPage() {
       setCountdown(6);
       console.log('[internal] Success state set to true');
       
+      // Scroll to top to show success message
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      
       // Reset form
       setQuantities({
         christmasMember: 0,

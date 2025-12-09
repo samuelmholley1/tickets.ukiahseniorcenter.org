@@ -265,6 +265,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ 
       success: true, 
+      transactionId,
       results,
       grandTotal: christmasTotal + nyeTotal
     });

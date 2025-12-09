@@ -96,13 +96,18 @@ export default function UnifiedSalesPage() {
         throw new Error(errorData.error || 'Failed to submit ticket sale');
       }
 
+      const responseData = await response.json();
+
       // Prepare data for success page
       const saleData = {
+        transactionId: responseData.transactionId,
         ...formData,
         ...quantities,
         christmasTotal,
         nyeTotal,
-        grandTotal
+        grandTotal,
+        ticketSubtotal: christmasTotal + nyeTotal,
+        donationAmount: wantsDonation ? parseFloat(donationAmount) : 0,
       };
 
       // Redirect to success page with data

@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
       totalTickets: number;
     }> = [];
 
-    // Generate Christmas tickets
+    // Generate Christmas tickets - each Christmas ticket numbered within Christmas group
     const totalChristmas = christmasMember + christmasNonMember;
     for (let i = 0; i < totalChristmas; i++) {
       tickets.push({
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Generate NYE tickets
+    // Generate NYE tickets - each NYE ticket numbered within NYE group
     const totalNYE = nyeMember + nyeNonMember;
     for (let i = 0; i < totalNYE; i++) {
       tickets.push({
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...borderColor);
-      const guestText = `Guest: ${customerName} [${ticket.ticketNumber} of ${ticket.totalTickets}]`;
+      const guestText = `${customerName} • ${ticket.ticketNumber} of ${ticket.totalTickets}`;
       doc.text(guestText, textCenterX, guestY, { align: 'center' });
 
       // Footer - 8pt centered

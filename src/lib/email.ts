@@ -95,7 +95,6 @@ export function generateReceiptEmail(data: TicketReceiptData): string {
     donationAmount,
     grandTotal,
     paymentMethod,
-    staffInitials,
     timestamp,
   } = data;
 

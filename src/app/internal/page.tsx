@@ -243,12 +243,36 @@ export default function UnifiedSalesPage() {
                   <div>
                     <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">
                       Member Tickets (${CHRISTMAS_MEMBER} each)
+                      {quantities.christmasMember > 0 && (
+                        <label style={{ display: 'inline-flex', alignItems: 'center', marginLeft: '12px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'normal' }}>
+                          <input
+                            type="checkbox"
+                            checked={vegetarianMeals === quantities.christmasMember + quantities.christmasNonMember}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setVegetarianMeals(quantities.christmasMember + quantities.christmasNonMember);
+                              } else {
+                                setVegetarianMeals(0);
+                              }
+                            }}
+                            style={{ width: '18px', height: '18px', marginRight: '6px', cursor: 'pointer' }}
+                          />
+                          <span style={{ color: '#2e7d32' }}>🌱 Vegetarian</span>
+                        </label>
+                      )}
                     </label>
                     <input
                       type="number"
                       min="0"
                       value={quantities.christmasMember}
-                      onChange={(e) => setQuantities({...quantities, christmasMember: parseInt(e.target.value) || 0})}
+                      onChange={(e) => {
+                        const newVal = parseInt(e.target.value) || 0;
+                        setQuantities({...quantities, christmasMember: newVal});
+                        // Reset vegetarian if reducing tickets below current veg count
+                        if (vegetarianMeals > newVal + quantities.christmasNonMember) {
+                          setVegetarianMeals(newVal + quantities.christmasNonMember);
+                        }
+                      }}
                       className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif] text-lg"
                     />
                   </div>
@@ -260,36 +284,18 @@ export default function UnifiedSalesPage() {
                       type="number"
                       min="0"
                       value={quantities.christmasNonMember}
-                      onChange={(e) => setQuantities({...quantities, christmasNonMember: parseInt(e.target.value) || 0})}
+                      onChange={(e) => {
+                        const newVal = parseInt(e.target.value) || 0;
+                        setQuantities({...quantities, christmasNonMember: newVal});
+                        // Reset vegetarian if reducing tickets below current veg count
+                        if (vegetarianMeals > quantities.christmasMember + newVal) {
+                          setVegetarianMeals(quantities.christmasMember + newVal);
+                        }
+                      }}
                       className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif] text-lg"
                     />
                   </div>
                 </div>
-
-                {/* Vegetarian Meal Option */}
-                {(quantities.christmasMember + quantities.christmasNonMember) > 0 && (
-                  <div style={{ marginTop: 'var(--space-3)', padding: 'var(--space-3)', background: '#e8f5e9', border: '2px solid #4caf50', borderRadius: '8px' }}>
-                    <label className="block font-['Bitter',serif] text-gray-800 font-medium mb-2">
-                      🌱 Vegetarian Meals (Eggplant instead of Prime Rib)
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      max={quantities.christmasMember + quantities.christmasNonMember}
-                      value={vegetarianMeals}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value) || 0;
-                        const maxVeg = quantities.christmasMember + quantities.christmasNonMember;
-                        setVegetarianMeals(Math.min(val, maxVeg));
-                      }}
-                      className="w-full px-4 py-3 border-2 border-[#4caf50] rounded-lg focus:border-[#388e3c] focus:outline-none font-['Bitter',serif] text-lg"
-                      placeholder="0"
-                    />
-                    <p className="text-sm text-gray-600 font-['Bitter',serif]" style={{ marginTop: '8px' }}>
-                      Max: {quantities.christmasMember + quantities.christmasNonMember} (total Christmas tickets)
-                    </p>
-                  </div>
-                )}
 
                 {christmasTotal > 0 && (
                   <div style={{ marginTop: 'var(--space-2)', textAlign: 'right' }}>

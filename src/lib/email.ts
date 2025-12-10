@@ -246,9 +246,21 @@ export function generateReceiptEmail(data: TicketReceiptData): string {
             Hello ${customerName},
           </div>
 
-          <p style="font-size: 16px; line-height: 1.8; margin: 20px 0;">
-            Thank you for your ticket purchase! Your tickets are attached to this email as a PDF file.
+          <p style="font-size: 18px; line-height: 1.8; margin: 20px 0; font-weight: bold; color: #000000;">
+            Your reservation is confirmed! No ticket required.
           </p>
+
+          <div style="background: #e8f5e9; border: 3px solid #2e7d32; padding: 25px; margin: 25px 0; border-radius: 8px;">
+            <p style="font-size: 17px; line-height: 2; margin: 0 0 15px 0; color: #000000;">
+              <strong>✓ All set!</strong> Just give us your name when you arrive.
+            </p>
+            <p style="font-size: 17px; line-height: 2; margin: 0 0 15px 0; color: #000000;">
+              <strong>✓ No ticket needed.</strong> We have your reservation in our system.
+            </p>
+            <p style="font-size: 17px; line-height: 2; margin: 0; color: #000000;">
+              <strong>Optional:</strong> If you'd like a ticket for your records, one is attached as a PDF. You can view it on your phone, print it at home, or ask us to print one for you.
+            </p>
+          </div>
 
           <div class="info-box">
             <div class="info-row">
@@ -333,11 +345,12 @@ export function generateReceiptEmail(data: TicketReceiptData): string {
 
           <div class="attachment-notice">
             <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px; color: #000000;">
-              YOUR TICKETS ARE ATTACHED TO THIS EMAIL
+              📎 OPTIONAL: TICKETS ATTACHED
             </div>
-            <div style="font-size: 16px; color: #000000; line-height: 1.6;">
-              Open the PDF file attached to this email.<br/>
-              Print your tickets at home or show them on your phone.
+            <div style="font-size: 16px; color: #000000; line-height: 1.8;">
+              Want a ticket for your records? Open the PDF attached to this email.<br/>
+              You can view it on your phone, print it at home, or we can print one for you.<br/>
+              <strong>Remember: No ticket required to attend!</strong>
             </div>
           </div>
 

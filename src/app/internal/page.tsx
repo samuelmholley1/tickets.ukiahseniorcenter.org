@@ -40,8 +40,6 @@ export default function UnifiedSalesPage() {
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [countdown, setCountdown] = useState(6);
 
   // Pricing
   const CHRISTMAS_MEMBER = 15;
@@ -113,51 +111,9 @@ export default function UnifiedSalesPage() {
         throw new Error(errorData.error || 'Failed to submit ticket sale');
       }
 
-      // Show success message and refresh after 6 seconds
-      console.log('[internal] Submission successful, showing success page');
-      setError('');
-      setSubmitting(false);
-      setShowSuccess(true);
-      setCountdown(6);
-      console.log('[internal] Success state set to true');
-      
-      // Scroll to top to show success message
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      
-      // Reset form
-      setQuantities({
-        christmasMember: 0,
-        christmasNonMember: 0,
-        nyeMember: 0,
-        nyeNonMember: 0,
-      });
-      setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        paymentMethod: 'cash',
-        checkNumber: '',
-        cashAmount: '',
-        checkAmount: '',
-        staffInitials: formData.staffInitials // Keep staff initials
-      });
-      setVegetarianMeals(0);
-      setWantsDonation(false);
-      setDonationAmount('');
-      
-      // Countdown timer
-      const timer = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            window.location.href = '/internal';
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      
+      // Redirect to success page
+      console.log('[internal] Submission successful, redirecting to success page');
+      window.location.href = '/internal/success';
       return;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -193,27 +149,6 @@ export default function UnifiedSalesPage() {
             </p>
           </div>
 
-          {/* Success Message with Countdown */}
-          {showSuccess ? (
-            <div className="bg-green-50 border-4 border-green-500 rounded-lg text-center" style={{ padding: 'var(--space-5)', marginBottom: 'var(--space-4)' }}>
-              <div style={{ fontSize: '4rem', marginBottom: 'var(--space-3)' }}>✅</div>
-              <h2 className="text-green-900 font-['Jost',sans-serif] font-bold text-3xl" style={{ marginBottom: 'var(--space-3)' }}>
-                Sale Recorded Successfully!
-              </h2>
-              <p className="text-green-800 font-['Bitter',serif] text-xl" style={{ marginBottom: 'var(--space-2)' }}>
-                Email receipt sent to customer
-              </p>
-              <p className="text-green-700 font-['Bitter',serif] text-lg" style={{ marginBottom: 'var(--space-3)' }}>
-                Scroll down to confirm your entry in the list below
-              </p>
-              <div className="bg-white border-2 border-green-500 rounded-lg" style={{ padding: 'var(--space-3)', display: 'inline-block' }}>
-                <p className="text-green-900 font-['Jost',sans-serif] font-bold text-2xl">
-                  Refreshing in {countdown} second{countdown !== 1 ? 's' : ''}...
-                </p>
-              </div>
-            </div>
-          ) : null}
-
           {/* Error Message */}
           {error && (
             <div className="bg-red-50 border-2 border-red-400 rounded-lg text-center" style={{ padding: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
@@ -243,23 +178,6 @@ export default function UnifiedSalesPage() {
                   <div>
                     <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">
                       Member Tickets (${CHRISTMAS_MEMBER} each)
-                      {quantities.christmasMember > 0 && (
-                        <label style={{ display: 'inline-flex', alignItems: 'center', marginLeft: '12px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'normal' }}>
-                          <input
-                            type="checkbox"
-                            checked={vegetarianMeals === quantities.christmasMember + quantities.christmasNonMember}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setVegetarianMeals(quantities.christmasMember + quantities.christmasNonMember);
-                              } else {
-                                setVegetarianMeals(0);
-                              }
-                            }}
-                            style={{ width: '18px', height: '18px', marginRight: '6px', cursor: 'pointer' }}
-                          />
-                          <span style={{ color: '#2e7d32' }}>🌱 Vegetarian</span>
-                        </label>
-                      )}
                     </label>
                     <input
                       type="number"
@@ -296,6 +214,29 @@ export default function UnifiedSalesPage() {
                     />
                   </div>
                 </div>
+
+                {/* Vegetarian Meal Option */}
+                {(quantities.christmasMember + quantities.christmasNonMember) > 0 && (
+                  <div style={{ marginTop: 'var(--space-2)' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '12px', background: '#f1f8f4', border: '2px solid #4caf50', borderRadius: '8px' }}>
+                      <input
+                        type="checkbox"
+                        checked={vegetarianMeals === quantities.christmasMember + quantities.christmasNonMember}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setVegetarianMeals(quantities.christmasMember + quantities.christmasNonMember);
+                          } else {
+                            setVegetarianMeals(0);
+                          }
+                        }}
+                        style={{ width: '20px', height: '20px', marginRight: '10px', cursor: 'pointer' }}
+                      />
+                      <span className="font-['Bitter',serif]" style={{ fontSize: '16px', color: '#1b5e20', fontWeight: '500' }}>
+                        🌱 Make all meals vegetarian (Eggplant instead of Prime Rib)
+                      </span>
+                    </label>
+                  </div>
+                )}
 
                 {christmasTotal > 0 && (
                   <div style={{ marginTop: 'var(--space-2)', textAlign: 'right' }}>

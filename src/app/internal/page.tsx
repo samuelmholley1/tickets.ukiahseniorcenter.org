@@ -33,7 +33,7 @@ export default function UnifiedSalesPage() {
     staffInitials: ''
   });
 
-  const [vegetarianMeals, setVegetarianMeals] = useState(0);
+  const [vegetarianMeals, setVegetarianMeals] = useState<boolean[]>([]);
 
   const [wantsDonation, setWantsDonation] = useState(false);
   const [donationAmount, setDonationAmount] = useState('');
@@ -102,7 +102,7 @@ export default function UnifiedSalesPage() {
           quantities,
           customer: formData,
           donation: wantsDonation ? parseFloat(donationAmount) : 0,
-          vegetarianMeals
+          vegetarianMeals: vegetarianMeals.filter(Boolean).length
         })
       });
 
@@ -185,11 +185,14 @@ export default function UnifiedSalesPage() {
                       value={quantities.christmasMember}
                       onChange={(e) => {
                         const newVal = parseInt(e.target.value) || 0;
+                        const totalChristmas = newVal + quantities.christmasNonMember;
                         setQuantities({...quantities, christmasMember: newVal});
-                        // Reset vegetarian if reducing tickets below current veg count
-                        if (vegetarianMeals > newVal + quantities.christmasNonMember) {
-                          setVegetarianMeals(newVal + quantities.christmasNonMember);
-                        }
+                        // Adjust vegetarian array to match new total
+                        setVegetarianMeals(prev => {
+                          const newArray = [...prev];
+                          newArray.length = totalChristmas;
+                          return newArray.fill(false, prev.length);
+                        });
                       }}
                       className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif] text-lg"
                     />
@@ -204,37 +207,47 @@ export default function UnifiedSalesPage() {
                       value={quantities.christmasNonMember}
                       onChange={(e) => {
                         const newVal = parseInt(e.target.value) || 0;
+                        const totalChristmas = quantities.christmasMember + newVal;
                         setQuantities({...quantities, christmasNonMember: newVal});
-                        // Reset vegetarian if reducing tickets below current veg count
-                        if (vegetarianMeals > quantities.christmasMember + newVal) {
-                          setVegetarianMeals(quantities.christmasMember + newVal);
-                        }
+                        // Adjust vegetarian array to match new total
+                        setVegetarianMeals(prev => {
+                          const newArray = [...prev];
+                          newArray.length = totalChristmas;
+                          return newArray.fill(false, prev.length);
+                        });
                       }}
                       className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif] text-lg"
                     />
                   </div>
                 </div>
 
-                {/* Vegetarian Meal Option */}
+                {/* Vegetarian Meal Options - Individual Checkboxes */}
                 {(quantities.christmasMember + quantities.christmasNonMember) > 0 && (
-                  <div style={{ marginTop: 'var(--space-2)' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '12px', background: '#f1f8f4', border: '2px solid #4caf50', borderRadius: '8px' }}>
-                      <input
-                        type="checkbox"
-                        checked={vegetarianMeals === quantities.christmasMember + quantities.christmasNonMember}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setVegetarianMeals(quantities.christmasMember + quantities.christmasNonMember);
-                          } else {
-                            setVegetarianMeals(0);
-                          }
-                        }}
-                        style={{ width: '20px', height: '20px', marginRight: '10px', cursor: 'pointer' }}
-                      />
-                      <span className="font-['Bitter',serif]" style={{ fontSize: '16px', color: '#1b5e20', fontWeight: '500' }}>
-                        🌱 Make all meals vegetarian (Eggplant instead of Prime Rib)
-                      </span>
-                    </label>
+                  <div style={{ marginTop: 'var(--space-3)', padding: 'var(--space-3)', background: '#f1f8f4', border: '2px solid #4caf50', borderRadius: '8px' }}>
+                    <h4 className="font-['Jost',sans-serif] font-bold text-[#1b5e20] mb-3" style={{ fontSize: '16px' }}>
+                      🌱 Vegetarian Meal Options (Eggplant instead of Prime Rib)
+                    </h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {Array.from({ length: quantities.christmasMember + quantities.christmasNonMember }, (_, i) => (
+                        <label key={i} style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '8px', background: 'white', borderRadius: '6px' }}>
+                          <input
+                            type="checkbox"
+                            checked={vegetarianMeals[i] || false}
+                            onChange={(e) => {
+                              setVegetarianMeals(prev => {
+                                const newArray = [...prev];
+                                newArray[i] = e.target.checked;
+                                return newArray;
+                              });
+                            }}
+                            style={{ width: '18px', height: '18px', marginRight: '10px', cursor: 'pointer' }}
+                          />
+                          <span className="font-['Bitter',serif]" style={{ fontSize: '15px', color: '#2e7d32', fontWeight: '500' }}>
+                            Make Meal #{i + 1} vegetarian
+                          </span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 )}
 

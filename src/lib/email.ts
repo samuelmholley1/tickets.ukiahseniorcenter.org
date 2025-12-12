@@ -5,6 +5,7 @@ interface EmailParams {
   to: string;
   subject: string;
   html: string;
+  additionalCC?: string[];
   attachments?: Array<{
     filename: string;
     content: Buffer;
@@ -12,7 +13,7 @@ interface EmailParams {
   }>;
 }
 
-export async function sendEmail({ to, subject, html, attachments }: EmailParams) {
+export async function sendEmail({ to, subject, html, additionalCC = [], attachments }: EmailParams) {
   console.log('[email] sendEmail called with to:', to);
   
   // Check if credentials are configured
@@ -40,10 +41,12 @@ export async function sendEmail({ to, subject, html, attachments }: EmailParams)
     },
   });
 
+  const ccList = ['cashier@seniorctr.org', 'activities@ukiahseniorcenter.org', ...additionalCC];
+  
   const mailOptions = {
     from: '"Ukiah Senior Center Tickets" <cashier@seniorctr.org>',
     to,
-    cc: ['cashier@seniorctr.org', 'activities@ukiahseniorcenter.org'],
+    cc: ccList,
     replyTo: 'cashier@seniorctr.org',
     subject,
     html,

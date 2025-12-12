@@ -22,6 +22,8 @@ export async function POST(request: NextRequest) {
       grandTotal,
       paymentMethod,
       staffInitials,
+      subjectPrefix = '',
+      additionalCC = [],
     } = body;
 
     if (!email) {
@@ -87,10 +89,15 @@ export async function POST(request: NextRequest) {
     console.log('[send-receipt] EMAIL_PASSWORD set:', !!process.env.EMAIL_PASSWORD);
     console.log('[send-receipt] EMAIL_USER:', process.env.EMAIL_USER || 'cashier@seniorctr.org');
     
+    const emailSubject = subjectPrefix 
+      ? `${subjectPrefix} Your Ukiah Senior Center Tickets - ${customerName}`
+      : `Your Ukiah Senior Center Tickets - ${customerName}`;
+    
     const result = await sendEmail({
       to: email,
-      subject: `Your Ukiah Senior Center Tickets - ${customerName}`,
+      subject: emailSubject,
       html: emailHTML,
+      additionalCC,
       attachments: [
         {
           filename: `UkiahSeniorCenter_Tickets_${firstName}${lastName}.pdf`,

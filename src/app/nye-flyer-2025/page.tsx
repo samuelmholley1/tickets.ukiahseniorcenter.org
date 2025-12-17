@@ -8,7 +8,7 @@ export default function NYEFlyer2025() {
   // Load Google Fonts
   useEffect(() => {
     const link = document.createElement('link');
-    link.href = 'https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap';
+    link.href = 'https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&family=Allura&display=swap';
     link.rel = 'stylesheet';
     if (!document.querySelector(`link[href="${link.href}"]`)) {
       document.head.appendChild(link);
@@ -92,7 +92,7 @@ export default function NYEFlyer2025() {
             💾 Save as PNG
           </button>
           <p style={{ marginTop: '10px', color: '#666', fontSize: '14px' }}>
-            Flyer is 3.5&quot; × 2&quot; (business card size) - High contrast, large text for seniors
+            Flyer is 3.5&quot; × 2&quot; (business card size) - Elegant design with Allura script, optimized for seniors
           </p>
         </div>
 
@@ -109,15 +109,32 @@ export default function NYEFlyer2025() {
             overflow: 'hidden',
             boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
             fontFamily: 'Arial, sans-serif',
-            padding: '0.12in',
-            border: '4px solid #1a237e',
+            padding: '0.18in',
+            border: '2px solid #1a237e',
             boxSizing: 'border-box'
           }}
         >
           
-          {/* Festive Corner Stars */}
-          <div style={{ position: 'absolute', top: '4px', right: '4px', fontSize: '16px' }}>⭐</div>
-          <div style={{ position: 'absolute', bottom: '4px', left: '4px', fontSize: '16px' }}>🎉</div>
+          {/* Subtle Fireworks Accents */}
+          <div style={{ 
+            position: 'absolute', 
+            top: '-8px', 
+            left: '-8px', 
+            fontSize: '40px',
+            opacity: '0.1',
+            color: '#d4af37',
+            transform: 'rotate(-15deg)'
+          }}>✨</div>
+          <div style={{ 
+            position: 'absolute', 
+            bottom: '-4px', 
+            right: '-4px', 
+            fontSize: '36px',
+            opacity: '0.12',
+            color: '#d4af37',
+            transform: 'rotate(25deg)',
+            zIndex: 0
+          }}>✨</div>
           
           {/* Content - ULTRA COMPACT */}
           <div style={{
@@ -127,110 +144,157 @@ export default function NYEFlyer2025() {
             justifyContent: 'space-between'
           }}>
             
-            {/* Header - MASSIVE */}
+            {/* Header - REFINED */}
             <div style={{ textAlign: 'center' }}>
-              <h1 style={{
-                fontFamily: '"Montserrat", sans-serif',
-                fontSize: '20px',
-                fontWeight: '900',
-                margin: '0',
-                letterSpacing: '0.5px',
-                textTransform: 'uppercase',
-                color: '#1a237e',
-                lineHeight: '0.9'
-              }}>
-                NEW YEAR&apos;S EVE<br/>GALA
-              </h1>
-            </div>
-
-            {/* Date & Price - CRITICAL INFO */}
-            <div style={{ textAlign: 'center' }}>
-              <p style={{
+              <div style={{
                 fontFamily: '"Montserrat", sans-serif',
                 fontSize: '16px',
-                fontWeight: 'bold',
-                margin: '0 0 2px 0',
-                color: '#d4af37',
+                fontWeight: '700',
+                margin: '0',
+                letterSpacing: '0.48px',
+                textTransform: 'uppercase',
+                color: '#1a237e',
+                lineHeight: '1.1'
+              }}>
+                NEW YEAR&apos;S EVE
+              </div>
+              <div style={{
+                fontFamily: '"Allura", cursive',
+                fontSize: '24px',
+                fontWeight: '400',
+                margin: '0',
+                marginTop: '2px',
+                color: '#1a237e',
                 lineHeight: '1'
+              }}>
+                Gala
+              </div>
+            </div>
+
+            {/* Date & Venue - CRITICAL INFO */}
+            <div style={{ textAlign: 'center', marginTop: '-4px' }}>
+              <p style={{
+                fontFamily: '"Montserrat", sans-serif',
+                fontSize: '15px',
+                fontWeight: 'bold',
+                margin: '0 0 6px 0',
+                color: '#d4af37',
+                lineHeight: '1',
+                letterSpacing: '0.3px'
               }}>
                 WED DEC 31
               </p>
               <p style={{
                 fontFamily: '"Montserrat", sans-serif',
-                fontSize: '11px',
-                fontWeight: '700',
+                fontSize: '12px',
+                fontWeight: '600',
                 margin: '0 0 4px 0',
                 color: '#1a237e',
-                lineHeight: '1.1'
+                lineHeight: '1.25'
               }}>
-                6PM • Bartlett Center
+                6:00 PM · Bartlett Event Center
               </p>
               
-              {/* HUGE PRICING */}
+              {/* PRICING BAR */}
               <div style={{
                 background: '#d4af37',
-                padding: '4px 6px',
-                margin: '0 -4px',
+                padding: '8px 6px',
+                margin: '10px -4px 0 -4px',
                 borderTop: '2px solid #1a237e',
                 borderBottom: '2px solid #1a237e'
               }}>
                 <p style={{
                   fontFamily: '"Montserrat", sans-serif',
-                  fontSize: '18px',
-                  fontWeight: '900',
+                  fontSize: '16px',
+                  fontWeight: '800',
                   margin: '0',
                   color: '#1a237e',
                   lineHeight: '1'
                 }}>
-                  $45 • $35 Members
+                  $45 · $35 Members
                 </p>
               </div>
             </div>
 
-            {/* Bottom - ESSENTIALS ONLY */}
+            {/* Bottom - ESSENTIALS WITH HIERARCHY */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: '1fr auto',
-              gap: '6px',
-              alignItems: 'center'
+              gap: '8px',
+              alignItems: 'end'
             }}>
               <div>
                 <p style={{
-                  fontFamily: '"Montserrat", sans-serif',
-                  fontSize: '8px',
-                  fontWeight: 'bold',
-                  margin: '0 0 2px 0',
+                  fontFamily: '"Allura", cursive',
+                  fontSize: '10px',
+                  margin: '0 0 1px 0',
                   color: '#1a237e',
-                  lineHeight: '1.1'
+                  opacity: '0.7',
+                  lineHeight: '1'
                 }}>
-                  🎵 Beatz Werkin Band<br/>
-                  🍽️ Apps & Desserts
+                  Celebrate
                 </p>
                 <p style={{
                   fontFamily: '"Montserrat", sans-serif',
-                  fontSize: '6px',
-                  fontWeight: '700',
-                  margin: 0,
+                  fontSize: '9px',
+                  fontWeight: '600',
+                  margin: '0 0 2px 0',
+                  color: '#1a237e',
+                  lineHeight: '1.15'
+                }}>
+                  🎶 Beatz Werkin Band
+                </p>
+                <p style={{
+                  fontFamily: '"Montserrat", sans-serif',
+                  fontSize: '7px',
+                  fontWeight: '500',
+                  margin: '0 0 3px 0',
                   color: '#333',
+                  lineHeight: '1.2'
+                }}>
+                  🍽️ Apps & Desserts Included
+                </p>
+                <p style={{
+                  fontFamily: '"Montserrat", sans-serif',
+                  fontSize: '7px',
+                  fontWeight: '600',
+                  margin: 0,
+                  color: '#1a237e',
                   lineHeight: '1.2'
                 }}>
                   tickets.ukiahseniorcenter.org
                 </p>
               </div>
-              <div style={{
-                border: '2px solid #1a237e',
-                padding: '2px',
-                background: '#fff'
-              }}>
-                <img 
-                  src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://tickets.ukiahseniorcenter.org"
-                  alt="QR"
-                  style={{
-                    width: '48px',
-                    height: '48px',
-                    display: 'block'
-                  }}
-                />
+              <div style={{ textAlign: 'center' }}>
+                <p style={{
+                  fontFamily: '"Montserrat", sans-serif',
+                  fontSize: '7px',
+                  fontWeight: '600',
+                  margin: '0 0 2px 0',
+                  color: '#1a237e',
+                  lineHeight: '1',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.3px'
+                }}>
+                  Scan for Tickets
+                </p>
+                <div style={{
+                  border: '2px solid #1a237e',
+                  padding: '2px',
+                  background: '#fff',
+                  position: 'relative',
+                  zIndex: 1
+                }}>
+                  <img 
+                    src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://tickets.ukiahseniorcenter.org"
+                    alt="Scan QR Code"
+                    style={{
+                      width: '52px',
+                      height: '52px',
+                      display: 'block'
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>

@@ -4,6 +4,16 @@ import { useRef } from 'react';
 
 export default function NYEFlyer2025() {
   const flyerRef = useRef<HTMLDivElement>(null);
+  
+  // Load Google Fonts
+  if (typeof document !== 'undefined') {
+    const link = document.createElement('link');
+    link.href = 'https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Allura&display=swap';
+    link.rel = 'stylesheet';
+    if (!document.querySelector(`link[href="${link.href}"]`)) {
+      document.head.appendChild(link);
+    }
+  }
 
   const downloadAsPNG = () => {
     alert('To save as PNG: Right-click the flyer and select "Save image as..." or use your browser\'s print function and "Save as PDF"');
@@ -89,51 +99,50 @@ export default function NYEFlyer2025() {
           }}>
             
             {/* Header Section */}
-            <div style={{ textAlign: 'center', marginBottom: '0.4in' }}>
+            <div style={{ textAlign: 'center', marginBottom: '0.35in' }}>
+              {/* Primary Title */}
               <h1 style={{
-                fontFamily: 'Georgia, serif',
-                fontSize: '52px',
+                fontFamily: '"Montserrat", sans-serif',
+                fontSize: '56px',
                 fontWeight: 'bold',
-                margin: '0 0 12px 0',
-                letterSpacing: '2px',
+                margin: '0 0 8px 0',
+                letterSpacing: '3px',
                 textTransform: 'uppercase',
                 color: '#ffffff',
-                textShadow: '0 2px 8px rgba(0,0,0,0.5)'
+                lineHeight: '1.1'
               }}>
-                NEW YEAR&apos;S EVE
+                NEW YEAR&apos;S EVE<br/>GALA DANCE
               </h1>
-              <h2 style={{
-                fontFamily: 'Georgia, serif',
-                fontSize: '44px',
-                fontWeight: 'bold',
-                margin: '0 0 16px 0',
-                letterSpacing: '1px',
+              
+              {/* Decorative Script Accent */}
+              <p style={{
+                fontFamily: '"Allura", cursive',
+                fontSize: '36px',
+                margin: '8px 0 16px 0',
                 color: '#d4af37',
-                textShadow: '0 2px 8px rgba(0,0,0,0.5)'
+                fontWeight: '400'
               }}>
-                GALA DANCE
-              </h2>
+                New Year&apos;s Eve
+              </p>
+              
+              {/* Gold Divider */}
               <div style={{
                 width: '200px',
                 height: '3px',
                 background: 'linear-gradient(90deg, transparent, #d4af37, transparent)',
-                margin: '0 auto 20px auto'
+                margin: '0 auto 16px auto'
               }} />
+              
+              {/* Host Line */}
               <p style={{
-                fontSize: '18px',
-                margin: 0,
+                fontFamily: '"Montserrat", sans-serif',
+                fontSize: '16px',
                 fontWeight: '500',
-                letterSpacing: '1px',
+                margin: 0,
+                letterSpacing: '0.5px',
                 color: '#e0e0e0'
               }}>
-                Bartlett Event Center
-              </p>
-              <p style={{
-                fontSize: '16px',
-                margin: '4px 0 0 0',
-                color: '#b0b0b0'
-              }}>
-                Ukiah Senior Center
+                Bartlett Event Center · Ukiah Senior Center
               </p>
             </div>
 
@@ -150,118 +159,103 @@ export default function NYEFlyer2025() {
               {/* Date & Time */}
               <div style={{ textAlign: 'center', marginBottom: '24px' }}>
                 <p style={{
-                  fontSize: '28px',
-                  fontWeight: 'bold',
+                  fontFamily: '"Montserrat", sans-serif',
+                  fontSize: '26px',
+                  fontWeight: '600',
                   margin: '0 0 12px 0',
                   color: '#d4af37'
                 }}>
                   Wednesday, December 31, 2025
                 </p>
                 <p style={{
-                  fontSize: '22px',
-                  margin: '0 0 8px 0',
+                  fontFamily: '"Montserrat", sans-serif',
+                  fontSize: '20px',
+                  fontWeight: '500',
+                  margin: '0 0 12px 0',
                   color: '#ffffff'
                 }}>
-                  Doors Open: 6:00 PM • Dancing: 7:00 PM - 10:00 PM
+                  Doors Open <strong>6:00 PM</strong> · Dance <strong>7:00–10:00 PM</strong>
                 </p>
                 <p style={{
-                  fontSize: '20px',
+                  fontFamily: '"Montserrat", sans-serif',
+                  fontSize: '19px',
+                  fontWeight: '500',
                   margin: 0,
-                  fontWeight: 'bold',
                   color: '#ffffff',
                   background: 'rgba(212,175,55,0.2)',
-                  padding: '8px',
+                  padding: '10px 16px',
                   borderRadius: '6px',
                   display: 'inline-block'
                 }}>
-                  🎆 Ball Drops at Midnight (New York Time!)
+                  🎉 Ball Drops at <strong>Midnight (New York Time)</strong>
                 </p>
               </div>
 
               {/* Pricing Box */}
               <div style={{
                 background: 'linear-gradient(135deg, #d4af37 0%, #f4d03f 100%)',
-                padding: '20px',
+                padding: '22px',
                 borderRadius: '8px',
                 textAlign: 'center',
                 marginBottom: '24px',
                 boxShadow: '0 4px 12px rgba(212,175,55,0.4)'
               }}>
                 <p style={{
-                  fontSize: '32px',
+                  fontFamily: '"Montserrat", sans-serif',
+                  fontSize: '34px',
                   fontWeight: 'bold',
-                  margin: '0 0 8px 0',
+                  margin: '0 0 6px 0',
                   color: '#1a237e',
-                  textShadow: 'none'
+                  letterSpacing: '0.5px'
                 }}>
-                  Tickets: $45 • Members: $35
+                  Tickets: $45 · Members: $35
                 </p>
                 <p style={{
+                  fontFamily: '"Montserrat", sans-serif',
                   fontSize: '16px',
+                  fontWeight: '400',
                   margin: 0,
-                  color: '#1a237e',
-                  fontWeight: '600'
+                  color: '#1a237e'
                 }}>
-                  Includes Appetizers & Desserts
+                  Includes appetizers and desserts
                 </p>
               </div>
 
-              {/* Details Grid */}
+              {/* Entertainment & Details */}
               <div style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '20px',
-                marginBottom: '20px'
-              }}>
-                <div>
-                  <p style={{
-                    fontSize: '20px',
-                    fontWeight: 'bold',
-                    margin: '0 0 8px 0',
-                    color: '#d4af37'
-                  }}>
-                    🎵 Live Music
-                  </p>
-                  <p style={{ fontSize: '18px', margin: 0, color: '#ffffff' }}>
-                    Beatz Werkin Band
-                  </p>
-                </div>
-                <div>
-                  <p style={{
-                    fontSize: '20px',
-                    fontWeight: 'bold',
-                    margin: '0 0 8px 0',
-                    color: '#d4af37'
-                  }}>
-                    ✨ Dress Code
-                  </p>
-                  <p style={{ fontSize: '18px', margin: 0, color: '#ffffff' }}>
-                    Flashy Attire!
-                  </p>
-                </div>
-              </div>
-
-              <div style={{
-                background: 'rgba(255,255,255,0.05)',
+                textAlign: 'center',
+                marginBottom: '20px',
                 padding: '16px',
+                background: 'rgba(255,255,255,0.05)',
                 borderRadius: '8px',
                 border: '1px solid rgba(212,175,55,0.2)'
               }}>
                 <p style={{
-                  fontSize: '16px',
-                  margin: '0 0 8px 0',
-                  color: '#e0e0e0',
-                  textAlign: 'center'
+                  fontFamily: '"Montserrat", sans-serif',
+                  fontSize: '20px',
+                  fontWeight: '600',
+                  margin: '0 0 10px 0',
+                  color: '#ffffff'
                 }}>
-                  🍺 Beer & Wine Available for Purchase
+                  Live Music by <strong>Beatz Werkin Band</strong>
                 </p>
                 <p style={{
-                  fontSize: '16px',
-                  margin: 0,
-                  color: '#e0e0e0',
-                  textAlign: 'center'
+                  fontFamily: '"Montserrat", sans-serif',
+                  fontSize: '18px',
+                  fontWeight: '400',
+                  margin: '0 0 12px 0',
+                  color: '#e0e0e0'
                 }}>
-                  🎟️ Raffle Drawings Throughout the Night
+                  Dress in Flashy Attire
+                </p>
+                <p style={{
+                  fontFamily: '"Montserrat", sans-serif',
+                  fontSize: '15px',
+                  fontWeight: '400',
+                  margin: 0,
+                  color: '#d0d0d0'
+                }}>
+                  Beer & wine available for purchase · Raffle drawings
                 </p>
               </div>
             </div>
@@ -281,25 +275,45 @@ export default function NYEFlyer2025() {
             }}>
               <div>
                 <h3 style={{
-                  fontSize: '24px',
-                  fontWeight: 'bold',
+                  fontFamily: '"Montserrat", sans-serif',
+                  fontSize: '18px',
+                  fontWeight: '600',
                   margin: '0 0 12px 0',
+                  color: '#ffffff',
+                  letterSpacing: '1px'
+                }}>
+                  Online Tickets
+                </h3>
+                <p style={{
+                  fontFamily: '"Montserrat", sans-serif',
+                  fontSize: '17px',
+                  fontWeight: '500',
+                  margin: '0 0 16px 0',
                   color: '#d4af37'
                 }}>
-                  WHERE TO BUY TICKETS
-                </h3>
-                <ul style={{
+                  tickets.ukiahseniorcenter.org
+                </p>
+                <h3 style={{
+                  fontFamily: '"Montserrat", sans-serif',
                   fontSize: '16px',
-                  lineHeight: '1.6',
-                  margin: 0,
-                  paddingLeft: '20px',
+                  fontWeight: '600',
+                  margin: '0 0 8px 0',
                   color: '#ffffff'
                 }}>
-                  <li>Ukiah Senior Center</li>
-                  <li>Bartlett Event Center</li>
-                  <li><strong>Online:</strong> tickets.ukiahseniorcenter.org</li>
-                  <li>Mendocino Book Company (cash/check only)</li>
-                </ul>
+                  Tickets available at:
+                </h3>
+                <p style={{
+                  fontFamily: '"Montserrat", sans-serif',
+                  fontSize: '15px',
+                  fontWeight: '400',
+                  lineHeight: '1.6',
+                  margin: 0,
+                  color: '#e0e0e0'
+                }}>
+                  Ukiah Senior Center<br/>
+                  Bartlett Event Center<br/>
+                  Mendocino Book Company (cash or check only)
+                </p>
               </div>
               <div style={{
                 background: 'white',
@@ -325,12 +339,15 @@ export default function NYEFlyer2025() {
                   QR generator
                 </div>
                 <p style={{
-                  fontSize: '14px',
-                  fontWeight: 'bold',
+                  fontFamily: '"Montserrat", sans-serif',
+                  fontSize: '13px',
+                  fontWeight: '600',
                   margin: 0,
-                  color: '#1a237e'
+                  color: '#1a237e',
+                  letterSpacing: '1px',
+                  textTransform: 'uppercase'
                 }}>
-                  SCAN FOR<br/>TICKETS
+                  Scan for<br/>Tickets
                 </p>
               </div>
             </div>
@@ -338,16 +355,18 @@ export default function NYEFlyer2025() {
             {/* Sponsors Footer */}
             <div style={{
               textAlign: 'center',
-              fontSize: '11px',
+              fontSize: '10px',
+              fontFamily: '"Montserrat", sans-serif',
+              fontWeight: '400',
               color: '#a0a0a0',
               paddingTop: '12px',
               borderTop: '1px solid rgba(212,175,55,0.2)'
             }}>
               <p style={{ margin: '0 0 4px 0' }}>
-                Thanks to Our Generous Sponsors
+                Thanks to our generous sponsors:
               </p>
               <p style={{ margin: 0 }}>
-                Ukiah Senior Center • Bartlett Event Center • Mendocino Book Company
+                Mendocino Book Company · Rain Forest Fantasy · Selzer Realty & Associates
               </p>
             </div>
           </div>

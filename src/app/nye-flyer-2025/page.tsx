@@ -144,30 +144,17 @@ export default function NYEFlyer2025() {
             justifyContent: 'space-between'
           }}>
             
-            {/* Header - REFINED */}
+            {/* Header - ALLURA */}
             <div style={{ textAlign: 'center' }}>
               <div style={{
-                fontFamily: '"Montserrat", sans-serif',
-                fontSize: '16px',
-                fontWeight: '700',
-                margin: '0',
-                letterSpacing: '0.48px',
-                textTransform: 'uppercase',
-                color: '#1a237e',
-                lineHeight: '1.1'
-              }}>
-                NEW YEAR&apos;S EVE
-              </div>
-              <div style={{
                 fontFamily: '"Allura", cursive',
-                fontSize: '24px',
+                fontSize: '32px',
                 fontWeight: '400',
                 margin: '0',
-                marginTop: '2px',
                 color: '#1a237e',
                 lineHeight: '1'
               }}>
-                Gala
+                New Year&apos;s Eve Gala
               </div>
             </div>
 

@@ -1,9 +1,11 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
+import html2canvas from 'html2canvas';
 
 export default function NYEFlyer2025() {
   const flyerRef = useRef<HTMLDivElement>(null);
+  const [isExporting, setIsExporting] = useState(false);
   
   // Load Google Fonts
   useEffect(() => {
@@ -18,13 +20,20 @@ export default function NYEFlyer2025() {
     const style = document.createElement('style');
     style.innerHTML = `
       @media print {
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          color-adjust: exact !important;
+        }
+        html, body {
+          margin: 0 !important;
+          padding: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
+        }
         @page {
           size: 3.5in 2in;
           margin: 0;
-        }
-        body {
-          margin: 0;
-          padding: 0;
         }
         .no-print {
           display: none !important;
@@ -33,9 +42,11 @@ export default function NYEFlyer2025() {
           width: 3.5in !important;
           height: 2in !important;
           margin: 0 !important;
-          padding: 0 !important;
+          padding: 0.18in !important;
           box-shadow: none !important;
           page-break-after: avoid !important;
+          border: 2px solid #1a237e !important;
+          background: white !important;
         }
       }
     `;
@@ -46,8 +57,41 @@ export default function NYEFlyer2025() {
     };
   }, []);
 
-  const downloadAsPNG = () => {
-    alert('To save as PNG: Right-click the flyer and select "Save image as..." or use your browser\'s print function and "Save as PDF"');
+  const downloadAsPNG = async () => {
+    if (!flyerRef.current) return;
+    
+    setIsExporting(true);
+    try {
+      // Wait a bit for fonts to load
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const canvas = await html2canvas(flyerRef.current, {
+        scale: 3, // High quality
+        backgroundColor: '#ffffff',
+        logging: false,
+        useCORS: true,
+        allowTaint: true
+      });
+      
+      // Convert to blob and download
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `NYE-Gala-Flyer-2025.png`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }
+      }, 'image/png', 1.0);
+    } catch (error) {
+      console.error('Error generating PNG:', error);
+      alert('Failed to generate PNG. Please try using Print → Save as PDF instead.');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const printFlyer = () => {
@@ -77,19 +121,20 @@ export default function NYEFlyer2025() {
           </button>
           <button 
             onClick={downloadAsPNG}
+            disabled={isExporting}
             style={{
-              background: '#427d78',
+              background: isExporting ? '#9ca3af' : '#427d78',
               color: 'white',
               padding: '12px 24px',
               border: 'none',
               borderRadius: '8px',
               fontSize: '16px',
               fontWeight: 'bold',
-              cursor: 'pointer',
+              cursor: isExporting ? 'not-allowed' : 'pointer',
               fontFamily: 'Jost, sans-serif'
             }}
           >
-            💾 Save as PNG
+            {isExporting ? '⏳ Generating...' : '💾 Download PNG'}
           </button>
           <p style={{ marginTop: '10px', color: '#666', fontSize: '14px' }}>
             Flyer is 3.5&quot; × 2&quot; (business card size) - Elegant design with Allura script, optimized for seniors
@@ -299,10 +344,10 @@ export default function NYEFlyer2025() {
       }}>
         <h3 style={{ margin: '0 0 12px 0', color: '#1a237e' }}>📋 Instructions:</h3>
         <ol style={{ margin: 0, paddingLeft: '20px', lineHeight: '1.8', color: '#333' }}>
-          <li><strong>To Print:</strong> Click the Print button above - prints quarter-page size (4.25&quot; × 5.5&quot;)</li>
-          <li><strong>To Save as PNG:</strong> Right-click the flyer and select &quot;Save image as...&quot;</li>
-          <li><strong>Senior-Optimized:</strong> Large text, high contrast, festive colors</li>
-          <li><strong>Professional Printing:</strong> Use browser Print → Save as PDF for print shops</li>
+          <li><strong>To Print:</strong> Click Print button - opens browser print dialog for 3.5&quot; × 2&quot; business cards</li>
+          <li><strong>To Save PNG:</strong> Click Download PNG button - saves high-quality image file</li>
+          <li><strong>Senior-Optimized:</strong> Elegant Allura script, large text, high contrast</li>
+          <li><strong>Print Settings:</strong> Set page size to 3.5&quot; × 2&quot; or use &quot;Fit to page&quot;</li>
         </ol>
       </div>
     </div>

@@ -42,7 +42,7 @@ export default function NYEFlyer2025() {
           width: 3.5in !important;
           height: 2in !important;
           margin: 0 !important;
-          padding: 0.18in !important;
+          padding: 0.30in !important;
           box-shadow: none !important;
           page-break-after: avoid !important;
           border: 2px solid #1a237e !important;
@@ -154,7 +154,7 @@ export default function NYEFlyer2025() {
             overflow: 'hidden',
             boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
             fontFamily: 'Arial, sans-serif',
-            padding: '0.18in',
+            padding: '0.30in',
             border: '2px solid #1a237e',
             boxSizing: 'border-box'
           }}
@@ -163,19 +163,20 @@ export default function NYEFlyer2025() {
           {/* Subtle Fireworks Accents */}
           <div style={{ 
             position: 'absolute', 
-            top: '-8px', 
-            left: '-8px', 
-            fontSize: '40px',
-            opacity: '0.1',
+            top: '-10px', 
+            left: '-10px', 
+            fontSize: '36px',
+            opacity: '0.11',
             color: '#d4af37',
-            transform: 'rotate(-15deg)'
+            transform: 'rotate(-15deg)',
+            zIndex: 0
           }}>✨</div>
           <div style={{ 
             position: 'absolute', 
-            bottom: '-4px', 
-            right: '-4px', 
-            fontSize: '36px',
-            opacity: '0.12',
+            bottom: '-6px', 
+            right: '-6px', 
+            fontSize: '32px',
+            opacity: '0.10',
             color: '#d4af37',
             transform: 'rotate(25deg)',
             zIndex: 0
@@ -189,40 +190,54 @@ export default function NYEFlyer2025() {
             justifyContent: 'space-between'
           }}>
             
-            {/* Header - ALLURA */}
+            {/* Header - REFINED HIERARCHY */}
             <div style={{ textAlign: 'center' }}>
               <div style={{
                 fontFamily: '"Allura", cursive',
-                fontSize: '32px',
+                fontSize: '24px',
                 fontWeight: '400',
                 margin: '0',
                 color: '#1a237e',
+                opacity: '0.9',
+                lineHeight: '1',
+                marginBottom: '2px'
+              }}>
+                New Year&apos;s Eve
+              </div>
+              <div style={{
+                fontFamily: '"Montserrat", sans-serif',
+                fontSize: '17px',
+                fontWeight: '700',
+                margin: '0',
+                color: '#1a237e',
+                letterSpacing: '1.2px',
+                textTransform: 'uppercase',
                 lineHeight: '1'
               }}>
-                New Year&apos;s Eve Gala
+                GALA
               </div>
             </div>
 
             {/* Date & Venue - CRITICAL INFO */}
-            <div style={{ textAlign: 'center', marginTop: '-4px' }}>
+            <div style={{ textAlign: 'center', marginTop: '20px' }}>
               <p style={{
                 fontFamily: '"Montserrat", sans-serif',
-                fontSize: '15px',
+                fontSize: '14px',
                 fontWeight: 'bold',
-                margin: '0 0 6px 0',
+                margin: '0 0 8px 0',
                 color: '#d4af37',
                 lineHeight: '1',
-                letterSpacing: '0.3px'
+                letterSpacing: '0.6px'
               }}>
                 WED DEC 31
               </p>
               <p style={{
                 fontFamily: '"Montserrat", sans-serif',
-                fontSize: '12px',
+                fontSize: '13px',
                 fontWeight: '600',
-                margin: '0 0 4px 0',
+                margin: '6px 0 4px 0',
                 color: '#1a237e',
-                lineHeight: '1.25'
+                lineHeight: '1.3'
               }}>
                 6:00 PM · Bartlett Event Center
               </p>
@@ -231,13 +246,13 @@ export default function NYEFlyer2025() {
               <div style={{
                 background: '#d4af37',
                 padding: '8px 6px',
-                margin: '10px -4px 0 -4px',
+                margin: '22px -8px 0 -8px',
                 borderTop: '2px solid #1a237e',
                 borderBottom: '2px solid #1a237e'
               }}>
                 <p style={{
                   fontFamily: '"Montserrat", sans-serif',
-                  fontSize: '16px',
+                  fontSize: '14px',
                   fontWeight: '800',
                   margin: '0',
                   color: '#1a237e',
@@ -252,27 +267,27 @@ export default function NYEFlyer2025() {
             <div style={{
               display: 'grid',
               gridTemplateColumns: '1fr auto',
-              gap: '8px',
+              gap: '10px',
               alignItems: 'end'
             }}>
               <div>
                 <p style={{
                   fontFamily: '"Allura", cursive',
-                  fontSize: '10px',
-                  margin: '0 0 1px 0',
+                  fontSize: '11px',
+                  margin: '0 0 8px 0',
                   color: '#1a237e',
-                  opacity: '0.7',
+                  opacity: '0.75',
                   lineHeight: '1'
                 }}>
                   Celebrate
                 </p>
                 <p style={{
                   fontFamily: '"Montserrat", sans-serif',
-                  fontSize: '9px',
+                  fontSize: '10px',
                   fontWeight: '600',
-                  margin: '0 0 2px 0',
+                  margin: '0 0 8px 0',
                   color: '#1a237e',
-                  lineHeight: '1.15'
+                  lineHeight: '1.2'
                 }}>
                   🎶 Beatz Werkin Band
                 </p>
@@ -280,7 +295,7 @@ export default function NYEFlyer2025() {
                   fontFamily: '"Montserrat", sans-serif',
                   fontSize: '7px',
                   fontWeight: '500',
-                  margin: '0 0 3px 0',
+                  margin: '0 0 10px 0',
                   color: '#333',
                   lineHeight: '1.2'
                 }}>
@@ -288,27 +303,27 @@ export default function NYEFlyer2025() {
                 </p>
                 <p style={{
                   fontFamily: '"Montserrat", sans-serif',
-                  fontSize: '7px',
-                  fontWeight: '600',
-                  margin: 0,
-                  color: '#1a237e',
-                  lineHeight: '1.2'
+                  fontSize: '7.5px',
+                  fontWeight: '700',
+                  margin: '6px 0 0 0',
+                  color: '#0d1b3e',
+                  lineHeight: '1.3'
                 }}>
                   tickets.ukiahseniorcenter.org
                 </p>
               </div>
-              <div style={{ textAlign: 'center' }}>
+              <div style={{ textAlign: 'center', position: 'relative', left: '-12px', top: '-8px' }}>
                 <p style={{
                   fontFamily: '"Montserrat", sans-serif',
                   fontSize: '7px',
-                  fontWeight: '600',
-                  margin: '0 0 2px 0',
+                  fontWeight: '700',
+                  margin: '0 0 6px 0',
                   color: '#1a237e',
                   lineHeight: '1',
                   textTransform: 'uppercase',
-                  letterSpacing: '0.3px'
+                  letterSpacing: '0.5px'
                 }}>
-                  Scan for Tickets
+                  SCAN FOR TICKETS
                 </p>
                 <div style={{
                   border: '2px solid #1a237e',

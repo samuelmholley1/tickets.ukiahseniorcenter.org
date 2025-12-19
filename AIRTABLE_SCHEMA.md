@@ -16,13 +16,14 @@
 - **Email** - Customer email address (use Email field type)
 - **Phone** - Customer phone number (use Phone number field type)
 - **Check Number** - Check number if payment by check
+- **Other Payment Details** - Details when payment method is "Other"
 - **Staff Initials** - Who processed the sale
 
 #### Text Fields (Long text)
 - **Payment Notes** - For split payments, stores: "Cash: $50.00, Check: $30.00"
 
 #### Single Select Field
-- **Payment Method** - Options: `Cash`, `Check`, `Cash & Check`
+- **Payment Method** - Options: `Cash`, `Check`, `Cash & Check`, `Comp`, `Other`
 
 #### Number Fields (Currency $)
 - **Ticket Subtotal** - Total cost of tickets only (before donation)
@@ -51,13 +52,14 @@
 - **Email** - Customer email address (use Email field type)
 - **Phone** - Customer phone number (use Phone number field type)
 - **Check Number** - Check number if payment by check
+- **Other Payment Details** - Details when payment method is "Other"
 - **Staff Initials** - Who processed the sale
 
 #### Text Fields (Long text)
 - **Payment Notes** - For split payments, stores: "Cash: $50.00, Check: $30.00"
 
 #### Single Select Field
-- **Payment Method** - Options: `Cash`, `Check`, `Cash & Check`
+- **Payment Method** - Options: `Cash`, `Check`, `Cash & Check`, `Comp`, `Other`
 
 #### Number Fields (Currency $)
 - **Ticket Subtotal** - Total cost of tickets only (before donation)

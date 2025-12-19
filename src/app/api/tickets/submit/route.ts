@@ -14,10 +14,11 @@ interface CustomerInfo {
   lastName: string;
   email: string;
   phone: string;
-  paymentMethod: 'cash' | 'check' | 'cashCheckSplit';
+  paymentMethod: 'cash' | 'check' | 'cashCheckSplit' | 'comp' | 'other';
   checkNumber?: string;
   cashAmount?: string;
   checkAmount?: string;
+  otherPaymentDetails?: string;
   staffInitials: string;
 }
 
@@ -89,6 +90,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Check number is required for check payments' }, { status: 400 });
     }
 
+    // Validate other payment details if payment method is other
+    if (customer.paymentMethod === 'other' && !customer.otherPaymentDetails?.trim()) {
+      return NextResponse.json({ error: 'Payment details are required when selecting Other payment method' }, { status: 400 });
+    }
+
     // Validate cash & check amounts if split payment
     if (customer.paymentMethod === 'cashCheckSplit') {
       const cashAmt = parseFloat(customer.cashAmount || '0');
@@ -121,6 +127,9 @@ export async function POST(request: NextRequest) {
     customer.staffInitials = customer.staffInitials.trim().substring(0, 50);
     if (customer.checkNumber) {
       customer.checkNumber = customer.checkNumber.trim().substring(0, 50);
+    }
+    if (customer.otherPaymentDetails) {
+      customer.otherPaymentDetails = customer.otherPaymentDetails.trim().substring(0, 255);
     }
 
     const CHRISTMAS_MEMBER = 15;
@@ -245,6 +254,11 @@ export async function POST(request: NextRequest) {
         const cashAmt = parseFloat(customer.cashAmount || '0');
         const checkAmt = parseFloat(customer.checkAmount || '0');
         paymentNotes = `Cash: $${cashAmt.toFixed(2)}, Check: $${checkAmt.toFixed(2)}`;
+      } else if (customer.paymentMethod === 'comp') {
+        paymentMethodText = 'Comp';
+      } else if (customer.paymentMethod === 'other') {
+        paymentMethodText = 'Other';
+        paymentNotes = customer.otherPaymentDetails || '';
       }
 
       const nyePayload = {

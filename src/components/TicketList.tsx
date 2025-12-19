@@ -15,6 +15,7 @@ interface TicketRecord {
     'Phone': string;
     'Payment Method': string;
     'Check Number'?: string;
+    'Purchase Date'?: string;
     'Ticket Subtotal'?: number;
     'Donation Amount'?: number;
     'Amount Paid': number;
@@ -105,6 +106,18 @@ export function TicketList() {
         <p className="font-['Bitter',serif] text-[#666]" style={{ lineHeight: '1.6', fontSize: 'clamp(0.875rem, 2.5vw, 1rem)' }}>
           Scroll down to confirm your entry
         </p>
+        {/* Zeffy Import Notice */}
+        <div style={{ 
+          marginTop: 'var(--space-2)', 
+          padding: '4px 12px',
+          background: '#d4f4dd',
+          border: '1px solid #4ade80',
+          borderRadius: '4px',
+          display: 'inline-block',
+          fontSize: '12px'
+        }}>
+          <span className="font-['Jost',sans-serif] text-[#15803d]">💳 Last Zeffy Import: 12/19/25 at 2:45 PM</span>
+        </div>
       </div>
 
       {/* Event Filter Tabs */}
@@ -234,7 +247,7 @@ export function TicketList() {
                         </div>
                       )}
                       <div className="font-['Bitter',serif] text-xs text-gray-500" style={{ marginTop: '4px' }}>
-                        {formatDate(record.createdTime)} • Processed by: {record.fields['Staff Initials']?.toUpperCase()}
+                        {formatDate(record.fields['Purchase Date'] || record.createdTime)} • Processed by: {record.fields['Staff Initials']?.toUpperCase()}
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>

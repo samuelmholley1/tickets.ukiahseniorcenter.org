@@ -22,6 +22,7 @@ interface AirtableRecord {
     'NYE Member Tickets'?: number;
     'NYE Non-Member Tickets'?: number;
     'Staff Initials': string;
+    'Purchase Date'?: string;
   };
 }
 

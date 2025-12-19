@@ -74,10 +74,8 @@ async function findRecordByEmail(tableId, email) {
   return data.records.length > 0 ? data.records[0] : null;
 }
 
-// Update record with creation date using Airtable API workaround
+// Update record with purchase date
 async function updateRecordDate(tableId, recordId, isoDate) {
-  // Note: Airtable doesn't allow updating "Created Time" field directly via API
-  // We'll add the date to Payment Notes instead
   const response = await fetch(
     `${AIRTABLE_API_BASE}/${AIRTABLE_BASE_ID}/${tableId}/${recordId}`,
     {
@@ -88,15 +86,7 @@ async function updateRecordDate(tableId, recordId, isoDate) {
       },
       body: JSON.stringify({
         fields: {
-          'Payment Notes': `Zeffy purchase date: ${new Date(isoDate).toLocaleString('en-US', { 
-            timeZone: 'America/Los_Angeles',
-            month: '2-digit',
-            day: '2-digit', 
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: true
-          })}`
+          'Purchase Date': isoDate
         }
       }),
     }

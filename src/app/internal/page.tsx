@@ -648,23 +648,6 @@ export default function UnifiedSalesPage() {
             )}
           </form>
 
-          {/* Zeffy Import Notice */}
-          <div style={{ 
-            marginTop: 'var(--space-4)', 
-            padding: 'var(--space-3)', 
-            background: '#e8f5f1',
-            border: '2px solid #5eb3a1',
-            borderRadius: '8px',
-            textAlign: 'center'
-          }}>
-            <p className="font-['Jost',sans-serif] font-bold text-[#427d78]" style={{ fontSize: '16px', marginBottom: '4px' }}>
-              💳 Last Zeffy Import
-            </p>
-            <p className="font-['Bitter',serif] text-gray-700" style={{ fontSize: '14px' }}>
-              12/19/25 at 2:45 PM
-            </p>
-          </div>
-
           {/* Embedded Ticket List */}
           <TicketList />
 

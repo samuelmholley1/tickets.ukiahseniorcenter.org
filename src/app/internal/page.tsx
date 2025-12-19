@@ -26,10 +26,11 @@ export default function UnifiedSalesPage() {
     lastName: '',
     email: '',
     phone: '',
-    paymentMethod: 'cash' as 'cash' | 'check' | 'cashCheckSplit',
+    paymentMethod: 'cash' as 'cash' | 'check' | 'cashCheckSplit' | 'comp' | 'other',
     checkNumber: '',
     cashAmount: '',
     checkAmount: '',
+    otherPaymentDetails: '',
     staffInitials: ''
   });
 
@@ -468,16 +469,19 @@ export default function UnifiedSalesPage() {
                     value={formData.paymentMethod}
                     onChange={(e) => setFormData({
                       ...formData, 
-                      paymentMethod: e.target.value as 'cash' | 'check' | 'cashCheckSplit',
+                      paymentMethod: e.target.value as 'cash' | 'check' | 'cashCheckSplit' | 'comp' | 'other',
                       checkNumber: e.target.value === 'cash' ? '' : formData.checkNumber,
                       cashAmount: e.target.value !== 'cashCheckSplit' ? '' : formData.cashAmount,
-                      checkAmount: e.target.value !== 'cashCheckSplit' ? '' : formData.checkAmount
+                      checkAmount: e.target.value !== 'cashCheckSplit' ? '' : formData.checkAmount,
+                      otherPaymentDetails: e.target.value !== 'other' ? '' : formData.otherPaymentDetails
                     })}
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
                   >
                     <option value="cash">Cash</option>
                     <option value="check">Check</option>
                     <option value="cashCheckSplit">Cash & Check</option>
+                    <option value="comp">Comp (Complimentary)</option>
+                    <option value="other">Other (please specify)</option>
                   </select>
                 </div>
 
@@ -509,6 +513,25 @@ export default function UnifiedSalesPage() {
                     required
                     value={formData.checkNumber}
                     onChange={(e) => setFormData({...formData, checkNumber: e.target.value})}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
+                  />
+                </div>
+              )}
+
+              {formData.paymentMethod === 'other' && (
+                <div style={{ marginBottom: 'var(--space-3)' }}>
+                  <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">
+                    Payment Details *
+                    <span className="text-xs text-gray-500" style={{ fontWeight: 'normal', display: 'block', marginTop: '4px' }}>
+                      (Please specify the payment method)
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.otherPaymentDetails}
+                    onChange={(e) => setFormData({...formData, otherPaymentDetails: e.target.value})}
+                    placeholder="e.g., Venmo, Zelle, Gift Certificate"
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
                   />
                 </div>

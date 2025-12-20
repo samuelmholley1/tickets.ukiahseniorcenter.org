@@ -38,8 +38,8 @@ export default function PrivacyPolicyPage() {
               1. Introduction
             </h2>
             <p>
-              Ukiah Senior Center ("we," "our," or "us") operates the ticketing and database system at 
-              tickets.ukiahseniorcenter.org and admin.ukiahseniorcenter.org (the "System"). This Privacy 
+              Ukiah Senior Center (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) operates the ticketing and database system at 
+              tickets.ukiahseniorcenter.org and admin.ukiahseniorcenter.org (the &quot;System&quot;). This Privacy 
               Policy explains how we collect, use, disclose, and safeguard your information when you use our System.
             </p>
           </section>
@@ -78,7 +78,7 @@ export default function PrivacyPolicyPage() {
               <li>Manage event attendance and meal planning</li>
               <li>Maintain accurate financial records</li>
               <li>Integrate transaction data with our accounting system (QuickBooks)</li>
-              <li>Communicate important updates about events you've purchased tickets for</li>
+              <li>Communicate important updates about events you&apos;ve purchased tickets for</li>
               <li>Improve our services and user experience</li>
             </ul>
           </section>
@@ -170,7 +170,7 @@ export default function PrivacyPolicyPage() {
             </h2>
             <p>
               We may update this Privacy Policy from time to time. We will notify you of any changes by 
-              updating the "Last Updated" date at the top of this policy.
+              updating the &quot;Last Updated&quot; date at the top of this policy.
             </p>
           </section>
 

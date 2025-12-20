@@ -38,9 +38,9 @@ export default function TermsPage() {
               1. Agreement to Terms
             </h2>
             <p>
-              By accessing or using the Ukiah Senior Center ticketing and database system ("System") at 
+              By accessing or using the Ukiah Senior Center ticketing and database system (&quot;System&quot;) at 
               tickets.ukiahseniorcenter.org and admin.ukiahseniorcenter.org, you agree to be bound by these 
-              Terms of Service ("Terms"). If you do not agree to these Terms, you may not use the System.
+              Terms of Service (&quot;Terms&quot;). If you do not agree to these Terms, you may not use the System.
             </p>
           </section>
 
@@ -156,7 +156,7 @@ export default function TermsPage() {
               8. Disclaimer of Warranties
             </h2>
             <p>
-              THE SYSTEM IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EITHER 
+              THE SYSTEM IS PROVIDED &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot; WITHOUT WARRANTIES OF ANY KIND, EITHER 
               EXPRESS OR IMPLIED. WE DO NOT WARRANT THAT THE SYSTEM WILL BE UNINTERRUPTED, ERROR-FREE, 
               OR FREE OF VIRUSES OR OTHER HARMFUL COMPONENTS.
             </p>

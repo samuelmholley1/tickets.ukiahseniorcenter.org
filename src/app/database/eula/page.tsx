@@ -70,7 +70,7 @@ export default function TermsPage() {
               <li>Provide accurate, current, and complete information</li>
               <li>Use the System only for lawful purposes</li>
               <li>Not attempt to gain unauthorized access to any part of the System</li>
-              <li>Not interfere with or disrupt the System's operation</li>
+              <li>Not interfere with or disrupt the System&apos;s operation</li>
               <li>Not use automated systems (bots, scrapers) without express written permission</li>
               <li>Safeguard any administrative access credentials if provided</li>
             </ul>

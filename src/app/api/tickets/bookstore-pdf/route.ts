@@ -1,14 +1,22 @@
 import { NextResponse } from 'next/server';
-import { jsPDF } from 'jspdf';
-import fs from 'fs';
-import path from 'path';
+import {
+  getUSCLogo,
+  createUSCPDF,
+  validatePDFSize,
+  createPDFErrorResponse,
+} from '@/lib/pdfUtils';
 
+/**
+ * POST /api/tickets/bookstore-pdf
+ * Generate pre-made bookstore tickets (20 NYE + 20 Christmas)
+ */
 export async function POST() {
+  const startTime = Date.now();
+  
   try {
-    // Load logo
-    const logoPath = path.join(process.cwd(), 'public', 'logo.png');
-    const logoBuffer = fs.readFileSync(logoPath);
-    const logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
+    // Load logo asynchronously
+    const logoBase64 = await getUSCLogo();
+    
     const customerName = 'Mendocino Book Company';
     const tickets: Array<{
       eventName: string;
@@ -20,7 +28,7 @@ export async function POST() {
     // Generate 20 NYE tickets first
     for (let i = 0; i < 20; i++) {
       tickets.push({
-        eventName: 'New Year\'s Eve Gala Dance',
+        eventName: "New Year's Eve Gala Dance",
         isNYE: true,
         ticketNumber: i + 1,
         totalTickets: 20,
@@ -37,11 +45,12 @@ export async function POST() {
       });
     }
 
-    // Create PDF document (8.5" x 11" letter size)
-    const doc = new jsPDF({
-      orientation: 'portrait',
-      unit: 'in',
-      format: 'letter',
+    // Create PDF document with proper metadata
+    const doc = createUSCPDF({
+      title: 'Bookstore Event Tickets',
+      author: 'Ukiah Senior Center',
+      subject: 'Pre-printed tickets for Mendocino Book Company',
+      creator: 'USC Ticketing System v2.0',
     });
 
     // Helper function to draw a ticket - SIMPLIFIED for senior-friendly reading
@@ -165,20 +174,43 @@ export async function POST() {
     });
 
     // Generate PDF buffer
-    const pdfBuffer = doc.output('arraybuffer');
+    const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
+    
+    // Validate PDF size
+    validatePDFSize(pdfBuffer);
+    
+    // Log success metrics
+    console.info('[Bookstore PDF] Generated successfully', {
+      totalTickets: tickets.length,
+      nyeTickets: 20,
+      christmasTickets: 20,
+      sizeBytes: pdfBuffer.length,
+      sizeMB: (pdfBuffer.length / (1024 * 1024)).toFixed(2),
+      durationMs: Date.now() - startTime,
+      timestamp: new Date().toISOString(),
+    });
 
     // Return PDF as response
-    return new NextResponse(new Uint8Array(pdfBuffer), {
+    return new NextResponse(pdfBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="Mendocino-Book-Company-Tickets-${Date.now()}.pdf"`,
+        'X-PDF-Size-Bytes': pdfBuffer.length.toString(),
+        'X-Ticket-Count': tickets.length.toString(),
       },
     });
+    
   } catch (error) {
-    console.error('Error generating bookstore PDF:', error);
-    return NextResponse.json(
-      { error: 'Failed to generate PDF', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
+    // Comprehensive error handling
+    const errorResponse = createPDFErrorResponse(error, 'Bookstore PDF generation');
+    
+    console.error('[Bookstore PDF] Generation failed:', {
+      ...errorResponse,
+      durationMs: Date.now() - startTime,
+    });
+    
+    return NextResponse.json(errorResponse, { 
+      status: error instanceof Error && error.name === 'PDFValidationError' ? 400 : 500 
+    });
   }
 }

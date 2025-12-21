@@ -1,25 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { jsPDF } from 'jspdf';
-import fs from 'fs';
-import path from 'path';
+import {
+  getUSCLogo,
+  createUSCPDF,
+  validatePDFSize,
+  createPDFErrorResponse,
+  USC_COLORS,
+} from '@/lib/pdfUtils';
+import { validateTicketRequest } from '@/lib/ticketValidation';
 
+/**
+ * POST /api/tickets/pdf
+ * Generate event ticket PDFs with enterprise-grade error handling
+ */
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+  
   try {
-    // Load logo
-    const logoPath = path.join(process.cwd(), 'public', 'logo.png');
-    const logoBuffer = fs.readFileSync(logoPath);
-    const logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
+    // Parse and validate request body
     const body = await request.json();
+    const validation = validateTicketRequest(body);
+    
+    if (!validation.success || !validation.data) {
+      console.warn('[Tickets PDF] Validation failed:', validation.errors);
+      return NextResponse.json(
+        { 
+          error: 'Invalid request',
+          code: 'VALIDATION_FAILED',
+          details: validation.errors,
+        },
+        { status: 400 }
+      );
+    }
+    
+    // TypeScript now knows validation.data is defined
     const {
       firstName,
       lastName,
-      christmasMember = 0,
-      christmasNonMember = 0,
-      nyeMember = 0,
-      nyeNonMember = 0,
-    } = body;
+      christmasMember,
+      christmasNonMember,
+      nyeMember,
+      nyeNonMember,
+    } = validation.data;
 
     const customerName = `${firstName} ${lastName}`;
+    
+    // Load logo asynchronously (cached after first call)
+    const logoBase64 = await getUSCLogo();
+    
     const tickets: Array<{
       eventName: string;
       isNYE: boolean;
@@ -42,18 +69,19 @@ export async function POST(request: NextRequest) {
     const totalNYE = nyeMember + nyeNonMember;
     for (let i = 0; i < totalNYE; i++) {
       tickets.push({
-        eventName: 'New Year&apos;s Eve Gala',
+        eventName: "New Year's Eve Gala",
         isNYE: true,
         ticketNumber: i + 1,
         totalTickets: totalNYE,
       });
     }
 
-    // Create PDF document (8.5" x 11" letter size)
-    const doc = new jsPDF({
-      orientation: 'portrait',
-      unit: 'in',
-      format: 'letter',
+    // Create PDF document with proper metadata
+    const doc = createUSCPDF({
+      title: 'Event Tickets',
+      author: 'Ukiah Senior Center',
+      subject: `Tickets for ${customerName}`,
+      creator: 'USC Ticketing System v2.0',
     });
 
     // Helper function to draw a senior-friendly ticket
@@ -61,10 +89,10 @@ export async function POST(request: NextRequest) {
       const width = 3.5;
       const height = 2;
       const isNYE = ticket.isNYE;
-      const borderColor: [number, number, number] = isNYE ? [124, 58, 237] : [66, 125, 120];
+      const borderColor = isNYE ? USC_COLORS.PURPLE : USC_COLORS.TEAL;
 
       // Background - pure white like bookstore cards
-      doc.setFillColor(255, 255, 255);
+      doc.setFillColor(...USC_COLORS.WHITE);
       doc.rect(x, y, width, height, 'F');
 
       // Border - thicker like bookstore (3px)
@@ -72,20 +100,24 @@ export async function POST(request: NextRequest) {
       doc.setLineWidth(0.04); // ~3pt to match bookstore
       doc.roundedRect(x, y, width, height, 0.05, 0.05);
 
-      // Logo - 30% width on left side
-      const logoWidth = width * 0.3;
-      const logoHeight = logoWidth; // Keep square
-      const logoX = x + 0.1;
-      const logoY = y + (height - logoHeight) / 2; // Vertically centered
-      try {
-        doc.addImage(logoBase64, 'PNG', logoX, logoY, logoWidth, logoHeight);
-      } catch (e) {
-        console.error('Error adding logo:', e);
+      // Logo - 30% width on left side (gracefully handle missing logo)
+      if (logoBase64) {
+        const logoWidth = width * 0.3;
+        const logoHeight = logoWidth; // Keep square
+        const logoX = x + 0.1;
+        const logoY = y + (height - logoHeight) / 2; // Vertically centered
+        try {
+          doc.addImage(logoBase64, 'PNG', logoX, logoY, logoWidth, logoHeight);
+        } catch (e) {
+          console.error('[Tickets PDF] Error adding logo:', e);
+          // Continue without logo
+        }
       }
 
       // Text area - right 70% with better spacing
+      const logoWidth = logoBase64 ? width * 0.3 : 0;
       const textStartX = x + logoWidth + 0.2;
-      const textWidth = width * 0.7 - 0.3;
+      const textWidth = width * (logoBase64 ? 0.7 : 1.0) - 0.3;
       const textCenterX = textStartX + textWidth / 2;
       
       let textY = y + 0.28;
@@ -102,7 +134,7 @@ export async function POST(request: NextRequest) {
       // Date & Time - 11pt centered in text area
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(0, 0, 0);
+      doc.setTextColor(...USC_COLORS.BLACK);
       const dateTime = isNYE 
         ? 'Wed Dec 31, 7-10pm'
         : 'Tues Dec 23, 12-12:30pm';
@@ -113,7 +145,7 @@ export async function POST(request: NextRequest) {
       // Key info lines - 10pt centered in text area
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      doc.setTextColor(0, 0, 0);
+      doc.setTextColor(...USC_COLORS.BLACK);
       
       if (isNYE) {
         // Music by Beatz Werkin - centered with italic band name
@@ -154,7 +186,7 @@ export async function POST(request: NextRequest) {
       const footerY = y + height - 0.22;
       doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(0, 0, 0);
+      doc.setTextColor(...USC_COLORS.BLACK);
       const footer = '495 Leslie St, Ukiah • (707) 462-4343 ext 209';
       const footerWidth = doc.getTextWidth(footer);
       doc.text(footer, x + (width - footerWidth) / 2, footerY);
@@ -180,18 +212,42 @@ export async function POST(request: NextRequest) {
 
     // Generate PDF buffer
     const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
+    
+    // Validate PDF size
+    validatePDFSize(pdfBuffer);
+    
+    // Log success metrics
+    console.info('[Tickets PDF] Generated successfully', {
+      customerName,
+      totalTickets: tickets.length,
+      christmasTickets: totalChristmas,
+      nyeTickets: totalNYE,
+      sizeBytes: pdfBuffer.length,
+      sizeMB: (pdfBuffer.length / (1024 * 1024)).toFixed(2),
+      durationMs: Date.now() - startTime,
+      timestamp: new Date().toISOString(),
+    });
 
     return new NextResponse(pdfBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="tickets.pdf"',
+        'Content-Disposition': `attachment; filename="tickets_${firstName}_${lastName}.pdf"`,
+        'X-PDF-Size-Bytes': pdfBuffer.length.toString(),
+        'X-Ticket-Count': tickets.length.toString(),
       },
     });
+    
   } catch (error) {
-    console.error('Error generating PDF:', error);
-    return NextResponse.json(
-      { error: 'Failed to generate PDF' },
-      { status: 500 }
-    );
+    // Comprehensive error handling with proper logging
+    const errorResponse = createPDFErrorResponse(error, 'Ticket PDF generation');
+    
+    console.error('[Tickets PDF] Generation failed:', {
+      ...errorResponse,
+      durationMs: Date.now() - startTime,
+    });
+    
+    return NextResponse.json(errorResponse, { 
+      status: error instanceof Error && error.name === 'PDFValidationError' ? 400 : 500 
+    });
   }
 }

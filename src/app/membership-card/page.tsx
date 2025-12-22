@@ -27,8 +27,8 @@ export default function MembershipCard() {
             width: '3.5in',
             height: '2in',
             position: 'relative',
-            overflow: 'hidden',
-            padding: '16px',
+            overflow: 'visible',
+            padding: '14px',
             fontSize: '9px',
             background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
             border: `3px solid ${borderColor}`,
@@ -50,11 +50,11 @@ export default function MembershipCard() {
             />
             <div style={{ flex: 1, textAlign: 'left' }}>
               <h3 style={{ fontFamily: 'Jost, sans-serif', fontWeight: 'bold', color: accentColor, fontSize: '14px', marginBottom: '3px', lineHeight: '1.1' }}>
-                2026 Membership Card
+                2025-2026 Membership Card
               </h3>
               <div style={{ fontFamily: 'Bitter, serif', color: '#1f2937', fontSize: '9px', lineHeight: '1.3', fontWeight: '600' }}>
                 <div style={{ marginBottom: '2px' }}>Ukiah Senior Center</div>
-                <div style={{ fontSize: '8px', color: '#427d78' }}>Valid January 1 - December 31, 2026</div>
+                <div style={{ fontSize: '8px', color: '#427d78' }}>Valid July 1, 2025 - June 30, 2026</div>
               </div>
             </div>
           </div>

@@ -20,6 +20,8 @@ interface CustomerInfo {
   checkAmount?: string;
   otherPaymentDetails?: string;
   staffInitials: string;
+  specialRequests?: string;
+  dessertPreference?: string;
 }
 
 interface RequestBody {
@@ -131,6 +133,12 @@ export async function POST(request: NextRequest) {
     if (customer.otherPaymentDetails) {
       customer.otherPaymentDetails = customer.otherPaymentDetails.trim().substring(0, 255);
     }
+    if (customer.specialRequests) {
+      customer.specialRequests = customer.specialRequests.trim().substring(0, 1000);
+    }
+    if (customer.dessertPreference) {
+      customer.dessertPreference = customer.dessertPreference.trim().substring(0, 100);
+    }
 
     const CHRISTMAS_MEMBER = 15;
     const CHRISTMAS_NON_MEMBER = 20;
@@ -192,6 +200,8 @@ export async function POST(request: NextRequest) {
           'Christmas Non-Member Tickets': quantities.christmasNonMember,
           'Vegetarian Meals': vegetarianMeals,
           'Staff Initials': customer.staffInitials,
+          'Special Requests': customer.specialRequests || '',
+          'Dessert Preference': customer.dessertPreference || '',
         },
       };
 
@@ -280,6 +290,7 @@ export async function POST(request: NextRequest) {
           'NYE Member Tickets': quantities.nyeMember,
           'NYE Non-Member Tickets': quantities.nyeNonMember,
           'Staff Initials': customer.staffInitials,
+          'Special Requests': customer.specialRequests || '',
         },
       };
 

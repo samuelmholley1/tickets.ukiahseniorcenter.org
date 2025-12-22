@@ -1,0 +1,333 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import LoadingStates from '@/components/LoadingStates';
+
+interface AttendeeRecord {
+  id: string;
+  fields: {
+    'First Name': string;
+    'Last Name': string;
+    'Ticket Quantity'?: number;
+    'Vegetarian Meals'?: number;
+    'Special Requests'?: string;
+    'Dessert Preference'?: string;
+  };
+}
+
+export default function ChristmasAttendanceList() {
+  const [records, setRecords] = useState<AttendeeRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetchAttendees();
+  }, []);
+
+  const fetchAttendees = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch('/api/christmas-attendance');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to fetch attendance data');
+      }
+      const data = await response.json();
+      setRecords(data.records || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      setRecords([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Sort attendees by last name, then first name
+  const sortedRecords = [...records].sort((a, b) => {
+    const lastNameCompare = (a.fields['Last Name'] || '').localeCompare(b.fields['Last Name'] || '');
+    if (lastNameCompare !== 0) return lastNameCompare;
+    return (a.fields['First Name'] || '').localeCompare(b.fields['First Name'] || '');
+  });
+
+  const totalMeals = records.reduce((sum, record) => sum + (record.fields['Ticket Quantity'] || 0), 0);
+  const totalVegetarian = records.reduce((sum, record) => sum + (record.fields['Vegetarian Meals'] || 0), 0);
+  const totalRegular = totalMeals - totalVegetarian;
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  return (
+    <div className="attendance-list-container">
+      {/* Print Styles */}
+      <style jsx global>{`
+        @media print {
+          body {
+            margin: 0;
+            padding: 0;
+            background: white;
+          }
+          .no-print {
+            display: none !important;
+          }
+          .attendance-list-container {
+            padding: 20px;
+          }
+          .attendance-table {
+            page-break-inside: avoid;
+          }
+          .attendance-table th,
+          .attendance-table td {
+            border: 1px solid #333;
+            padding: 8px;
+          }
+          .attendance-header {
+            margin-bottom: 20px;
+          }
+        }
+
+        @media screen {
+          .attendance-list-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: white;
+            min-height: 100vh;
+          }
+        }
+
+        .attendance-header {
+          text-align: center;
+          margin-bottom: 30px;
+        }
+
+        .attendance-header h1 {
+          font-family: 'Jost', sans-serif;
+          font-size: 2.5rem;
+          color: #427d78;
+          margin-bottom: 10px;
+          font-weight: 700;
+        }
+
+        .attendance-header .subtitle {
+          font-family: 'Bitter', serif;
+          font-size: 1.125rem;
+          color: #666;
+        }
+
+        .summary-stats {
+          display: flex;
+          justify-content: center;
+          gap: 30px;
+          margin: 20px 0 30px;
+          padding: 15px;
+          background: #f8f9fa;
+          border-radius: 8px;
+        }
+
+        .stat-item {
+          text-align: center;
+        }
+
+        .stat-label {
+          font-family: 'Bitter', serif;
+          font-size: 0.875rem;
+          color: #666;
+          margin-bottom: 5px;
+        }
+
+        .stat-value {
+          font-family: 'Jost', sans-serif;
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: #427d78;
+        }
+
+        .attendance-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 20px;
+        }
+
+        .attendance-table th {
+          background: #427d78;
+          color: white;
+          font-family: 'Jost', sans-serif;
+          font-weight: 700;
+          padding: 12px 8px;
+          text-align: left;
+          border: 1px solid #2d5753;
+        }
+
+        .attendance-table td {
+          padding: 10px 8px;
+          border: 1px solid #dee2e6;
+          font-family: 'Bitter', serif;
+        }
+
+        .attendance-table tbody tr:nth-child(even) {
+          background: #f8f9fa;
+        }
+
+        .attendance-table tbody tr:hover {
+          background: #e9ecef;
+        }
+
+        .print-button {
+          display: inline-block;
+          background: #427d78;
+          color: white;
+          padding: 12px 24px;
+          border-radius: 8px;
+          font-family: 'Jost', sans-serif;
+          font-weight: 700;
+          cursor: pointer;
+          border: none;
+          font-size: 1rem;
+          margin-bottom: 20px;
+          transition: background 0.2s;
+        }
+
+        .print-button:hover {
+          background: #5eb3a1;
+        }
+
+        .error-message {
+          background: #fee;
+          border: 2px solid #fcc;
+          padding: 20px;
+          border-radius: 8px;
+          text-align: center;
+          color: #c00;
+          font-family: 'Jost', sans-serif;
+          font-weight: 700;
+        }
+
+        .loading-container {
+          text-align: center;
+          padding: 60px 20px;
+        }
+      `}</style>
+
+      {/* Screen-only controls */}
+      <div className="no-print" style={{ marginBottom: '20px' }}>
+        <button onClick={handlePrint} className="print-button">
+          🖨️ Print Attendance List
+        </button>
+      </div>
+
+      {/* Header */}
+      <div className="attendance-header">
+        <h1>Christmas Drive-Thru 2025</h1>
+        <div className="subtitle">Attendance List</div>
+        <div style={{ marginTop: '10px', fontSize: '0.875rem', color: '#999' }}>
+          Generated: {new Date().toLocaleDateString('en-US', { 
+            month: 'long', 
+            day: 'numeric', 
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit'
+          })}
+        </div>
+      </div>
+
+      {/* Summary Statistics */}
+      {!loading && !error && (
+        <div className="summary-stats">
+          <div className="stat-item">
+            <div className="stat-label">Total Attendees</div>
+            <div className="stat-value">{records.length}</div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-label">Total Meals</div>
+            <div className="stat-value">{totalMeals}</div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-label">Prime Rib</div>
+            <div className="stat-value">{totalRegular}</div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-label">Vegetarian (Eggplant)</div>
+            <div className="stat-value">{totalVegetarian}</div>
+          </div>
+        </div>
+      )}
+
+      {/* Error Message */}
+      {error && (
+        <div className="error-message">
+          ✗ {error}
+        </div>
+      )}
+
+      {/* Loading State */}
+      {loading && (
+        <div className="loading-container">
+          <LoadingStates size="lg" />
+          <p style={{ marginTop: '20px', color: '#666', fontFamily: 'Bitter, serif' }}>
+            Loading attendance data...
+          </p>
+        </div>
+      )}
+
+      {/* Attendance Table */}
+      {!loading && !error && (
+        <table className="attendance-table">
+          <thead>
+            <tr>
+              <th style={{ width: '25%' }}>Last Name</th>
+              <th style={{ width: '25%' }}>First Name</th>
+              <th style={{ width: '10%', textAlign: 'center' }}>Tickets</th>
+              <th style={{ width: '10%', textAlign: 'center' }}>Vegetarian</th>
+              <th style={{ width: '30%' }}>Special Requests / Dessert</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sortedRecords.length === 0 ? (
+              <tr>
+                <td colSpan={5} style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+                  No attendees found
+                </td>
+              </tr>
+            ) : (
+              sortedRecords.map((record) => {
+                const specialRequests = [];
+                
+                // Add vegetarian note if applicable
+                const vegCount = record.fields['Vegetarian Meals'] || 0;
+                if (vegCount > 0) {
+                  specialRequests.push(`${vegCount} Vegetarian meal${vegCount > 1 ? 's' : ''}`);
+                }
+                
+                // Add dessert preference if specified
+                if (record.fields['Dessert Preference']) {
+                  specialRequests.push(`Dessert: ${record.fields['Dessert Preference']}`);
+                }
+                
+                // Add any other special requests
+                if (record.fields['Special Requests']) {
+                  specialRequests.push(record.fields['Special Requests']);
+                }
+
+                const specialRequestsText = specialRequests.length > 0 
+                  ? specialRequests.join(' | ') 
+                  : '—';
+
+                return (
+                  <tr key={record.id}>
+                    <td>{record.fields['Last Name'] || '—'}</td>
+                    <td>{record.fields['First Name'] || '—'}</td>
+                    <td style={{ textAlign: 'center' }}>{record.fields['Ticket Quantity'] || 0}</td>
+                    <td style={{ textAlign: 'center' }}>{vegCount || '—'}</td>
+                    <td>{specialRequestsText}</td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}

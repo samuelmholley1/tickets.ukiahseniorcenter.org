@@ -100,6 +100,8 @@ export default function ChristmasAttendanceList() {
         .attendance-header {
           text-align: center;
           margin-bottom: 30px;
+          page-break-after: avoid;
+          page-break-inside: avoid;
         }
 
         .attendance-header h1 {
@@ -124,6 +126,8 @@ export default function ChristmasAttendanceList() {
           padding: 15px;
           background: #f8f9fa;
           border-radius: 8px;
+          page-break-after: avoid;
+          page-break-inside: avoid;
         }
 
         .stat-item {
@@ -148,6 +152,7 @@ export default function ChristmasAttendanceList() {
           width: 100%;
           border-collapse: collapse;
           margin-top: 20px;
+          page-break-before: avoid;
         }
 
         .attendance-table th {

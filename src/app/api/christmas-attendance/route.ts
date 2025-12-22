@@ -13,6 +13,7 @@ interface AirtableRecord {
     'Phone': string;
     'Ticket Quantity'?: number;
     'Vegetarian Meals'?: number;
+    'Refunded'?: boolean;
   };
 }
 
@@ -74,16 +75,18 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
     
-    // Return only the fields needed for attendance list
-    const records = data.records.map((record: AirtableRecord) => ({
-      id: record.id,
-      fields: {
-        'First Name': record.fields['First Name'] || '',
-        'Last Name': record.fields['Last Name'] || '',
-        'Ticket Quantity': record.fields['Ticket Quantity'] || 0,
-        'Vegetarian Meals': record.fields['Vegetarian Meals'] || 0,
-      }
-    }));
+    // Filter out refunded records and return only the fields needed for attendance list
+    const records = data.records
+      .filter((record: AirtableRecord) => !record.fields.Refunded)
+      .map((record: AirtableRecord) => ({
+        id: record.id,
+        fields: {
+          'First Name': record.fields['First Name'] || '',
+          'Last Name': record.fields['Last Name'] || '',
+          'Ticket Quantity': record.fields['Ticket Quantity'] || 0,
+          'Vegetarian Meals': record.fields['Vegetarian Meals'] || 0,
+        }
+      }));
 
     return NextResponse.json({ records });
 

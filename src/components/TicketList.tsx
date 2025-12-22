@@ -116,7 +116,7 @@ export function TicketList() {
           display: 'inline-block',
           fontSize: '12px'
         }}>
-          <span className="font-['Jost',sans-serif] text-[#15803d]">💳 Last Zeffy Import: 12/22/25 at 2:50 PM</span>
+          <span className="font-['Jost',sans-serif] text-[#15803d]">💳 Last Zeffy Import: 12/22/25 at 3:25 PM</span>
         </div>
       </div>
 

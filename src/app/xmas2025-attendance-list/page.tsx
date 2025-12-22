@@ -303,40 +303,37 @@ export default function ChristmasAttendanceList() {
           <thead>
             <tr>
               <th style={{ width: '8%', textAlign: 'center' }}>Check In</th>
-              <th style={{ width: '20%' }}>Last Name</th>
-              <th style={{ width: '20%' }}>First Name</th>
+              <th style={{ width: '23%' }}>Last Name</th>
+              <th style={{ width: '23%' }}>First Name</th>
               <th style={{ width: '8%', textAlign: 'center' }}>Tickets</th>
-              <th style={{ width: '8%', textAlign: 'center' }}>Vegetarian</th>
-              <th style={{ width: '36%' }}>Special Requests / Dessert</th>
+              <th style={{ width: '38%' }}>Notes</th>
             </tr>
           </thead>
           <tbody>
             {sortedRecords.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+                <td colSpan={5} style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
                   No attendees found
                 </td>
               </tr>
             ) : (
               sortedRecords.map((record) => {
-                const specialRequests = [];
+                const notes = [];
                 
                 // Add vegetarian note if applicable
                 const vegCount = record.fields['Vegetarian Meals'] || 0;
                 if (vegCount > 0) {
-                  specialRequests.push(`${vegCount} Vegetarian meal${vegCount > 1 ? 's' : ''}`);
+                  notes.push(`Vegetarian: ${vegCount}`);
                 }
                 
                 // Hard-coded special cases
                 const firstName = record.fields['First Name'] || '';
                 const lastName = record.fields['Last Name'] || '';
                 if (lastName.toLowerCase() === 'snyder' && firstName.toLowerCase() === 'mary') {
-                  specialRequests.push('Dessert: Pumpkin Pie');
+                  notes.push('Pumpkin Pie');
                 }
 
-                const specialRequestsText = specialRequests.length > 0 
-                  ? specialRequests.join(' | ') 
-                  : '—';
+                const notesText = notes.length > 0 ? notes.join(' | ') : '—';
 
                 const ticketCount = record.fields['Ticket Quantity'] || 0;
                 const checkboxes = Array.from({ length: ticketCount }, (_, i) => i);
@@ -353,8 +350,7 @@ export default function ChristmasAttendanceList() {
                     <td>{record.fields['Last Name'] || '—'}</td>
                     <td>{record.fields['First Name'] || '—'}</td>
                     <td style={{ textAlign: 'center' }}>{ticketCount || 0}</td>
-                    <td style={{ textAlign: 'center' }}>{vegCount || '—'}</td>
-                    <td>{specialRequestsText}</td>
+                    <td>{notesText}</td>
                   </tr>
                 );
               })

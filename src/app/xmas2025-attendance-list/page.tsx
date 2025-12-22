@@ -164,6 +164,29 @@ export default function ChristmasAttendanceList() {
           padding: 10px 8px;
           border: 1px solid #dee2e6;
           font-family: 'Bitter', serif;
+          vertical-align: top;
+        }
+
+        .checkbox-cell {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 4px;
+          align-items: flex-start;
+        }
+
+        .checkbox-item {
+          width: 18px;
+          height: 18px;
+          border: 2px solid #427d78;
+          border-radius: 3px;
+          background: white;
+        }
+
+        @media print {
+          .checkbox-item {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
         }
 
         .attendance-table tbody tr:nth-child(even) {
@@ -276,17 +299,18 @@ export default function ChristmasAttendanceList() {
         <table className="attendance-table">
           <thead>
             <tr>
-              <th style={{ width: '25%' }}>Last Name</th>
-              <th style={{ width: '25%' }}>First Name</th>
-              <th style={{ width: '10%', textAlign: 'center' }}>Tickets</th>
-              <th style={{ width: '10%', textAlign: 'center' }}>Vegetarian</th>
-              <th style={{ width: '30%' }}>Special Requests / Dessert</th>
+              <th style={{ width: '8%', textAlign: 'center' }}>Check In</th>
+              <th style={{ width: '20%' }}>Last Name</th>
+              <th style={{ width: '20%' }}>First Name</th>
+              <th style={{ width: '8%', textAlign: 'center' }}>Tickets</th>
+              <th style={{ width: '8%', textAlign: 'center' }}>Vegetarian</th>
+              <th style={{ width: '36%' }}>Special Requests / Dessert</th>
             </tr>
           </thead>
           <tbody>
             {sortedRecords.length === 0 ? (
               <tr>
-                <td colSpan={5} style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+                <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
                   No attendees found
                 </td>
               </tr>
@@ -314,11 +338,21 @@ export default function ChristmasAttendanceList() {
                   ? specialRequests.join(' | ') 
                   : '—';
 
+                const ticketCount = record.fields['Ticket Quantity'] || 0;
+                const checkboxes = Array.from({ length: ticketCount }, (_, i) => i);
+
                 return (
                   <tr key={record.id}>
+                    <td>
+                      <div className="checkbox-cell">
+                        {checkboxes.map((i) => (
+                          <div key={i} className="checkbox-item" />
+                        ))}
+                      </div>
+                    </td>
                     <td>{record.fields['Last Name'] || '—'}</td>
                     <td>{record.fields['First Name'] || '—'}</td>
-                    <td style={{ textAlign: 'center' }}>{record.fields['Ticket Quantity'] || 0}</td>
+                    <td style={{ textAlign: 'center' }}>{ticketCount || 0}</td>
                     <td style={{ textAlign: 'center' }}>{vegCount || '—'}</td>
                     <td>{specialRequestsText}</td>
                   </tr>

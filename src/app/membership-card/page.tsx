@@ -34,7 +34,7 @@ export default function MembershipCard() {
       }}
     >
       {/* Header with Logo */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', borderBottom: `2px solid ${borderColor}`, paddingBottom: '4px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', borderBottom: `2px solid ${borderColor}`, paddingBottom: '3px' }}>
         <img
           src="/logo.png"
           alt="Ukiah Senior Center"
@@ -42,35 +42,35 @@ export default function MembershipCard() {
           height="45"
           style={{ flexShrink: 0 }}
         />
-        <div style={{ flex: 1, textAlign: 'left' }}>
-          <h3 style={{ fontFamily: 'Jost, sans-serif', fontWeight: 'bold', color: accentColor, fontSize: '14px', marginBottom: '2px', lineHeight: '1' }}>
+        <div style={{ flex: 1, textAlign: 'left', marginTop: '-2px' }}>
+          <h3 style={{ fontFamily: 'Jost, sans-serif', fontWeight: 'bold', color: accentColor, fontSize: '14px', marginBottom: '1px', lineHeight: '1' }}>
             2025-2026 Membership Card
           </h3>
-          <div style={{ fontFamily: 'Bitter, serif', color: '#1f2937', fontSize: '9px', lineHeight: '1.2', fontWeight: '600' }}>
-            <div style={{ marginBottom: '1px' }}>Ukiah Senior Center</div>
+          <div style={{ fontFamily: 'Bitter, serif', color: '#1f2937', fontSize: '9px', lineHeight: '1.1', fontWeight: '600' }}>
+            <div style={{ marginBottom: '0px' }}>Ukiah Senior Center</div>
             <div style={{ fontSize: '8px', color: '#427d78' }}>Valid July 1, 2025 - June 30, 2026</div>
           </div>
         </div>
       </div>
 
       {/* Member Details */}
-      <div style={{ flex: 1, paddingTop: '8px', paddingBottom: '4px', fontSize: '10px', fontFamily: 'Bitter, serif', lineHeight: '1.4' }}>
-        <div style={{ marginBottom: '4px' }}>
+      <div style={{ flex: 1, paddingTop: '6px', paddingBottom: '3px', fontSize: '10px', fontFamily: 'Bitter, serif', lineHeight: '1.3' }}>
+        <div style={{ marginBottom: '3px' }}>
           <strong style={{ color: accentColor, fontSize: '11px' }}>Member:</strong>
-          <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#1f2937', marginTop: '1px' }}>
+          <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#1f2937', marginTop: '0px' }}>
             {memberName}
           </div>
         </div>
-        <div style={{ marginTop: '6px', paddingTop: '4px', borderTop: `1px solid ${borderColor}`, fontSize: '8px', color: '#6b7280', lineHeight: '1.3' }}>
-          <div style={{ marginBottom: '2px' }}>✓ Access to all senior center programs</div>
-          <div style={{ marginBottom: '2px' }}>✓ Member pricing on events & activities</div>
+        <div style={{ marginTop: '4px', paddingTop: '3px', borderTop: `1px solid ${borderColor}`, fontSize: '8px', color: '#6b7280', lineHeight: '1.2' }}>
+          <div style={{ marginBottom: '1px' }}>✓ Access to all senior center programs</div>
+          <div style={{ marginBottom: '1px' }}>✓ Member pricing on events & activities</div>
           <div>✓ Monthly newsletter & event updates</div>
         </div>
       </div>
 
       {/* Footer */}
-      <div style={{ textAlign: 'center', borderTop: `2px solid ${borderColor}`, paddingTop: '4px' }}>
-        <p style={{ fontFamily: 'Bitter, serif', color: '#6b7280', fontSize: '8px', lineHeight: '1.1', fontWeight: '600', marginBottom: '1px' }}>
+      <div style={{ textAlign: 'center', borderTop: `2px solid ${borderColor}`, paddingTop: '3px' }}>
+        <p style={{ fontFamily: 'Bitter, serif', color: '#6b7280', fontSize: '8px', lineHeight: '1', fontWeight: '600', marginBottom: '1px' }}>
           495 Leslie St, Ukiah, CA 95482 • (707) 462-4343
         </p>
         <p style={{ fontFamily: 'Jost, sans-serif', color: accentColor, fontSize: '7px', fontWeight: 'bold', marginTop: '1px' }}>

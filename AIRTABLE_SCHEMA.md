@@ -21,8 +21,6 @@
 
 #### Text Fields (Long text)
 - **Payment Notes** - For split payments, stores: "Cash: $50.00, Check: $30.00"
-- **Special Requests** - Any special requests or notes from the customer (allergies, accessibility needs, etc.)
-- **Dessert Preference** - Dessert preference (e.g., "Pumpkin Pie" instead of default cheesecake)
 
 #### Single Select Field
 - **Payment Method** - Options: `Cash`, `Check`, `Cash & Check`, `Comp`, `Other`
@@ -59,7 +57,6 @@
 
 #### Text Fields (Long text)
 - **Payment Notes** - For split payments, stores: "Cash: $50.00, Check: $30.00"
-- **Special Requests** - Any special requests or notes from the customer (allergies, accessibility needs, etc.)
 
 #### Single Select Field
 - **Payment Method** - Options: `Cash`, `Check`, `Cash & Check`, `Comp`, `Other`

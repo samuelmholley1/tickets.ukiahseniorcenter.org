@@ -31,9 +31,7 @@ export default function UnifiedSalesPage() {
     cashAmount: '',
     checkAmount: '',
     otherPaymentDetails: '',
-    staffInitials: '',
-    specialRequests: '',
-    dessertPreference: ''
+    staffInitials: ''
   });
 
   const [vegetarianMeals, setVegetarianMeals] = useState<boolean[]>([]);
@@ -504,49 +502,6 @@ export default function UnifiedSalesPage() {
                   />
                 </div>
               </div>
-
-              {/* Special Requests and Dessert Preference for Christmas */}
-              {christmasTotal > 0 && (
-                <div style={{ marginTop: 'var(--space-3)', padding: 'var(--space-3)', background: '#fffaf0', borderRadius: '8px', border: '2px dashed #e5b96f' }}>
-                  <h3 className="font-['Jost',sans-serif] font-bold text-[#8b6914] text-lg mb-3">
-                    🎄 Christmas Meal Preferences
-                  </h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
-                    <div>
-                      <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">
-                        Special Requests
-                        <span className="text-xs text-gray-500" style={{ fontWeight: 'normal', display: 'block', marginTop: '4px' }}>
-                          (Allergies, accessibility needs, etc.)
-                        </span>
-                      </label>
-                      <textarea
-                        value={formData.specialRequests}
-                        onChange={(e) => setFormData({...formData, specialRequests: e.target.value})}
-                        rows={3}
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
-                        placeholder="Optional"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">
-                        Dessert Preference
-                        <span className="text-xs text-gray-500" style={{ fontWeight: 'normal', display: 'block', marginTop: '4px' }}>
-                          (Default: Cheesecake)
-                        </span>
-                      </label>
-                      <select
-                        value={formData.dessertPreference}
-                        onChange={(e) => setFormData({...formData, dessertPreference: e.target.value})}
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
-                      >
-                        <option value="">Cheesecake (default)</option>
-                        <option value="Pumpkin Pie">Pumpkin Pie</option>
-                        <option value="Other">Other (specify in Special Requests)</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {formData.paymentMethod === 'check' && (
                 <div style={{ marginBottom: 'var(--space-3)' }}>

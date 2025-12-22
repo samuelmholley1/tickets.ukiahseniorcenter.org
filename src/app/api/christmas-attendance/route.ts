@@ -13,8 +13,6 @@ interface AirtableRecord {
     'Phone': string;
     'Ticket Quantity'?: number;
     'Vegetarian Meals'?: number;
-    'Special Requests'?: string;
-    'Dessert Preference'?: string;
   };
 }
 
@@ -84,8 +82,6 @@ export async function GET(request: NextRequest) {
         'Last Name': record.fields['Last Name'] || '',
         'Ticket Quantity': record.fields['Ticket Quantity'] || 0,
         'Vegetarian Meals': record.fields['Vegetarian Meals'] || 0,
-        'Special Requests': record.fields['Special Requests'] || '',
-        'Dessert Preference': record.fields['Dessert Preference'] || '',
       }
     }));
 

@@ -10,8 +10,6 @@ interface AttendeeRecord {
     'Last Name': string;
     'Ticket Quantity'?: number;
     'Vegetarian Meals'?: number;
-    'Special Requests'?: string;
-    'Dessert Preference'?: string;
   };
 }
 
@@ -329,14 +327,11 @@ export default function ChristmasAttendanceList() {
                   specialRequests.push(`${vegCount} Vegetarian meal${vegCount > 1 ? 's' : ''}`);
                 }
                 
-                // Add dessert preference if specified
-                if (record.fields['Dessert Preference']) {
-                  specialRequests.push(`Dessert: ${record.fields['Dessert Preference']}`);
-                }
-                
-                // Add any other special requests
-                if (record.fields['Special Requests']) {
-                  specialRequests.push(record.fields['Special Requests']);
+                // Hard-coded special cases
+                const firstName = record.fields['First Name'] || '';
+                const lastName = record.fields['Last Name'] || '';
+                if (lastName.toLowerCase() === 'snyder' && firstName.toLowerCase() === 'mary') {
+                  specialRequests.push('Dessert: Pumpkin Pie');
                 }
 
                 const specialRequestsText = specialRequests.length > 0 

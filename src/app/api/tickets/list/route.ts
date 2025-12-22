@@ -23,6 +23,7 @@ interface AirtableRecord {
     'NYE Non-Member Tickets'?: number;
     'Staff Initials': string;
     'Purchase Date'?: string;
+    'Refunded'?: boolean;
   };
 }
 
@@ -95,7 +96,8 @@ export async function GET(request: NextRequest) {
       }
 
       const christmasData = await christmasResponse.json();
-      records.push(...christmasData.records.map((r: AirtableRecord) => ({ ...r, event: 'Christmas Drive-Thru' })));
+      const christmasRecords = christmasData.records.filter((r: AirtableRecord) => !r.fields.Refunded);
+      records.push(...christmasRecords.map((r: AirtableRecord) => ({ ...r, event: 'Christmas Drive-Thru' })));
     }
 
     // Fetch NYE tickets
@@ -120,7 +122,8 @@ export async function GET(request: NextRequest) {
       }
 
       const nyeData = await nyeResponse.json();
-      records.push(...nyeData.records.map((r: AirtableRecord) => ({ ...r, event: 'NYE Gala Dance' })));
+      const nyeRecords = nyeData.records.filter((r: AirtableRecord) => !r.fields.Refunded);
+      records.push(...nyeRecords.map((r: AirtableRecord) => ({ ...r, event: 'NYE Gala Dance' })));
     }
 
     // Sort all records by creation time (newest first)

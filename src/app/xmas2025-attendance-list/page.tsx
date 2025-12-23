@@ -42,14 +42,14 @@ export default function ChristmasAttendanceList() {
   };
 
   // Sort attendees by last name, then first name
-  // Separate Heather Haydon for delivery list
+  // Separate Heather Haydon for delivery list (last name starts with "Haydon")
   const heatherRecords = records.filter(r => 
-    r.fields['Last Name']?.toLowerCase() === 'haydon' && 
+    r.fields['Last Name']?.toLowerCase().startsWith('haydon') && 
     r.fields['First Name']?.toLowerCase() === 'heather'
   );
   
   const regularRecords = records.filter(r => 
-    !(r.fields['Last Name']?.toLowerCase() === 'haydon' && 
+    !(r.fields['Last Name']?.toLowerCase().startsWith('haydon') && 
       r.fields['First Name']?.toLowerCase() === 'heather')
   );
 

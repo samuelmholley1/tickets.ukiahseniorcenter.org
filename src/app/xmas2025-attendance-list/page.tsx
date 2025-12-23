@@ -80,9 +80,10 @@ export default function ChristmasAttendanceList() {
   const deliveryRegular = deliveryMeals - deliveryVegetarian;
 
   // Calculate grand totals (kitchen needs to know total to make)
-  const grandTotalMeals = totalMeals + deliveryMeals;
+  // Add 1 for Jon Henderson (pickup at 2pm, in fridge)
+  const grandTotalMeals = totalMeals + deliveryMeals + 1;
   const grandTotalVegetarian = totalVegetarian + deliveryVegetarian;
-  const grandTotalRegular = totalRegular + deliveryRegular;
+  const grandTotalRegular = totalRegular + deliveryRegular + 1;
 
   const handlePrint = () => {
     window.print();
@@ -362,7 +363,7 @@ export default function ChristmasAttendanceList() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
               <div>
                 <div style={{ fontSize: '1.125rem', fontWeight: '700', color: '#1e40af', marginBottom: '10px' }}>
-                  DRIVE-THROUGH PICKUP ({totalMeals} meals)
+                  DRIVE-THROUGH PICKUP ({totalMeals + 1} meals)
                 </div>
                 <div style={{ display: 'flex', gap: '15px', paddingLeft: '20px' }}>
                   <div>
@@ -371,11 +372,25 @@ export default function ChristmasAttendanceList() {
                   </div>
                   <div>
                     <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#1e3a8a' }}>Cheesecake</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e40af' }}>{totalRegular - 2}</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e40af' }}>{totalRegular - 2 + 1}</div>
                   </div>
                   <div>
                     <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#1e3a8a' }}>Pumpkin Pie</div>
                     <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e40af' }}>2</div>
+                  </div>
+                </div>
+                <div style={{ 
+                  marginTop: '12px', 
+                  padding: '10px', 
+                  backgroundColor: '#fef3c7', 
+                  borderRadius: '6px',
+                  border: '2px solid #f59e0b'
+                }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: '700', color: '#92400e', marginBottom: '4px' }}>
+                    ⚠️ SPECIAL - PUT IN FRIDGE
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#78350f', fontWeight: '600' }}>
+                    1 meal for Jon Henderson (2pm pickup)
                   </div>
                 </div>
               </div>
@@ -415,10 +430,19 @@ export default function ChristmasAttendanceList() {
                 🚗 DRIVE-THROUGH PICKUP
               </div>
               <div style={{ fontSize: '0.875rem', color: '#047857', fontWeight: '600', marginBottom: '8px' }}>
-                {regularRecords.length} Reservations
+                {regularRecords.length} Reservations (+1 pending)
               </div>
               <div style={{ fontSize: '2.5rem', fontWeight: '700', color: '#065f46' }}>
-                {totalMeals} Meals
+                {totalMeals + 1} Meals
+              </div>
+              <div style={{ 
+                marginTop: '12px',
+                fontSize: '0.75rem', 
+                color: '#047857', 
+                fontWeight: '600',
+                fontStyle: 'italic'
+              }}>
+                Includes 1 meal for Jon Henderson in fridge
               </div>
             </div>
             <div style={{ 

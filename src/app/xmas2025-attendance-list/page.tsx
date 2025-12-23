@@ -327,7 +327,7 @@ export default function ChristmasAttendanceList() {
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#78350f', marginBottom: '5px' }}>
-                  PUMPKIN PIE (PRIME RIB)
+                  PRIME RIB WITH CHEESECAKE
                 </div>
                 <div style={{ fontSize: '2rem', fontWeight: '700', color: '#92400e' }}>
                   {grandTotalRegular}
@@ -362,7 +362,7 @@ export default function ChristmasAttendanceList() {
                     <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e40af' }}>{totalVegetarian}</div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#1e3a8a' }}>Pumpkin Pie</div>
+                    <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#1e3a8a' }}>Regular (Cheesecake)</div>
                     <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e40af' }}>{totalRegular}</div>
                   </div>
                 </div>
@@ -377,10 +377,29 @@ export default function ChristmasAttendanceList() {
                     <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e40af' }}>{deliveryVegetarian}</div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#1e3a8a' }}>Pumpkin Pie</div>
+                    <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#1e3a8a' }}>Regular (Cheesecake)</div>
                     <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e40af' }}>{deliveryRegular}</div>
                   </div>
                 </div>
+              </div>
+            </div>
+            <div style={{ 
+              marginTop: '15px', 
+              padding: '12px', 
+              backgroundColor: '#fef3c7', 
+              borderRadius: '6px',
+              border: '2px solid #f59e0b'
+            }}>
+              <div style={{ 
+                fontSize: '0.875rem', 
+                fontWeight: '700', 
+                color: '#92400e',
+                marginBottom: '5px'
+              }}>
+                ⚠️ SPECIAL REQUEST
+              </div>
+              <div style={{ fontSize: '0.875rem', color: '#78350f', fontWeight: '600' }}>
+                Mary Snyder: Pumpkin Pie instead of Cheesecake (1)
               </div>
             </div>
           </div>

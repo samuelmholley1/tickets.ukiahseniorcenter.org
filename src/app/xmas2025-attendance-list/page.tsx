@@ -42,7 +42,18 @@ export default function ChristmasAttendanceList() {
   };
 
   // Sort attendees by last name, then first name
-  const sortedRecords = [...records].sort((a, b) => {
+  // Separate Heather Haydon for delivery list
+  const heatherRecords = records.filter(r => 
+    r.fields['Last Name']?.toLowerCase() === 'haydon' && 
+    r.fields['First Name']?.toLowerCase() === 'heather'
+  );
+  
+  const regularRecords = records.filter(r => 
+    !(r.fields['Last Name']?.toLowerCase() === 'haydon' && 
+      r.fields['First Name']?.toLowerCase() === 'heather')
+  );
+
+  const sortedRecords = [...regularRecords].sort((a, b) => {
     const lastNameCompare = (a.fields['Last Name'] || '').localeCompare(b.fields['Last Name'] || '');
     if (lastNameCompare !== 0) return lastNameCompare;
     return (a.fields['First Name'] || '').localeCompare(b.fields['First Name'] || '');
@@ -357,6 +368,75 @@ export default function ChristmasAttendanceList() {
             )}
           </tbody>
         </table>
+      )}
+
+      {/* Separate Delivery List for Heather Haydon */}
+      {!loading && !error && heatherRecords.length > 0 && (
+        <>
+          <div style={{ 
+            marginTop: '60px', 
+            paddingTop: '40px', 
+            borderTop: '3px solid #427d78',
+            pageBreakBefore: 'always' 
+          }}>
+            <div className="attendance-header">
+              <h2 style={{ 
+                fontFamily: 'Jost, sans-serif', 
+                fontSize: '2rem', 
+                color: '#427d78', 
+                marginBottom: '10px',
+                fontWeight: 700 
+              }}>
+                Separate Delivery List
+              </h2>
+              <div className="subtitle" style={{ fontSize: '1rem' }}>
+                To be delivered separately
+              </div>
+            </div>
+
+            <table className="attendance-table" style={{ marginTop: '30px' }}>
+              <thead>
+                <tr>
+                  <th style={{ width: '8%', textAlign: 'center' }}>Check In</th>
+                  <th style={{ width: '23%' }}>Last Name</th>
+                  <th style={{ width: '23%' }}>First Name</th>
+                  <th style={{ width: '8%', textAlign: 'center' }}>Tickets</th>
+                  <th style={{ width: '38%' }}>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {heatherRecords.map((record) => {
+                  const notes = [];
+                  
+                  const vegCount = record.fields['Vegetarian Meals'] || 0;
+                  if (vegCount > 0) {
+                    notes.push(`Vegetarian: ${vegCount}`);
+                  }
+
+                  const notesText = notes.length > 0 ? notes.join(' | ') : '—';
+                  const ticketCount = record.fields['Ticket Quantity'] || 0;
+                  const checkboxes = Array.from({ length: ticketCount }, (_, i) => i);
+
+                  return (
+                    <tr key={record.id}>
+                      <td>
+                        <div className="checkbox-cell">
+                          {checkboxes.map((i) => (
+                            <div key={i} className="checkbox-item" />
+                          ))}
+                        </div>
+                      </td>
+                      <td>{record.fields['Last Name'] || '—'}</td>
+                      <td>{record.fields['First Name'] || '—'}</td>
+                      <td style={{ textAlign: 'center' }}>{ticketCount || 0}</td>
+                      <td>{notesText}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   );

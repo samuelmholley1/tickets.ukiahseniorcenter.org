@@ -8,6 +8,7 @@ interface AttendeeRecord {
   fields: {
     'First Name': string;
     'Last Name': string;
+    'Phone'?: string;
     'Ticket Quantity'?: number;
     'Vegetarian Meals'?: number;
   };

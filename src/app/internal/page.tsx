@@ -59,7 +59,7 @@ export default function UnifiedSalesPage() {
   
   const ticketSubtotal = christmasTotal + nyeTotal;
   const donation = wantsDonation ? (parseFloat(donationAmount) || 0) : 0;
-  const grandTotal = ticketSubtotal + donation;
+  const grandTotal = (ticketSubtotal || 0) + (donation || 0);
   
   const totalTickets = 
     quantities.christmasMember + 

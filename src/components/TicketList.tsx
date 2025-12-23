@@ -283,7 +283,7 @@ export function TicketList() {
                         🎟️ Print Tickets
                       </button>
                       <div className="font-['Jost',sans-serif] font-bold text-2xl text-[#427d78]">
-                        ${record.fields['Amount Paid'].toFixed(2)}
+                        ${(record.fields['Amount Paid'] || 0).toFixed(2)}
                       </div>
                     </div>
                   </div>
@@ -303,7 +303,7 @@ export function TicketList() {
                     </div>
                     {record.fields['Donation Amount'] ? (
                       <div className="font-['Bitter',serif] text-sm text-gray-600" style={{ marginTop: '6px' }}>
-                        + ${record.fields['Donation Amount'].toFixed(2)} donation
+                        + ${(record.fields['Donation Amount'] || 0).toFixed(2)} donation
                       </div>
                     ) : null}
                   </div>

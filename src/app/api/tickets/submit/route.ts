@@ -328,7 +328,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Send email receipt automatically if email is provided
-    if (customer.email && customer.email.length > 0) {
+    // DISABLED for Christmas Drive-Through - only send for NYE tickets
+    if (customer.email && customer.email.length > 0 && quantities.nyeMember + quantities.nyeNonMember > 0) {
       console.log('[submit] Sending email receipt to:', customer.email);
       try {
         const emailResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/tickets/send-receipt`, {

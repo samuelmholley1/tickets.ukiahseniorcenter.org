@@ -308,7 +308,7 @@ export default function ChristmasAttendanceList() {
               fontWeight: '700',
               color: '#92400e'
             }}>🍽️ KITCHEN SUMMARY</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px' }}>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#78350f', marginBottom: '5px' }}>
                   TOTAL MEALS TO MAKE
@@ -330,7 +330,15 @@ export default function ChristmasAttendanceList() {
                   PRIME RIB WITH CHEESECAKE
                 </div>
                 <div style={{ fontSize: '2rem', fontWeight: '700', color: '#92400e' }}>
-                  {grandTotalRegular}
+                  {grandTotalRegular - 2}
+                </div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#78350f', marginBottom: '5px' }}>
+                  PRIME RIB WITH PUMPKIN PIE
+                </div>
+                <div style={{ fontSize: '2rem', fontWeight: '700', color: '#92400e' }}>
+                  2
                 </div>
               </div>
             </div>

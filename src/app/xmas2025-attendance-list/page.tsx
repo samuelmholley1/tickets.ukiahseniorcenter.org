@@ -387,11 +387,8 @@ export default function ChristmasAttendanceList() {
                 marginBottom: '10px',
                 fontWeight: 700 
               }}>
-                Separate Delivery List
+                Delivery List
               </h2>
-              <div className="subtitle" style={{ fontSize: '1rem' }}>
-                To be delivered separately
-              </div>
             </div>
 
             <table className="attendance-table" style={{ marginTop: '30px' }}>

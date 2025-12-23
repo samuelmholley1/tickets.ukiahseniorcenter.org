@@ -471,17 +471,18 @@ export default function ChristmasAttendanceList() {
         <table className="attendance-table">
           <thead>
             <tr>
-              <th style={{ width: '8%', textAlign: 'center' }}>Check In</th>
-              <th style={{ width: '23%' }}>Last Name</th>
-              <th style={{ width: '23%' }}>First Name</th>
-              <th style={{ width: '8%', textAlign: 'center' }}>Tickets</th>
-              <th style={{ width: '38%' }}>Notes</th>
+              <th style={{ width: '6%', textAlign: 'center' }}>Check In</th>
+              <th style={{ width: '18%' }}>Last Name</th>
+              <th style={{ width: '18%' }}>First Name</th>
+              <th style={{ width: '15%' }}>Phone</th>
+              <th style={{ width: '6%', textAlign: 'center' }}>Tickets</th>
+              <th style={{ width: '37%' }}>Notes</th>
             </tr>
           </thead>
           <tbody>
             {sortedRecords.length === 0 ? (
               <tr>
-                <td colSpan={5} style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+                <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
                   No attendees found
                 </td>
               </tr>
@@ -506,6 +507,8 @@ export default function ChristmasAttendanceList() {
 
                 const ticketCount = record.fields['Ticket Quantity'] || 0;
                 const checkboxes = Array.from({ length: ticketCount }, (_, i) => i);
+                
+                const phone = record.fields['Phone'] || '—';
 
                 return (
                   <tr key={record.id}>
@@ -518,6 +521,7 @@ export default function ChristmasAttendanceList() {
                     </td>
                     <td>{record.fields['Last Name'] || '—'}</td>
                     <td>{record.fields['First Name'] || '—'}</td>
+                    <td>{phone}</td>
                     <td style={{ textAlign: 'center' }}>{ticketCount || 0}</td>
                     <td>{notesText}</td>
                   </tr>
@@ -552,11 +556,12 @@ export default function ChristmasAttendanceList() {
             <table className="attendance-table" style={{ marginTop: '30px' }}>
               <thead>
                 <tr>
-                  <th style={{ width: '8%', textAlign: 'center' }}>Check In</th>
-                  <th style={{ width: '23%' }}>Last Name</th>
-                  <th style={{ width: '23%' }}>First Name</th>
-                  <th style={{ width: '8%', textAlign: 'center' }}>Tickets</th>
-                  <th style={{ width: '38%' }}>Notes</th>
+                  <th style={{ width: '6%', textAlign: 'center' }}>Check In</th>
+                  <th style={{ width: '18%' }}>Last Name</th>
+                  <th style={{ width: '18%' }}>First Name</th>
+                  <th style={{ width: '15%' }}>Phone</th>
+                  <th style={{ width: '6%', textAlign: 'center' }}>Tickets</th>
+                  <th style={{ width: '37%' }}>Notes</th>
                 </tr>
               </thead>
               <tbody>
@@ -571,6 +576,7 @@ export default function ChristmasAttendanceList() {
                   const notesText = notes.length > 0 ? notes.join(' | ') : '—';
                   const ticketCount = record.fields['Ticket Quantity'] || 0;
                   const checkboxes = Array.from({ length: ticketCount }, (_, i) => i);
+                  const phone = record.fields['Phone'] || '—';
 
                   return (
                     <tr key={record.id}>
@@ -583,6 +589,7 @@ export default function ChristmasAttendanceList() {
                       </td>
                       <td>{record.fields['Last Name'] || '—'}</td>
                       <td>{record.fields['First Name'] || '—'}</td>
+                      <td>{phone}</td>
                       <td style={{ textAlign: 'center' }}>{ticketCount || 0}</td>
                       <td>{notesText}</td>
                     </tr>

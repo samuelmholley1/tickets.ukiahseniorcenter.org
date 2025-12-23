@@ -59,8 +59,9 @@ export default function ChristmasAttendanceList() {
     return (a.fields['First Name'] || '').localeCompare(b.fields['First Name'] || '');
   });
 
-  const totalMeals = records.reduce((sum, record) => sum + (record.fields['Ticket Quantity'] || 0), 0);
-  const totalVegetarian = records.reduce((sum, record) => sum + (record.fields['Vegetarian Meals'] || 0), 0);
+  // Calculate totals from regular records only (excluding delivery)
+  const totalMeals = regularRecords.reduce((sum, record) => sum + (record.fields['Ticket Quantity'] || 0), 0);
+  const totalVegetarian = regularRecords.reduce((sum, record) => sum + (record.fields['Vegetarian Meals'] || 0), 0);
   const totalRegular = totalMeals - totalVegetarian;
 
   const handlePrint = () => {
@@ -274,7 +275,7 @@ export default function ChristmasAttendanceList() {
         <div className="summary-stats">
           <div className="stat-item">
             <div className="stat-label">Total Attendees</div>
-            <div className="stat-value">{records.length}</div>
+            <div className="stat-value">{regularRecords.length}</div>
           </div>
           <div className="stat-item">
             <div className="stat-label">Total Meals</div>

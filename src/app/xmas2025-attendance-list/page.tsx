@@ -74,6 +74,16 @@ export default function ChristmasAttendanceList() {
   const totalVegetarian = regularRecords.reduce((sum, record) => sum + (record.fields['Vegetarian Meals'] || 0), 0);
   const totalRegular = totalMeals - totalVegetarian;
 
+  // Calculate delivery totals
+  const deliveryMeals = heatherRecords.reduce((sum, record) => sum + (record.fields['Ticket Quantity'] || 0), 0);
+  const deliveryVegetarian = heatherRecords.reduce((sum, record) => sum + (record.fields['Vegetarian Meals'] || 0), 0);
+  const deliveryRegular = deliveryMeals - deliveryVegetarian;
+
+  // Calculate grand totals (kitchen needs to know total to make)
+  const grandTotalMeals = totalMeals + deliveryMeals;
+  const grandTotalVegetarian = totalVegetarian + deliveryVegetarian;
+  const grandTotalRegular = totalRegular + deliveryRegular;
+
   const handlePrint = () => {
     window.print();
   };
@@ -282,24 +292,111 @@ export default function ChristmasAttendanceList() {
 
       {/* Summary Statistics */}
       {!loading && !error && (
-        <div className="summary-stats">
+        <>
+          {/* Kitchen Summary */}
+          <div style={{ 
+            backgroundColor: '#fef3c7', 
+            border: '3px solid #f59e0b',
+            padding: '20px', 
+            marginBottom: '20px',
+            borderRadius: '8px'
+          }}>
+            <h2 style={{ 
+              margin: '0 0 15px 0', 
+              fontSize: '1.5rem', 
+              fontFamily: 'Jost, sans-serif',
+              fontWeight: '700',
+              color: '#92400e'
+            }}>🍽️ KITCHEN SUMMARY</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px' }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#78350f', marginBottom: '5px' }}>
+                  TOTAL MEALS TO MAKE
+                </div>
+                <div style={{ fontSize: '2rem', fontWeight: '700', color: '#92400e' }}>
+                  {grandTotalMeals}
+                </div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#78350f', marginBottom: '5px' }}>
+                  VEGETARIAN (EGGPLANT)
+                </div>
+                <div style={{ fontSize: '2rem', fontWeight: '700', color: '#92400e' }}>
+                  {grandTotalVegetarian}
+                </div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#78350f', marginBottom: '5px' }}>
+                  PUMPKIN PIE (PRIME RIB)
+                </div>
+                <div style={{ fontSize: '2rem', fontWeight: '700', color: '#92400e' }}>
+                  {grandTotalRegular}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Packer/Distributor Summary */}
+          <div style={{ 
+            backgroundColor: '#dbeafe', 
+            border: '3px solid #3b82f6',
+            padding: '20px', 
+            marginBottom: '20px',
+            borderRadius: '8px'
+          }}>
+            <h2 style={{ 
+              margin: '0 0 15px 0', 
+              fontSize: '1.5rem', 
+              fontFamily: 'Jost, sans-serif',
+              fontWeight: '700',
+              color: '#1e40af'
+            }}>📦 PACKER/DISTRIBUTOR SUMMARY</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
+              <div>
+                <div style={{ fontSize: '1.125rem', fontWeight: '700', color: '#1e40af', marginBottom: '10px' }}>
+                  DRIVE-THROUGH PICKUP ({totalMeals} meals)
+                </div>
+                <div style={{ display: 'flex', gap: '20px', paddingLeft: '20px' }}>
+                  <div>
+                    <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#1e3a8a' }}>Vegetarian</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e40af' }}>{totalVegetarian}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#1e3a8a' }}>Pumpkin Pie</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e40af' }}>{totalRegular}</div>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: '1.125rem', fontWeight: '700', color: '#1e40af', marginBottom: '10px' }}>
+                  DELIVERY ({deliveryMeals} meals)
+                </div>
+                <div style={{ display: 'flex', gap: '20px', paddingLeft: '20px' }}>
+                  <div>
+                    <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#1e3a8a' }}>Vegetarian</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e40af' }}>{deliveryVegetarian}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#1e3a8a' }}>Pumpkin Pie</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e40af' }}>{deliveryRegular}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Original Summary Stats */}
+          <div className="summary-stats">
           <div className="stat-item">
             <div className="stat-label">Total Attendees</div>
-            <div className="stat-value">{regularRecords.length}</div>
+            <div className="stat-value">{regularRecords.length} Drive-Through + {heatherRecords.length} Delivery</div>
           </div>
           <div className="stat-item">
             <div className="stat-label">Total Meals</div>
-            <div className="stat-value">{totalMeals}</div>
-          </div>
-          <div className="stat-item">
-            <div className="stat-label">Prime Rib</div>
-            <div className="stat-value">{totalRegular}</div>
-          </div>
-          <div className="stat-item">
-            <div className="stat-label">Vegetarian (Eggplant)</div>
-            <div className="stat-value">{totalVegetarian}</div>
+            <div className="stat-value">{totalMeals} Drive-Through + {deliveryMeals} Delivery</div>
           </div>
         </div>
+        </>
       )}
 
       {/* Error Message */}

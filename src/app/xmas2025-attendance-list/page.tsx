@@ -397,17 +397,53 @@ export default function ChristmasAttendanceList() {
             </div>
           </div>
 
-          {/* Original Summary Stats */}
-          <div className="summary-stats">
-          <div className="stat-item">
-            <div className="stat-label">Total Attendees</div>
-            <div className="stat-value">{regularRecords.length} Drive-Through + {heatherRecords.length} Delivery</div>
+          {/* Reservation Summary Boxes */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', marginBottom: '20px' }}>
+            <div style={{ 
+              backgroundColor: '#d1fae5', 
+              border: '3px solid #10b981',
+              padding: '20px',
+              borderRadius: '8px',
+              textAlign: 'center'
+            }}>
+              <div style={{ 
+                fontSize: '1.25rem', 
+                fontWeight: '700', 
+                color: '#065f46',
+                marginBottom: '10px'
+              }}>
+                🚗 DRIVE-THROUGH PICKUP
+              </div>
+              <div style={{ fontSize: '0.875rem', color: '#047857', fontWeight: '600', marginBottom: '8px' }}>
+                {regularRecords.length} Reservations
+              </div>
+              <div style={{ fontSize: '2.5rem', fontWeight: '700', color: '#065f46' }}>
+                {totalMeals} Meals
+              </div>
+            </div>
+            <div style={{ 
+              backgroundColor: '#fce7f3', 
+              border: '3px solid #ec4899',
+              padding: '20px',
+              borderRadius: '8px',
+              textAlign: 'center'
+            }}>
+              <div style={{ 
+                fontSize: '1.25rem', 
+                fontWeight: '700', 
+                color: '#9f1239',
+                marginBottom: '10px'
+              }}>
+                🚚 DELIVERY
+              </div>
+              <div style={{ fontSize: '0.875rem', color: '#be123c', fontWeight: '600', marginBottom: '8px' }}>
+                {heatherRecords.length} Reservations
+              </div>
+              <div style={{ fontSize: '2.5rem', fontWeight: '700', color: '#9f1239' }}>
+                {deliveryMeals} Meals
+              </div>
+            </div>
           </div>
-          <div className="stat-item">
-            <div className="stat-label">Total Meals</div>
-            <div className="stat-value">{totalMeals} Drive-Through + {deliveryMeals} Delivery</div>
-          </div>
-        </div>
         </>
       )}
 

@@ -53,6 +53,16 @@ export default function ChristmasAttendanceList() {
       r.fields['First Name']?.toLowerCase() === 'heather')
   );
 
+  console.log('🔍 ATTENDANCE LIST DEBUG:');
+  console.log('Total records fetched:', records.length);
+  console.log('Heather records:', heatherRecords.length, heatherRecords);
+  console.log('Regular records:', regularRecords.length);
+  console.log('All records:', records.map(r => ({
+    firstName: r.fields['First Name'],
+    lastName: r.fields['Last Name'],
+    isHeather: r.fields['Last Name']?.toLowerCase() === 'haydon' && r.fields['First Name']?.toLowerCase() === 'heather'
+  })));
+
   const sortedRecords = [...regularRecords].sort((a, b) => {
     const lastNameCompare = (a.fields['Last Name'] || '').localeCompare(b.fields['Last Name'] || '');
     if (lastNameCompare !== 0) return lastNameCompare;

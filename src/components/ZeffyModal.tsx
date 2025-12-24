@@ -133,8 +133,7 @@ export function ZeffyModal({ isOpen, onClose, eventTitle, zeffyUrl }: ZeffyModal
     >
       <div
         ref={modalRef}
-        className="max-w-[900px] w-[92vw] rounded-lg shadow-xl ring-1 ring-black/5 relative bg-white flex flex-col"
-        style={{ maxHeight: '90vh' }}
+        className="max-w-[900px] w-[92vw] rounded-lg shadow-xl ring-1 ring-black/5 p-6 relative bg-white"
       >
         {/* Visually hidden title for a11y */}
         <h2 id="ticket-modal-title" className="sr-only">
@@ -153,20 +152,20 @@ export function ZeffyModal({ isOpen, onClose, eventTitle, zeffyUrl }: ZeffyModal
           </svg>
         </button>
 
-        {/* Modal Header - Fixed at top */}
-        <div className="px-6 pt-6 pb-4 border-b border-neutral-200 flex items-center justify-center gap-3">
+        {/* Modal Header */}
+        <div className="mb-6 text-center border-b border-neutral-200 pb-6">
           <img 
             src="/logo.png" 
             alt="Ukiah Senior Center" 
-            style={{ width: '60px', height: 'auto', display: 'block' }}
+            className="w-12 h-12 mx-auto mb-2 object-contain"
           />
-          <h3 className="text-lg md:text-xl font-['Jost',sans-serif] font-bold text-[#427d78]" style={{ lineHeight: '1.2' }}>
+          <h3 className="text-lg font-['Jost',sans-serif] font-bold text-[#427d78]">
             {eventTitle}
           </h3>
         </div>
 
-        {/* Tip Notice - Fixed at top */}
-        <div className="px-6 py-3 border-b border-neutral-200">
+        {/* Tip Notice */}
+        <div className="mb-6 pb-6 border-b border-neutral-200">
           <div className="bg-red-50 border border-red-400 rounded" style={{ padding: '8px 12px' }}>
             <p className="text-xs text-red-900 font-['Bitter',serif] text-center" style={{ marginBottom: '6px', lineHeight: '1.4' }}>
               <strong>⚠️ Set Zeffy Tip to $0</strong> so you don&apos;t pay any fees.
@@ -187,8 +186,8 @@ export function ZeffyModal({ isOpen, onClose, eventTitle, zeffyUrl }: ZeffyModal
           </div>
         </div>
 
-        {/* Iframe Container - Fixed height to prevent scrolling */}
-        <div className="relative bg-gray-50" style={{ position: 'relative', overflow: 'hidden', height: '1400px', width: '100%' }}>
+        {/* Iframe Container */}
+        <div className="relative min-h-[600px] rounded-lg overflow-hidden bg-gray-50">
           {isLoading && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="flex flex-col items-center space-y-4">
@@ -200,8 +199,8 @@ export function ZeffyModal({ isOpen, onClose, eventTitle, zeffyUrl }: ZeffyModal
           {hasLoaded && (
             <iframe
               src={zeffyUrl}
-              className="border-0"
-              style={{ position: 'absolute', border: 0, top: 0, left: 0, bottom: 0, right: 0, width: '100%', height: '100%' }}
+              className="w-full h-full border-0"
+              style={{ minHeight: '600px' }}
               title={`Zeffy ticketing form for ${eventTitle}`}
               onLoad={() => setIsLoading(false)}
               allow="payment"

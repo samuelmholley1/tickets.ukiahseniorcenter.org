@@ -1,49 +1,54 @@
 # Airtable API Guide - Ukiah Senior Center Tickets
 
+**Last Updated:** December 30, 2025
+
 ## Environment Variables
 
 ```bash
 AIRTABLE_API_KEY=your_airtable_personal_access_token_here
 AIRTABLE_BASE_ID=appZ6HE5luAFV0Ot2
-AIRTABLE_CHRISTMAS_TICKETS_TABLE_ID=tblChristmasDriveThru2025
-AIRTABLE_NYE_TICKETS_TABLE_ID=tblNYEGala2025
+AIRTABLE_CHRISTMAS_TICKETS_TABLE_ID=tbljtMTsXvSP3MDt4
+AIRTABLE_NYE_TICKETS_TABLE_ID=tbl5OyCybJCfrebOb
 ```
 
-## Quick Setup
+## Database IDs
 
-```bash
-# Export variables for easy curl usage (get token from .env.local)
-export AIRTABLE_TOKEN="your_airtable_personal_access_token_here"
-export AIRTABLE_BASE="appZ6HE5luAFV0Ot2"
-export CHRISTMAS_TABLE="tblChristmasDriveThru2025"
-export NYE_TABLE="tblNYEGala2025"
-```
+- **Base ID:** `appZ6HE5luAFV0Ot2`
+- **Christmas Table ID:** `tbljtMTsXvSP3MDt4`
+- **NYE Table ID:** `tbl5OyCybJCfrebOb`
 
-## Create Tables in Airtable
+## Complete Field Schema
 
-### Christmas Drive-Thru Meal Table
-Fields:
-- First Name (Single line text)
-- Last Name (Single line text)
-- Email (Email)
-- Phone (Phone number)
-- Payment Method (Single select: Cash, Check)
-- Check Number (Single line text)
-- Amount Paid (Currency)
-- Staff Initials (Single line text)
-- Created Time (Created time)
+### Christmas Drive-Thru 2025
+| Field Name | Type | Required | Notes |
+|------------|------|----------|-------|
+| First Name | Single line text | Yes | Customer first name |
+| Last Name | Single line text | Yes | Customer last name |
+| Email | Email | No | Customer email |
+| Phone | Phone number | No | Customer phone |
+| Ticket Quantity | Number (integer) | Yes | Total tickets/meals |
+| Vegetarian Meals | Number (integer) | No | Eggplant meal count |
+| Payment Method | Single select | Yes | Cash, Check, Zeffy, TicketSpice, Comp |
+| Amount Paid | Number (currency) | Yes | **Ticket price only** |
+| Donation Amount | Number (currency) | No | **Separate donation field** |
+| Purchase Date | Date & Time | No | Transaction timestamp |
+| Transaction ID | Single line text | No | Unique transaction ID |
+| Refunded | Checkbox | No | Checked if refunded |
 
-### NYE Gala Dance Table
-Fields:
-- First Name (Single line text)
-- Last Name (Single line text)
-- Email (Email)
-- Phone (Phone number)
-- Payment Method (Single select: Cash, Check)
-- Check Number (Single line text)
-- Amount Paid (Currency)
-- Staff Initials (Single line text)
-- Created Time (Created time)
+### NYE Gala 2025
+| Field Name | Type | Required | Notes |
+|------------|------|----------|-------|
+| First Name | Single line text | Yes | Customer first name |
+| Last Name | Single line text | Yes | Customer last name |
+| Email | Email | No | Customer email |
+| Phone | Phone number | No | Customer phone |
+| Ticket Quantity | Number (integer) | Yes | Total dance tickets |
+| Payment Method | Single select | Yes | Cash, Check, Zeffy, TicketSpice, Comp |
+| Amount Paid | Number (currency) | Yes | **Ticket price only** |
+| Donation Amount | Number (currency) | No | **Separate donation field** |
+| Purchase Date | Date & Time | No | Transaction timestamp |
+| Transaction ID | Single line text | No | Unique transaction ID |
+| Refunded | Checkbox | No | Checked if refunded |
 
 ## Common cURL Commands
 

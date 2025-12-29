@@ -34,8 +34,6 @@ export default function UnifiedSalesPage() {
     staffInitials: ''
   });
 
-  const [vegetarianMeals, setVegetarianMeals] = useState<boolean[]>([]);
-
   const [wantsDonation, setWantsDonation] = useState(false);
   const [donationAmount, setDonationAmount] = useState('');
 

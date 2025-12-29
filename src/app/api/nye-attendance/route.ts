@@ -82,6 +82,7 @@ export async function GET(request: NextRequest) {
         fields: {
           'First Name': record.fields['First Name'] || '',
           'Last Name': record.fields['Last Name'] || '',
+          'Email': record.fields['Email'] || '',
           'Phone': record.fields['Phone'] || '',
           'Ticket Quantity': record.fields['Ticket Quantity'] || 0,
         }

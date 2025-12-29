@@ -8,6 +8,7 @@ interface AttendeeRecord {
   fields: {
     'First Name': string;
     'Last Name': string;
+    'Email'?: string;
     'Phone'?: string;
     'Ticket Quantity'?: number;
   };
@@ -142,11 +143,12 @@ export default function NYEAttendanceList() {
           font-size: 0.875rem;
           text-transform: uppercase;
           letter-spacing: 0.5px;
+          border: 1px solid #2d5653;
         }
 
         .attendance-table td {
           padding: 10px 12px;
-          border-bottom: 1px solid #ddd;
+          border: 1px solid #ddd;
           font-size: 0.875rem;
         }
 
@@ -268,18 +270,19 @@ export default function NYEAttendanceList() {
         <table className="attendance-table">
           <thead>
             <tr>
-              <th style={{ width: '6%', textAlign: 'center' }}>Check In</th>
-              <th style={{ width: '22%' }}>Last Name</th>
-              <th style={{ width: '22%' }}>First Name</th>
-              <th style={{ width: '18%' }}>Phone</th>
-              <th style={{ width: '6%', textAlign: 'center' }}>Guests</th>
-              <th style={{ width: '26%' }}>Notes</th>
+              <th style={{ width: '5%', textAlign: 'center' }}>Check In</th>
+              <th style={{ width: '15%' }}>Last Name</th>
+              <th style={{ width: '15%' }}>First Name</th>
+              <th style={{ width: '20%' }}>Email</th>
+              <th style={{ width: '13%' }}>Phone</th>
+              <th style={{ width: '5%', textAlign: 'center' }}>Guests</th>
+              <th style={{ width: '27%' }}>Notes</th>
             </tr>
           </thead>
           <tbody>
             {sortedRecords.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+                <td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
                   No attendees found
                 </td>
               </tr>
@@ -287,6 +290,7 @@ export default function NYEAttendanceList() {
               sortedRecords.map((record) => {
                 const ticketCount = record.fields['Ticket Quantity'] || 0;
                 const checkboxes = Array.from({ length: ticketCount }, (_, i) => i);
+                const email = record.fields['Email'] || '—';
                 const phone = record.fields['Phone'] || '—';
 
                 return (
@@ -300,6 +304,7 @@ export default function NYEAttendanceList() {
                     </td>
                     <td>{record.fields['Last Name'] || '—'}</td>
                     <td>{record.fields['First Name'] || '—'}</td>
+                    <td style={{ fontSize: '0.75rem' }}>{email}</td>
                     <td>{phone}</td>
                     <td style={{ textAlign: 'center' }}>{ticketCount || 0}</td>
                     <td>—</td>

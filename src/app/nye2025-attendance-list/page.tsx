@@ -212,7 +212,7 @@ export default function NYEAttendanceList() {
 
       {/* Header */}
       <div className="attendance-header">
-        <h1>New Year's Eve Gala Dance 2025</h1>
+        <h1>New Year&apos;s Eve Gala Dance 2025</h1>
         <div className="subtitle">Attendance List</div>
         <div style={{ marginTop: '10px', fontSize: '0.875rem', color: '#999' }}>
           Generated: {new Date().toLocaleDateString('en-US', { 

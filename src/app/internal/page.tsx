@@ -104,7 +104,7 @@ export default function UnifiedSalesPage() {
           quantities,
           customer: formData,
           donation: wantsDonation ? parseFloat(donationAmount) : 0,
-          vegetarianMeals: vegetarianMeals.filter(Boolean).length
+          vegetarianMeals: 0 // vegetarianMeals.filter(Boolean).length - Uncomment for next year's Christmas event
         })
       });
 

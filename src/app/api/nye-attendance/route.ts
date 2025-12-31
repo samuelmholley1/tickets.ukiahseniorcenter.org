@@ -74,19 +74,48 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
     
-    // Filter out refunded records and return only the fields needed for attendance list
-    const records = data.records
-      .filter((record: AirtableRecord) => !record.fields.Refunded)
-      .map((record: AirtableRecord) => ({
-        id: record.id,
-        fields: {
-          'First Name': record.fields['First Name'] || '',
-          'Last Name': record.fields['Last Name'] || '',
-          'Email': record.fields['Email'] || '',
-          'Phone': record.fields['Phone'] || '',
-          'Ticket Quantity': record.fields['Ticket Quantity'] || 0,
-        }
-      }));
+    // Filter out refunded records
+    const activeRecords = data.records.filter((record: AirtableRecord) => !record.fields.Refunded);
+    
+    // Group by email to merge multiple transactions from the same person
+    const groupedByEmail = new Map<string, {
+      firstName: string;
+      lastName: string;
+      email: string;
+      phone: string;
+      totalTickets: number;
+    }>();
+    
+    activeRecords.forEach((record: AirtableRecord) => {
+      const email = record.fields['Email']?.toLowerCase() || '';
+      const existing = groupedByEmail.get(email);
+      
+      if (existing) {
+        // Merge: add ticket quantities
+        existing.totalTickets += record.fields['Ticket Quantity'] || 0;
+      } else {
+        // New entry
+        groupedByEmail.set(email, {
+          firstName: record.fields['First Name'] || '',
+          lastName: record.fields['Last Name'] || '',
+          email: record.fields['Email'] || '',
+          phone: record.fields['Phone'] || '',
+          totalTickets: record.fields['Ticket Quantity'] || 0,
+        });
+      }
+    });
+    
+    // Convert back to array format
+    const records = Array.from(groupedByEmail.values()).map((person, index) => ({
+      id: `merged-${index}`,
+      fields: {
+        'First Name': person.firstName,
+        'Last Name': person.lastName,
+        'Email': person.email,
+        'Phone': person.phone,
+        'Ticket Quantity': person.totalTickets,
+      }
+    }));
 
     return NextResponse.json({ records });
 

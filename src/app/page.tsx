@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+// import { useState } from 'react';
 import { SiteNavigation } from '@/components/SiteNavigation';
 import { SiteFooterContent } from '@/components/SiteFooterContent';
-import LoadingStates from '@/components/LoadingStates';
+// import LoadingStates from '@/components/LoadingStates';
 
 export default function Tickets() {
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true);
 
   return (
     <>

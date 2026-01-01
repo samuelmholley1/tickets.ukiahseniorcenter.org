@@ -27,6 +27,7 @@ export default function Tickets() {
           </div>
 
           {/* Tip Notice */}
+          {/* ZEFFY TIP NOTICE - UNCOMMENT WHEN TICKET SALES ARE ACTIVE
           <div className="bg-red-50 border-2 border-red-400 rounded-lg" style={{ padding: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
             <h3 className="text-base md:text-lg font-['Jost',sans-serif] font-bold text-red-900 text-center" style={{ marginBottom: 'var(--space-2)', lineHeight: '1.3' }}>
               ⚠️ Set Zeffy Tip to $0
@@ -47,8 +48,32 @@ export default function Tickets() {
               />
             </div>
           </div>
+          */}
 
-          {/* Event Form */}
+          {/* Online Sales Closed Notice */}
+          <div className="bg-gradient-to-br from-blue-50 to-teal-50 border-2 border-[#427d78] rounded-lg" style={{ padding: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
+            <h2 className="text-2xl md:text-3xl font-['Jost',sans-serif] font-bold text-[#427d78] text-center" style={{ marginBottom: 'var(--space-3)', lineHeight: '1.3' }}>
+              🎉 Online Ticket Sales Have Closed
+            </h2>
+            <div className="text-center" style={{ marginBottom: 'var(--space-3)' }}>
+              <p className="text-lg md:text-xl text-gray-700 font-['Bitter',serif] font-semibold" style={{ marginBottom: 'var(--space-2)', lineHeight: '1.5' }}>
+                Don&apos;t worry! You can still purchase tickets at the door.
+              </p>
+              <p className="text-base md:text-lg text-gray-600 font-['Bitter',serif]" style={{ marginBottom: 'var(--space-3)', maxWidth: '700px', marginInline: 'auto', lineHeight: '1.7' }}>
+                We look forward to seeing you at our event! Payment accepted at the entrance.
+              </p>
+            </div>
+            <div className="bg-white rounded-lg border border-[#427d78]" style={{ padding: 'var(--space-3)', maxWidth: '600px', marginInline: 'auto' }}>
+              <p className="text-center text-base md:text-lg text-gray-700 font-['Bitter',serif]" style={{ marginBottom: 'var(--space-2)', lineHeight: '1.6' }}>
+                <strong className="text-[#427d78]">Check back soon!</strong> Upcoming events and ticket sales will be posted here.
+              </p>
+              <p className="text-center text-sm md:text-base text-gray-600 font-['Bitter',serif]" style={{ marginBottom: 0, lineHeight: '1.6' }}>
+                Questions? Call us at <a href="tel:+17074624343" className="text-[#427d78] hover:text-[#5eb3a1] font-semibold">(707) 462-4343</a>
+              </p>
+            </div>
+          </div>
+
+          {/* Event Form - COMMENTED OUT FOR NEXT EVENT
           <div className="card">
             <div className="bg-gray-50 rounded-lg border-4 border-[#427d78] relative" style={{ padding: 'var(--space-3)' }}>
               {loading && (
@@ -74,6 +99,7 @@ export default function Tickets() {
               </div>
             </div>
           </div>
+          */}
 
           {/* Questions Card */}
           <div className="card text-center" style={{ marginTop: 'var(--space-4)' }}>

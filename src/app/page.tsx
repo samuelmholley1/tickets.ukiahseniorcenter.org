@@ -53,14 +53,17 @@ export default function Tickets() {
           {/* Online Sales Closed Notice */}
           <div className="bg-gradient-to-br from-blue-50 to-teal-50 border-2 border-[#427d78] rounded-lg" style={{ padding: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
             <h2 className="text-2xl md:text-3xl font-['Jost',sans-serif] font-bold text-[#427d78] text-center" style={{ marginBottom: 'var(--space-3)', lineHeight: '1.3' }}>
-              🎉 Online Ticket Sales Have Closed
+              🎉 2025 New Year&apos;s Eve Gala Dance
             </h2>
             <div className="text-center" style={{ marginBottom: 'var(--space-3)' }}>
+              <p className="text-xl md:text-2xl text-red-600 font-['Bitter',serif] font-bold" style={{ marginBottom: 'var(--space-2)', lineHeight: '1.4' }}>
+                Online Ticket Sales Are Now Closed
+              </p>
               <p className="text-lg md:text-xl text-gray-700 font-['Bitter',serif] font-semibold" style={{ marginBottom: 'var(--space-2)', lineHeight: '1.5' }}>
                 Don&apos;t worry! You can still purchase tickets at the door.
               </p>
               <p className="text-base md:text-lg text-gray-600 font-['Bitter',serif]" style={{ marginBottom: 'var(--space-3)', maxWidth: '700px', marginInline: 'auto', lineHeight: '1.7' }}>
-                We look forward to seeing you at our event! Payment accepted at the entrance.
+                We look forward to seeing you tonight! Payment accepted at the entrance.
               </p>
             </div>
             <div className="bg-white rounded-lg border border-[#427d78]" style={{ padding: 'var(--space-3)', maxWidth: '600px', marginInline: 'auto' }}>

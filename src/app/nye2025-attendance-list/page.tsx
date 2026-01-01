@@ -70,8 +70,18 @@ export default function NYEAttendanceList() {
           .attendance-list-container {
             padding: 20px;
           }
+          .summary-box {
+            page-break-after: avoid;
+            break-after: avoid;
+          }
           .attendance-table {
-            page-break-inside: avoid;
+            page-break-before: avoid;
+            break-before: avoid;
+            page-break-inside: auto;
+          }
+          .attendance-table thead {
+            page-break-after: avoid;
+            break-after: avoid;
           }
           .attendance-table th,
           .attendance-table td {

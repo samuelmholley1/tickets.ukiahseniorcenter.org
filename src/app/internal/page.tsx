@@ -133,7 +133,9 @@ export default function UnifiedSalesPage() {
           {/* Action Button */}
           <div style={{ display: 'flex', gap: 'var(--space-2)', justifyContent: 'center', marginBottom: 'var(--space-3)', flexWrap: 'wrap' }}>
             <a
-              href="https://tickets.ukiahseniorcenter.org"
+              href="https://www.zeffy.com/en-US/ticketing/new-years-eve-gala-dance--2025"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-block bg-[#5eb3a1] hover:bg-[#427d78] text-white font-['Jost',sans-serif] font-bold px-6 py-3 rounded-lg transition-colors duration-300 shadow-md hover:shadow-lg"
               style={{ fontSize: 'clamp(0.875rem, 2.5vw, 1rem)' }}
             >

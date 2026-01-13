@@ -2,11 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const AIRTABLE_API_BASE = 'https://api.airtable.com/v0';
 
+/* ========== 2026 EVENTS ==========
+ * Valentine's Day Dance - February 14, 2026
+ *   - Member: $30 until Feb 9, then $35
+ *   - Non-Member: $45 (always)
+ * 
+ * Speakeasy Gala - April 11, 2026
+ *   - All tickets: $100 until Mar 28, then $110
+ * ================================= */
+
 interface TicketQuantities {
+  // 2026 Events
+  valentinesMember: number;
+  valentinesNonMember: number;
+  speakeasy: number;
+  
+  /* ========== CHRISTMAS/NYE 2025 - COMMENTED OUT ==========
   christmasMember: number;
   christmasNonMember: number;
   nyeMember: number;
   nyeNonMember: number;
+  ========================================================= */
 }
 
 interface CustomerInfo {
@@ -26,12 +42,24 @@ interface RequestBody {
   quantities: TicketQuantities;
   customer: CustomerInfo;
   donation?: number;
-  vegetarianMeals?: number;
 }
 
 // Generate a unique transaction ID
 function generateTransactionId(): string {
   return `TXN-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
+}
+
+// Dynamic pricing based on current date
+function getValentinesMemberPrice(): number {
+  const today = new Date();
+  const priceChangeDate = new Date('2026-02-10T00:00:00');
+  return today < priceChangeDate ? 30 : 35;
+}
+
+function getSpeakeasyPrice(): number {
+  const today = new Date();
+  const priceChangeDate = new Date('2026-03-29T00:00:00');
+  return today < priceChangeDate ? 100 : 110;
 }
 
 export async function POST(request: NextRequest) {
@@ -46,15 +74,15 @@ export async function POST(request: NextRequest) {
     if (!process.env.AIRTABLE_BASE_ID) {
       throw new Error('AIRTABLE_BASE_ID is not configured');
     }
-    if (!process.env.AIRTABLE_CHRISTMAS_TICKETS_TABLE_ID) {
-      throw new Error('AIRTABLE_CHRISTMAS_TICKETS_TABLE_ID is not configured');
+    if (!process.env.AIRTABLE_VALENTINES_TABLE_ID) {
+      throw new Error('AIRTABLE_VALENTINES_TABLE_ID is not configured');
     }
-    if (!process.env.AIRTABLE_NYE_TICKETS_TABLE_ID) {
-      throw new Error('AIRTABLE_NYE_TICKETS_TABLE_ID is not configured');
+    if (!process.env.AIRTABLE_SPEAKEASY_TABLE_ID) {
+      throw new Error('AIRTABLE_SPEAKEASY_TABLE_ID is not configured');
     }
 
     const body: RequestBody = await request.json();
-    const { quantities, customer, donation = 0, vegetarianMeals = 0 } = body;
+    const { quantities, customer, donation = 0 } = body;
 
     // Input validation
     if (!customer.firstName?.trim() || !customer.lastName?.trim()) {
@@ -113,12 +141,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid donation amount' }, { status: 400 });
     }
 
-    // Validate vegetarian meals count
-    const totalChristmasTickets = quantities.christmasMember + quantities.christmasNonMember;
-    if (vegetarianMeals < 0 || vegetarianMeals > totalChristmasTickets) {
-      return NextResponse.json({ error: 'Invalid vegetarian meals count' }, { status: 400 });
-    }
-
     // Sanitize string inputs with length limits (Airtable has limits)
     customer.firstName = customer.firstName.trim().substring(0, 100);
     customer.lastName = customer.lastName.trim().substring(0, 100);
@@ -132,119 +154,25 @@ export async function POST(request: NextRequest) {
       customer.otherPaymentDetails = customer.otherPaymentDetails.trim().substring(0, 255);
     }
 
-    const CHRISTMAS_MEMBER = 15;
-    const CHRISTMAS_NON_MEMBER = 20;
-    const NYE_MEMBER = 35;
-    const NYE_NON_MEMBER = 45;
+    // Get current prices (dynamic based on date)
+    const VALENTINES_MEMBER = getValentinesMemberPrice();
+    const VALENTINES_NON_MEMBER = 45;
+    const SPEAKEASY = getSpeakeasyPrice();
 
     const results = [];
 
-    // Submit to Christmas table if any Christmas tickets selected
-    const christmasTotal = 
-      (quantities.christmasMember * CHRISTMAS_MEMBER) + 
-      (quantities.christmasNonMember * CHRISTMAS_NON_MEMBER);
+    // Calculate totals
+    const valentinesTotal = 
+      (quantities.valentinesMember * VALENTINES_MEMBER) + 
+      (quantities.valentinesNonMember * VALENTINES_NON_MEMBER);
     
-    const nyeTotal = 
-      (quantities.nyeMember * NYE_MEMBER) + 
-      (quantities.nyeNonMember * NYE_NON_MEMBER);
+    const speakeasyTotal = quantities.speakeasy * SPEAKEASY;
     
-    // Determine where donation goes: Christmas if both selected, otherwise whichever event
-    const donationGoesToChristmas = christmasTotal > 0;
+    // Determine where donation goes: Valentine's if selected, otherwise Speakeasy
+    const donationGoesToValentines = valentinesTotal > 0;
 
-    if (christmasTotal > 0) {
-      const christmasTicketInfo = [];
-      if (quantities.christmasMember > 0) {
-        christmasTicketInfo.push(`${quantities.christmasMember} Member ($${CHRISTMAS_MEMBER} ea)`);
-      }
-      if (quantities.christmasNonMember > 0) {
-        christmasTicketInfo.push(`${quantities.christmasNonMember} Non-Member ($${CHRISTMAS_NON_MEMBER} ea)`);
-      }
-
-      // Build payment method display text and notes
-      let paymentMethodText = 'Cash';
-      let paymentNotes = '';
-      
-      if (customer.paymentMethod === 'check') {
-        paymentMethodText = 'Check';
-      } else if (customer.paymentMethod === 'cashCheckSplit') {
-        paymentMethodText = 'Cash & Check';
-        const cashAmt = parseFloat(customer.cashAmount || '0');
-        const checkAmt = parseFloat(customer.checkAmount || '0');
-        paymentNotes = `Cash: $${cashAmt.toFixed(2)}, Check: $${checkAmt.toFixed(2)}`;
-      }
-
-      const christmasPayload = {
-        fields: {
-          'Transaction ID': transactionId,
-          'First Name': customer.firstName,
-          'Last Name': customer.lastName,
-          'Email': customer.email,
-          'Phone': customer.phone,
-          'Payment Method': paymentMethodText,
-          'Check Number': customer.checkNumber || '',
-          'Payment Notes': paymentNotes,
-          'Purchase Date': new Date().toISOString(),
-          'Ticket Subtotal': christmasTotal,
-          'Donation Amount': donationGoesToChristmas ? donation : 0,
-          'Amount Paid': donationGoesToChristmas ? christmasTotal + donation : christmasTotal,
-          'Ticket Quantity': quantities.christmasMember + quantities.christmasNonMember,
-          'Christmas Member Tickets': quantities.christmasMember,
-          'Christmas Non-Member Tickets': quantities.christmasNonMember,
-          'Vegetarian Meals': vegetarianMeals,
-          'Staff Initials': customer.staffInitials,
-        },
-      };
-
-      console.log('Submitting to Christmas table:', JSON.stringify(christmasPayload, null, 2));
-
-      const christmasResponse = await fetch(
-        `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_CHRISTMAS_TICKETS_TABLE_ID}`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(christmasPayload),
-        }
-      );
-
-      if (!christmasResponse.ok) {
-        const errorText = await christmasResponse.text();
-        console.error('Christmas Airtable API Error:', errorText);
-        console.error('Payload sent:', JSON.stringify(christmasPayload, null, 2));
-        
-        // Try to parse error for better message
-        let detailedError = errorText;
-        try {
-          const errorJson = JSON.parse(errorText);
-          if (errorJson.error?.message) {
-            detailedError = errorJson.error.message;
-          }
-        } catch {
-          // Use raw error text
-        }
-        
-        throw new Error(`Christmas table error (${christmasResponse.status}): ${detailedError}`);
-      }
-
-      const christmasData = await christmasResponse.json();
-      console.log('Christmas record created:', christmasData.id);
-      
-      results.push({ event: 'Christmas Drive-Thru', total: christmasTotal, recordId: christmasData.id });
-    }
-
-    // Submit to NYE table if any NYE tickets selected
-    if (nyeTotal > 0) {
-      const nyeTicketInfo = [];
-      if (quantities.nyeMember > 0) {
-        nyeTicketInfo.push(`${quantities.nyeMember} Member ($${NYE_MEMBER} ea)`);
-      }
-      if (quantities.nyeNonMember > 0) {
-        nyeTicketInfo.push(`${quantities.nyeNonMember} Non-Member ($${NYE_NON_MEMBER} ea)`);
-      }
-
-      // Build payment method display text and notes
+    // Build payment method display text and notes helper
+    const getPaymentInfo = () => {
       let paymentMethodText = 'Cash';
       let paymentNotes = '';
       
@@ -261,8 +189,15 @@ export async function POST(request: NextRequest) {
         paymentMethodText = 'Other';
         paymentNotes = customer.otherPaymentDetails || '';
       }
+      
+      return { paymentMethodText, paymentNotes };
+    };
 
-      const nyePayload = {
+    // Submit to Valentine's table if any Valentine's tickets selected
+    if (valentinesTotal > 0) {
+      const { paymentMethodText, paymentNotes } = getPaymentInfo();
+
+      const valentinesPayload = {
         fields: {
           'Transaction ID': transactionId,
           'First Name': customer.firstName,
@@ -273,36 +208,34 @@ export async function POST(request: NextRequest) {
           'Check Number': customer.checkNumber || '',
           'Payment Notes': paymentNotes,
           'Purchase Date': new Date().toISOString(),
-          'Ticket Subtotal': nyeTotal,
-          'Donation Amount': !donationGoesToChristmas ? donation : 0,
-          'Amount Paid': !donationGoesToChristmas ? nyeTotal + donation : nyeTotal,
-          'Ticket Quantity': quantities.nyeMember + quantities.nyeNonMember,
-          'NYE Member Tickets': quantities.nyeMember,
-          'NYE Non-Member Tickets': quantities.nyeNonMember,
+          'Ticket Quantity': quantities.valentinesMember + quantities.valentinesNonMember,
+          'Member Tickets': quantities.valentinesMember,
+          'Non-Member Tickets': quantities.valentinesNonMember,
+          'Amount Paid': valentinesTotal,
+          'Donation Amount': donationGoesToValentines ? donation : 0,
           'Staff Initials': customer.staffInitials,
         },
       };
 
-      console.log('Submitting to NYE table:', JSON.stringify(nyePayload, null, 2));
+      console.log('Submitting to Valentine\'s table:', JSON.stringify(valentinesPayload, null, 2));
 
-      const nyeResponse = await fetch(
-        `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_NYE_TICKETS_TABLE_ID}`,
+      const valentinesResponse = await fetch(
+        `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_VALENTINES_TABLE_ID}`,
         {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(nyePayload),
+          body: JSON.stringify(valentinesPayload),
         }
       );
 
-      if (!nyeResponse.ok) {
-        const errorText = await nyeResponse.text();
-        console.error('NYE Airtable API Error:', errorText);
-        console.error('Payload sent:', JSON.stringify(nyePayload, null, 2));
+      if (!valentinesResponse.ok) {
+        const errorText = await valentinesResponse.text();
+        console.error('Valentine\'s Airtable API Error:', errorText);
+        console.error('Payload sent:', JSON.stringify(valentinesPayload, null, 2));
         
-        // Try to parse error for better message
         let detailedError = errorText;
         try {
           const errorJson = JSON.parse(errorText);
@@ -313,63 +246,87 @@ export async function POST(request: NextRequest) {
           // Use raw error text
         }
         
-        // If Christmas succeeded but NYE failed, log warning
-        if (christmasTotal > 0) {
-          console.error('CRITICAL: Christmas record created but NYE failed. Customer may have partial order.');
-        }
-        
-        throw new Error(`NYE table error (${nyeResponse.status}): ${detailedError}`);
+        throw new Error(`Valentine's table error (${valentinesResponse.status}): ${detailedError}`);
       }
 
-      const nyeData = await nyeResponse.json();
-      console.log('NYE record created:', nyeData.id);
+      const valentinesData = await valentinesResponse.json();
+      console.log('Valentine\'s record created:', valentinesData.id);
       
-      results.push({ event: 'NYE Gala Dance', total: nyeTotal, recordId: nyeData.id });
+      results.push({ event: 'Valentine\'s Day Dance', total: valentinesTotal, recordId: valentinesData.id });
     }
 
-    // Send email receipt automatically if email is provided
-    // DISABLED for Christmas Drive-Through - only send for NYE tickets
-    if (customer.email && customer.email.length > 0 && quantities.nyeMember + quantities.nyeNonMember > 0) {
-      console.log('[submit] Sending email receipt to:', customer.email);
-      try {
-        const emailResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/tickets/send-receipt`, {
+    // Submit to Speakeasy table if any Speakeasy tickets selected
+    if (speakeasyTotal > 0) {
+      const { paymentMethodText, paymentNotes } = getPaymentInfo();
+
+      const speakeasyPayload = {
+        fields: {
+          'Transaction ID': transactionId,
+          'First Name': customer.firstName,
+          'Last Name': customer.lastName,
+          'Email': customer.email,
+          'Phone': customer.phone,
+          'Payment Method': paymentMethodText,
+          'Check Number': customer.checkNumber || '',
+          'Payment Notes': paymentNotes,
+          'Purchase Date': new Date().toISOString(),
+          'Ticket Quantity': quantities.speakeasy,
+          'Amount Paid': speakeasyTotal,
+          'Donation Amount': !donationGoesToValentines ? donation : 0,
+          'Staff Initials': customer.staffInitials,
+        },
+      };
+
+      console.log('Submitting to Speakeasy table:', JSON.stringify(speakeasyPayload, null, 2));
+
+      const speakeasyResponse = await fetch(
+        `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_SPEAKEASY_TABLE_ID}`,
+        {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            transactionId,
-            firstName: customer.firstName,
-            lastName: customer.lastName,
-            email: customer.email,
-            phone: customer.phone,
-            christmasMember: quantities.christmasMember,
-            christmasNonMember: quantities.christmasNonMember,
-            nyeMember: quantities.nyeMember,
-            nyeNonMember: quantities.nyeNonMember,
-            ticketSubtotal: christmasTotal + nyeTotal,
-            donationAmount: donation,
-            grandTotal: christmasTotal + nyeTotal + donation,
-            paymentMethod: customer.paymentMethod,
-            staffInitials: customer.staffInitials,
-          }),
-        });
-        
-        if (emailResponse.ok) {
-          console.log('[submit] Email receipt sent successfully');
-        } else {
-          const emailError = await emailResponse.json();
-          console.error('[submit] Email receipt failed:', emailError);
+          headers: {
+            'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(speakeasyPayload),
         }
-      } catch (emailErr) {
-        console.error('[submit] Error sending email receipt:', emailErr);
-        // Don't fail the whole transaction if email fails
+      );
+
+      if (!speakeasyResponse.ok) {
+        const errorText = await speakeasyResponse.text();
+        console.error('Speakeasy Airtable API Error:', errorText);
+        console.error('Payload sent:', JSON.stringify(speakeasyPayload, null, 2));
+        
+        let detailedError = errorText;
+        try {
+          const errorJson = JSON.parse(errorText);
+          if (errorJson.error?.message) {
+            detailedError = errorJson.error.message;
+          }
+        } catch {
+          // Use raw error text
+        }
+        
+        // If Valentine's succeeded but Speakeasy failed, log warning
+        if (valentinesTotal > 0) {
+          console.error('CRITICAL: Valentine\'s record created but Speakeasy failed. Customer may have partial order.');
+        }
+        
+        throw new Error(`Speakeasy table error (${speakeasyResponse.status}): ${detailedError}`);
       }
+
+      const speakeasyData = await speakeasyResponse.json();
+      console.log('Speakeasy record created:', speakeasyData.id);
+      
+      results.push({ event: 'Speakeasy Gala', total: speakeasyTotal, recordId: speakeasyData.id });
     }
+
+    // TODO: Add email receipt sending for 2026 events when templates are ready
 
     return NextResponse.json({ 
       success: true, 
       transactionId,
       results,
-      grandTotal: christmasTotal + nyeTotal
+      grandTotal: valentinesTotal + speakeasyTotal + donation
     });
 
   } catch (error) {

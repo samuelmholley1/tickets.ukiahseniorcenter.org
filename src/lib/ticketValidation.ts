@@ -6,7 +6,7 @@
 import { z } from 'zod';
 
 // ============================================================================
-// TICKET REQUEST VALIDATION
+// TICKET REQUEST VALIDATION - 2026 EVENTS
 // ============================================================================
 
 export const TicketRequestSchema = z.object({
@@ -20,6 +20,26 @@ export const TicketRequestSchema = z.object({
     .max(50, 'Last name must be 50 characters or less')
     .trim(),
   
+  // 2026 Events
+  valentinesMember: z.number()
+    .int('Must be a whole number')
+    .min(0, 'Cannot be negative')
+    .max(20, 'Maximum 20 tickets per type')
+    .default(0),
+  
+  valentinesNonMember: z.number()
+    .int('Must be a whole number')
+    .min(0, 'Cannot be negative')
+    .max(20, 'Maximum 20 tickets per type')
+    .default(0),
+  
+  speakeasy: z.number()
+    .int('Must be a whole number')
+    .min(0, 'Cannot be negative')
+    .max(20, 'Maximum 20 tickets per type')
+    .default(0),
+  
+  /* ========== 2025 EVENTS - COMMENTED OUT ==========
   christmasMember: z.number()
     .int('Must be a whole number')
     .min(0, 'Cannot be negative')
@@ -39,14 +59,14 @@ export const TicketRequestSchema = z.object({
     .int('Must be a whole number')
     .min(0, 'Cannot be negative')
     .max(20, 'Maximum 20 tickets per type'),
+  ================================================== */
   
 }).refine(
   (data) => {
     const total = 
-      data.christmasMember + 
-      data.christmasNonMember + 
-      data.nyeMember + 
-      data.nyeNonMember;
+      data.valentinesMember + 
+      data.valentinesNonMember + 
+      data.speakeasy;
     return total > 0 && total <= 50;
   },
   {

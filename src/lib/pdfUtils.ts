@@ -23,6 +23,11 @@ export const USC_COLORS = {
   BLACK: [0, 0, 0] as [number, number, number],
   WHITE: [255, 255, 255] as [number, number, number],
   GRAY: [200, 200, 200] as [number, number, number],
+  // 2026 Event Colors
+  PINK: [219, 39, 119] as [number, number, number],        // Valentine's - vibrant pink
+  PINK_LIGHT: [252, 231, 243] as [number, number, number], // Valentine's background
+  GOLD: [212, 175, 55] as [number, number, number],        // Speakeasy gold
+  DARK_NAVY: [26, 26, 46] as [number, number, number],     // Speakeasy dark
 } as const;
 
 // ============================================================================

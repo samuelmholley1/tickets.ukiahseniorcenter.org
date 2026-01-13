@@ -1,13 +1,76 @@
 # Airtable Schema - Complete Field Reference
 
-**Last Updated:** December 30, 2025
+**Last Updated:** January 13, 2026
 
 > **CRITICAL:** `Amount Paid` = ticket price ONLY. `Donation Amount` is a SEPARATE field for additional donations.  
 > Example: $35 ticket + $65 donation = `Amount Paid: 35`, `Donation Amount: 65` (NOT Amount Paid: 100)
 
 ---
 
-## Christmas Drive-Thru 2025 Table
+## 2026 Events
+
+### Valentine's Day Dance 2026 Table
+
+**Table ID:** `[TO BE CREATED - add to .env.local as AIRTABLE_VALENTINES_TABLE_ID]`
+
+#### Pricing
+- **Member:** $30 until Feb 9, 2026, then $35
+- **Non-Member:** $45 (always)
+
+#### Fields to Create
+
+| Field Name | Type | Description | Example |
+|------------|------|-------------|---------|
+| **First Name** | Single line text | Customer first name | `Mary` |
+| **Last Name** | Single line text | Customer last name | `Smith` |
+| **Email** | Email | Customer email address | `mary@example.com` |
+| **Phone** | Phone number | Customer phone number | `17074623456` |
+| **Ticket Quantity** | Number (integer) | Total number of tickets | `2` |
+| **Member Tickets** | Number (integer) | Count of member-priced tickets | `1` |
+| **Non-Member Tickets** | Number (integer) | Count of non-member tickets | `1` |
+| **Payment Method** | Single select | Options: `Cash`, `Check`, `Zeffy`, `Comp`, `Other` | `Cash` |
+| **Check Number** | Single line text | For check payments | `1234` |
+| **Payment Notes** | Long text | Split payment details, other notes | `Cash: $30, Check: $45` |
+| **Amount Paid** | Number (currency) | **TICKET PRICE ONLY** | `75.00` |
+| **Donation Amount** | Number (currency) | **SEPARATE DONATION FIELD** | `25.00` |
+| **Purchase Date** | Date & Time | When purchase was made (with timestamp) | `1/15/2026 2:30 PM` |
+| **Transaction ID** | Single line text | Unique transaction identifier | `TXN-1234567890-ABC123` |
+| **Staff Initials** | Single line text | Who processed the sale | `JD` |
+| **Refunded** | Checkbox | Checked if transaction was refunded | ☐ |
+
+---
+
+### Speakeasy Gala 2026 Table
+
+**Table ID:** `[TO BE CREATED - add to .env.local as AIRTABLE_SPEAKEASY_TABLE_ID]`
+
+#### Pricing
+- **All Tickets:** $100 until Mar 28, 2026, then $110
+
+#### Fields to Create
+
+| Field Name | Type | Description | Example |
+|------------|------|-------------|---------|
+| **First Name** | Single line text | Customer first name | `John` |
+| **Last Name** | Single line text | Customer last name | `Doe` |
+| **Email** | Email | Customer email address | `john@example.com` |
+| **Phone** | Phone number | Customer phone number | `17074623456` |
+| **Ticket Quantity** | Number (integer) | Total number of tickets | `2` |
+| **Payment Method** | Single select | Options: `Cash`, `Check`, `Zeffy`, `Comp`, `Other` | `Zeffy` |
+| **Check Number** | Single line text | For check payments | `5678` |
+| **Payment Notes** | Long text | Split payment details, other notes | `` |
+| **Amount Paid** | Number (currency) | **TICKET PRICE ONLY** | `200.00` |
+| **Donation Amount** | Number (currency) | **SEPARATE DONATION FIELD** | `50.00` |
+| **Purchase Date** | Date & Time | When purchase was made (with timestamp) | `3/15/2026 10:00 AM` |
+| **Transaction ID** | Single line text | Unique transaction identifier | `zeffy-3/15/2026, 10:00 AM-John-Doe` |
+| **Staff Initials** | Single line text | Who processed the sale | `ZEFFY` |
+| **Refunded** | Checkbox | Checked if transaction was refunded | ☐ |
+
+---
+
+## 2025 Events (Archived)
+
+### Christmas Drive-Thru 2025 Table
 
 **Table ID:** `tbljtMTsXvSP3MDt4`  
 **URL:** https://airtable.com/appZ6HE5luAFV0Ot2/tbljtMTsXvSP3MDt4
@@ -101,6 +164,12 @@
 | Refund Amount | Refunded | Checkbox if > 0 |
 
 ### Pricing Reference
+
+#### 2026 Events
+- **Valentine's Day Dance:** Member $30 (early bird until Feb 9) / $35 (Feb 10+), Non-member $45
+- **Speakeasy Gala:** $100 (early bird until Mar 28) / $110 (Mar 29+)
+
+#### 2025 Events (Archived)
 - **Christmas:** Member $15, Non-member $20
 - **NYE Gala:** Member $35, Non-member $45
 

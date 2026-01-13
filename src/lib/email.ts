@@ -68,36 +68,515 @@ export async function sendEmail({ to, subject, html, additionalCC = [], attachme
   }
 }
 
-interface TicketReceiptData {
-  transactionId: string;
+// ============================================================================
+// 2026 EVENT EMAIL TEMPLATES
+// ============================================================================
+
+interface ValentinesReceiptData {
   customerName: string;
   customerEmail: string;
   customerPhone: string;
-  christmasMember: number;
-  christmasNonMember: number;
-  nyeMember: number;
-  nyeNonMember: number;
+  memberTickets: number;
+  nonMemberTickets: number;
   ticketSubtotal: number;
   donationAmount: number;
   grandTotal: number;
   paymentMethod: string;
-  staffInitials: string;
   timestamp: string;
+  memberPrice: number;
+  nonMemberPrice: number;
 }
 
-export function generateReceiptEmail(data: TicketReceiptData): string {
+export function generateValentinesEmail(data: ValentinesReceiptData): string {
   const {
     customerName,
     customerEmail,
     customerPhone,
-    christmasMember,
-    christmasNonMember,
-    nyeMember,
-    nyeNonMember,
+    memberTickets,
+    nonMemberTickets,
     ticketSubtotal,
     donationAmount,
     grandTotal,
     paymentMethod,
+    timestamp,
+    memberPrice,
+    nonMemberPrice,
+  } = data;
+
+  const totalTickets = memberTickets + nonMemberTickets;
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>
+        body {
+          font-family: Arial, Helvetica, sans-serif;
+          line-height: 1.8;
+          color: #000000;
+          background-color: #ffffff;
+          margin: 0;
+          padding: 0;
+        }
+        .container {
+          max-width: 600px;
+          margin: 0 auto;
+          background: #ffffff;
+        }
+        .header {
+          background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+          padding: 40px 20px;
+          text-align: center;
+          border-bottom: 3px solid #db2777;
+        }
+        .logo {
+          width: 100px;
+          height: 100px;
+          margin: 0 auto 20px;
+          display: block;
+        }
+        .content {
+          padding: 30px 20px;
+        }
+        .greeting {
+          font-size: 20px;
+          font-weight: bold;
+          margin-bottom: 20px;
+          color: #000000;
+        }
+        .info-box {
+          background: #fce7f3;
+          padding: 20px;
+          margin: 20px 0;
+          border: 2px solid #db2777;
+        }
+        .info-row {
+          padding: 8px 0;
+          font-size: 16px;
+          line-height: 1.8;
+        }
+        .info-label {
+          font-weight: bold;
+          color: #000000;
+        }
+        .event-header {
+          background: #db2777;
+          color: white;
+          padding: 15px;
+          font-weight: bold;
+          font-size: 18px;
+          margin-top: 20px;
+        }
+        .event-items {
+          background: #fce7f3;
+          border: 2px solid #db2777;
+          padding: 15px;
+          margin-bottom: 20px;
+        }
+        .item-row {
+          padding: 8px 0;
+          font-size: 16px;
+          line-height: 1.6;
+        }
+        .divider {
+          border: none;
+          border-top: 3px solid #000000;
+          margin: 25px 0;
+        }
+        .total-row {
+          padding: 10px 0;
+          font-size: 18px;
+          font-weight: bold;
+        }
+        .grand-total {
+          background: #fce7f3;
+          padding: 20px;
+          border: 3px solid #db2777;
+          margin: 25px 0;
+        }
+        .grand-total-row {
+          font-size: 24px;
+          font-weight: bold;
+          color: #db2777;
+        }
+        .attachment-notice {
+          background: #fffbeb;
+          border: 3px solid #f59e0b;
+          padding: 20px;
+          text-align: center;
+          margin: 25px 0;
+        }
+        .footer-text {
+          text-align: center;
+          color: #000000;
+          font-size: 14px;
+          padding: 20px;
+          border-top: 2px solid #cccccc;
+        }
+        h1 {
+          margin: 0;
+          font-size: 24px;
+          font-weight: bold;
+        }
+        h2 {
+          font-size: 20px;
+          font-weight: bold;
+          margin: 25px 0 15px 0;
+          color: #000000;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <img src="https://tickets.ukiahseniorcenter.org/logo.png" alt="Ukiah Senior Center" class="logo" />
+          <h1 style="color: #db2777; margin: 0;">💕 Valentine's Day Dance</h1>
+        </div>
+
+        <div class="content">
+          <div class="greeting">
+            Hello ${customerName},
+          </div>
+
+          <p style="font-size: 18px; line-height: 1.8; margin: 20px 0; font-weight: bold; color: #db2777;">
+            Your Valentine's Day Dance reservation is confirmed!
+          </p>
+
+          <div style="background: #fdf2f8; border: 3px solid #db2777; padding: 25px; margin: 25px 0; border-radius: 8px;">
+            <p style="font-size: 17px; line-height: 2; margin: 0 0 15px 0; color: #000000;">
+              <strong>📅 Date:</strong> Saturday, February 14, 2026
+            </p>
+            <p style="font-size: 17px; line-height: 2; margin: 0 0 15px 0; color: #000000;">
+              <strong>🕖 Time:</strong> Doors open 6pm, Dance 7-10pm
+            </p>
+            <p style="font-size: 17px; line-height: 2; margin: 0 0 15px 0; color: #000000;">
+              <strong>📍 Location:</strong> Ukiah Senior Center, 495 Leslie St
+            </p>
+            <p style="font-size: 17px; line-height: 2; margin: 0; color: #000000;">
+              <strong>✓ Just give us your name at the door!</strong>
+            </p>
+          </div>
+
+          <div class="info-box">
+            <div class="info-row">
+              <span class="info-label">Name:</span> ${customerName}
+            </div>
+            <div class="info-row">
+              <span class="info-label">Email:</span> ${customerEmail}
+            </div>
+            <div class="info-row">
+              <span class="info-label">Phone:</span> ${customerPhone}
+            </div>
+            <div class="info-row">
+              <span class="info-label">Payment Method:</span> ${paymentMethod}
+            </div>
+            <div class="info-row">
+              <span class="info-label">Date:</span> ${timestamp}
+            </div>
+          </div>
+
+          <div class="event-header">
+            💕 Valentine's Day Dance - ${totalTickets} Ticket${totalTickets > 1 ? 's' : ''}
+          </div>
+          <div class="event-items">
+            ${memberTickets > 0 ? `
+            <div class="item-row">
+              ${memberTickets} Member Ticket${memberTickets > 1 ? 's' : ''} @ $${memberPrice.toFixed(2)} each = <strong>$${(memberTickets * memberPrice).toFixed(2)}</strong>
+            </div>
+            ` : ''}
+            ${nonMemberTickets > 0 ? `
+            <div class="item-row">
+              ${nonMemberTickets} Non-Member Ticket${nonMemberTickets > 1 ? 's' : ''} @ $${nonMemberPrice.toFixed(2)} each = <strong>$${(nonMemberTickets * nonMemberPrice).toFixed(2)}</strong>
+            </div>
+            ` : ''}
+            <div class="item-row" style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #db2777;">
+              <strong>Ticket Total: $${ticketSubtotal.toFixed(2)}</strong>
+            </div>
+          </div>
+
+          ${donationAmount > 0 ? `
+          <div class="total-row" style="font-size: 18px;">
+            Donation (Thank you! 💝): $${donationAmount.toFixed(2)}
+          </div>
+          ` : ''}
+
+          <div class="grand-total">
+            <div class="grand-total-row">
+              TOTAL PAID: $${grandTotal.toFixed(2)}
+            </div>
+          </div>
+
+          <div class="attachment-notice">
+            <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px; color: #000000;">
+              📎 OPTIONAL: TICKETS ATTACHED
+            </div>
+            <div style="font-size: 16px; color: #000000; line-height: 1.8;">
+              Want a ticket for your records? Open the PDF attached to this email.<br/>
+              <strong>Remember: No ticket required to attend!</strong>
+            </div>
+          </div>
+
+          <div style="background: #f5f5f5; border: 2px solid #000000; padding: 20px; text-align: center; margin: 25px 0;">
+            <div style="font-size: 16px; color: #000000; line-height: 1.8;">
+              <strong>Questions?</strong><br/>
+              Call: (707) 462-4343 ext. 209<br/>
+              Email: cashier@seniorctr.org
+            </div>
+          </div>
+        </div>
+
+        <div class="footer-text">
+          <strong>Ukiah Senior Center</strong><br/>
+          495 Leslie Street, Ukiah, CA 95482<br/>
+          Phone: (707) 462-4343<br/>
+          Email: cashier@seniorctr.org
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+interface SpeakeasyReceiptData {
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  ticketQuantity: number;
+  ticketPrice: number;
+  ticketSubtotal: number;
+  donationAmount: number;
+  grandTotal: number;
+  paymentMethod: string;
+  timestamp: string;
+}
+
+export function generateSpeakeasyEmail(data: SpeakeasyReceiptData): string {
+  const {
+    customerName,
+    customerEmail,
+    customerPhone,
+    ticketQuantity,
+    ticketPrice,
+    ticketSubtotal,
+    donationAmount,
+    grandTotal,
+    paymentMethod,
+    timestamp,
+  } = data;
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>
+        body {
+          font-family: Arial, Helvetica, sans-serif;
+          line-height: 1.8;
+          color: #000000;
+          background-color: #ffffff;
+          margin: 0;
+          padding: 0;
+        }
+        .container {
+          max-width: 600px;
+          margin: 0 auto;
+          background: #ffffff;
+        }
+        .header {
+          background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+          padding: 40px 20px;
+          text-align: center;
+          border-bottom: 3px solid #d4af37;
+        }
+        .logo {
+          width: 100px;
+          height: 100px;
+          margin: 0 auto 20px;
+          display: block;
+        }
+        .content {
+          padding: 30px 20px;
+        }
+        .greeting {
+          font-size: 20px;
+          font-weight: bold;
+          margin-bottom: 20px;
+          color: #000000;
+        }
+        .info-box {
+          background: #fefce8;
+          padding: 20px;
+          margin: 20px 0;
+          border: 2px solid #d4af37;
+        }
+        .info-row {
+          padding: 8px 0;
+          font-size: 16px;
+          line-height: 1.8;
+        }
+        .info-label {
+          font-weight: bold;
+          color: #000000;
+        }
+        .event-header {
+          background: #1a1a2e;
+          color: #d4af37;
+          padding: 15px;
+          font-weight: bold;
+          font-size: 18px;
+          margin-top: 20px;
+        }
+        .event-items {
+          background: #fefce8;
+          border: 2px solid #d4af37;
+          padding: 15px;
+          margin-bottom: 20px;
+        }
+        .item-row {
+          padding: 8px 0;
+          font-size: 16px;
+          line-height: 1.6;
+        }
+        .grand-total {
+          background: #1a1a2e;
+          padding: 20px;
+          border: 3px solid #d4af37;
+          margin: 25px 0;
+        }
+        .grand-total-row {
+          font-size: 24px;
+          font-weight: bold;
+          color: #d4af37;
+        }
+        .attachment-notice {
+          background: #fffbeb;
+          border: 3px solid #f59e0b;
+          padding: 20px;
+          text-align: center;
+          margin: 25px 0;
+        }
+        .footer-text {
+          text-align: center;
+          color: #000000;
+          font-size: 14px;
+          padding: 20px;
+          border-top: 2px solid #cccccc;
+        }
+        h1 {
+          margin: 0;
+          font-size: 22px;
+          font-weight: bold;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <img src="https://tickets.ukiahseniorcenter.org/logo.png" alt="Ukiah Senior Center" class="logo" />
+          <h1 style="color: #d4af37; margin: 0 0 8px 0;">An Affair to Remember</h1>
+          <p style="color: #d4af37; margin: 0; font-size: 18px;">🎭 A Night at the Speakeasy</p>
+        </div>
+
+        <div class="content">
+          <div class="greeting">
+            Hello ${customerName},
+          </div>
+
+          <p style="font-size: 18px; line-height: 1.8; margin: 20px 0; font-weight: bold; color: #1a1a2e;">
+            Your Speakeasy Gala reservation is confirmed!
+          </p>
+
+          <div style="background: #fefce8; border: 3px solid #d4af37; padding: 25px; margin: 25px 0; border-radius: 8px;">
+            <p style="font-size: 17px; line-height: 2; margin: 0 0 15px 0; color: #000000;">
+              <strong>📅 Date:</strong> Saturday, April 11, 2026
+            </p>
+            <p style="font-size: 17px; line-height: 2; margin: 0 0 15px 0; color: #000000;">
+              <strong>🕖 Time:</strong> Doors open 6pm, Entertainment 7-10pm
+            </p>
+            <p style="font-size: 17px; line-height: 2; margin: 0 0 15px 0; color: #000000;">
+              <strong>📍 Location:</strong> Ukiah Senior Center, 495 Leslie St
+            </p>
+            <p style="font-size: 17px; line-height: 2; margin: 0 0 15px 0; color: #000000;">
+              <strong>👔 Dress Code:</strong> 1920s Speakeasy Attire Encouraged!
+            </p>
+            <p style="font-size: 17px; line-height: 2; margin: 0; color: #000000;">
+              <strong>✓ Just give us your name at the door!</strong>
+            </p>
+          </div>
+
+          <div class="info-box">
+            <div class="info-row">
+              <span class="info-label">Name:</span> ${customerName}
+            </div>
+            <div class="info-row">
+              <span class="info-label">Email:</span> ${customerEmail}
+            </div>
+            <div class="info-row">
+              <span class="info-label">Phone:</span> ${customerPhone}
+            </div>
+            <div class="info-row">
+              <span class="info-label">Payment Method:</span> ${paymentMethod}
+            </div>
+            <div class="info-row">
+              <span class="info-label">Date:</span> ${timestamp}
+            </div>
+          </div>
+
+          <div class="event-header">
+            🎭 Speakeasy Gala - ${ticketQuantity} Ticket${ticketQuantity > 1 ? 's' : ''}
+          </div>
+          <div class="event-items">
+            <div class="item-row">
+              ${ticketQuantity} Ticket${ticketQuantity > 1 ? 's' : ''} @ $${ticketPrice.toFixed(2)} each = <strong>$${ticketSubtotal.toFixed(2)}</strong>
+            </div>
+          </div>
+
+          ${donationAmount > 0 ? `
+          <div style="font-size: 18px; font-weight: bold; padding: 10px 0;">
+            Donation (Thank you! 🙏): $${donationAmount.toFixed(2)}
+          </div>
+          ` : ''}
+
+          <div class="grand-total">
+            <div class="grand-total-row">
+              TOTAL PAID: $${grandTotal.toFixed(2)}
+            </div>
+          </div>
+
+          <div class="attachment-notice">
+            <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px; color: #000000;">
+              📎 OPTIONAL: TICKETS ATTACHED
+            </div>
+            <div style="font-size: 16px; color: #000000; line-height: 1.8;">
+              Want a ticket for your records? Open the PDF attached to this email.<br/>
+              <strong>Remember: No ticket required to attend!</strong>
+            </div>
+          </div>
+
+          <div style="background: #f5f5f5; border: 2px solid #000000; padding: 20px; text-align: center; margin: 25px 0;">
+            <div style="font-size: 16px; color: #000000; line-height: 1.8;">
+              <strong>Questions?</strong><br/>
+              Call: (707) 462-4343 ext. 209<br/>
+              Email: cashier@seniorctr.org
+            </div>
+          </div>
+        </div>
+
+        <div class="footer-text">
+          <strong>Ukiah Senior Center</strong><br/>
+          495 Leslie Street, Ukiah, CA 95482<br/>
+          Phone: (707) 462-4343<br/>
+          Email: cashier@seniorctr.org
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+/* ========== 2025 EVENT EMAIL TEMPLATES - PRESERVED ==========
     timestamp,
   } = data;
 
@@ -377,3 +856,4 @@ export function generateReceiptEmail(data: TicketReceiptData): string {
     </html>
   `;
 }
+========== END 2025 EVENT EMAIL TEMPLATES ==========*/

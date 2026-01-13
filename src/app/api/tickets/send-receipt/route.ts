@@ -1,5 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendEmail, generateReceiptEmail } from '@/lib/email';
+import { sendEmail, generateValentinesEmail, generateSpeakeasyEmail } from '@/lib/email';
+
+// Dynamic pricing functions (must match submit route)
+function getValentinesMemberPrice(): number {
+  const priceIncreaseDate = new Date('2026-02-10T00:00:00-08:00');
+  return new Date() < priceIncreaseDate ? 30 : 35;
+}
+
+function getSpeakeasyPrice(): number {
+  const priceIncreaseDate = new Date('2026-03-29T00:00:00-07:00');
+  return new Date() < priceIncreaseDate ? 100 : 110;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,21 +19,15 @@ export async function POST(request: NextRequest) {
     console.log('[send-receipt] Request body:', JSON.stringify(body, null, 2));
     
     const {
-      transactionId,
       firstName,
       lastName,
       email,
       phone,
-      christmasMember = 0,
-      christmasNonMember = 0,
-      nyeMember = 0,
-      nyeNonMember = 0,
-      ticketSubtotal,
+      valentinesMember = 0,
+      valentinesNonMember = 0,
+      speakeasy = 0,
       donationAmount = 0,
-      grandTotal,
       paymentMethod,
-      staffInitials,
-      subjectPrefix = '',
       additionalCC = [],
     } = body;
 
@@ -40,81 +45,178 @@ export async function POST(request: NextRequest) {
       timeStyle: 'short',
     });
 
-    // Generate PDF by calling our PDF generation endpoint
-    console.log('[send-receipt] Generating PDF for tickets');
-    const pdfResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/tickets/pdf`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        firstName,
-        lastName,
-        email,
-        phone,
-        christmasMember,
-        christmasNonMember,
-        nyeMember,
-        nyeNonMember,
-      }),
-    });
+    // Calculate if we have tickets for each event
+    const hasValentines = valentinesMember > 0 || valentinesNonMember > 0;
+    const hasSpeakeasy = speakeasy > 0;
+    
+    // Calculate prices
+    const memberPrice = getValentinesMemberPrice();
+    const nonMemberPrice = 45; // Always $45 for non-members
+    const speakeasyPrice = getSpeakeasyPrice();
+    
+    // Calculate subtotals for each event
+    const valentinesSubtotal = (valentinesMember * memberPrice) + (valentinesNonMember * nonMemberPrice);
+    const speakeasySubtotal = speakeasy * speakeasyPrice;
 
-    if (!pdfResponse.ok) {
-      const errorText = await pdfResponse.text();
-      console.error('[send-receipt] PDF generation failed:', errorText);
-      throw new Error(`Failed to generate PDF: ${errorText}`);
+    const results: { event: string; success: boolean; messageId?: string; error?: string }[] = [];
+
+    // ======== Send Valentine's Email if they have Valentine's tickets ========
+    if (hasValentines) {
+      console.log('[send-receipt] Generating Valentine\'s PDF');
+      const valentinesPdfResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/tickets/pdf`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName,
+          lastName,
+          email,
+          phone,
+          valentinesMember,
+          valentinesNonMember,
+          speakeasy: 0, // Only Valentine's tickets in this PDF
+        }),
+      });
+
+      if (!valentinesPdfResponse.ok) {
+        const errorText = await valentinesPdfResponse.text();
+        console.error('[send-receipt] Valentine\'s PDF generation failed:', errorText);
+        throw new Error(`Failed to generate Valentine's PDF: ${errorText}`);
+      }
+
+      const valentinesPdfBuffer = Buffer.from(await valentinesPdfResponse.arrayBuffer());
+      console.log('[send-receipt] Valentine\'s PDF generated, size:', valentinesPdfBuffer.length, 'bytes');
+
+      // Donation goes on Valentine's email if both events, or if only Valentine's
+      const valentinesDonation = hasSpeakeasy ? donationAmount : donationAmount;
+      const valentinesGrandTotal = valentinesSubtotal + (hasSpeakeasy ? donationAmount : donationAmount);
+
+      const valentinesEmailHTML = generateValentinesEmail({
+        customerName,
+        customerEmail: email,
+        customerPhone: phone,
+        memberTickets: valentinesMember,
+        nonMemberTickets: valentinesNonMember,
+        ticketSubtotal: valentinesSubtotal,
+        donationAmount: valentinesDonation,
+        grandTotal: valentinesGrandTotal,
+        paymentMethod,
+        timestamp,
+        memberPrice,
+        nonMemberPrice,
+      });
+
+      console.log('[send-receipt] Sending Valentine\'s email...');
+      const valentinesResult = await sendEmail({
+        to: email,
+        subject: `Your Valentine's Day Dance Reservation is Confirmed! 💕`,
+        html: valentinesEmailHTML,
+        additionalCC,
+        attachments: [
+          {
+            filename: `ValentinesDay_Tickets_${firstName}${lastName}.pdf`,
+            content: valentinesPdfBuffer,
+            contentType: 'application/pdf',
+          },
+        ],
+      });
+
+      results.push({
+        event: 'valentines',
+        success: valentinesResult.success,
+        messageId: valentinesResult.messageId,
+        error: valentinesResult.error instanceof Error ? valentinesResult.error.message : undefined,
+      });
     }
 
-    const pdfBuffer = Buffer.from(await pdfResponse.arrayBuffer());
-    console.log('[send-receipt] PDF generated successfully, size:', pdfBuffer.length, 'bytes');
+    // ======== Send Speakeasy Email if they have Speakeasy tickets ========
+    if (hasSpeakeasy) {
+      console.log('[send-receipt] Generating Speakeasy PDF');
+      const speakeasyPdfResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/tickets/pdf`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName,
+          lastName,
+          email,
+          phone,
+          valentinesMember: 0, // Only Speakeasy tickets in this PDF
+          valentinesNonMember: 0,
+          speakeasy,
+        }),
+      });
 
-    // Generate email HTML
-    const emailHTML = generateReceiptEmail({
-      transactionId,
-      customerName,
-      customerEmail: email,
-      customerPhone: phone,
-      christmasMember,
-      christmasNonMember,
-      nyeMember,
-      nyeNonMember,
-      ticketSubtotal,
-      donationAmount,
-      grandTotal,
-      paymentMethod,
-      staffInitials,
-      timestamp,
-    });
+      if (!speakeasyPdfResponse.ok) {
+        const errorText = await speakeasyPdfResponse.text();
+        console.error('[send-receipt] Speakeasy PDF generation failed:', errorText);
+        throw new Error(`Failed to generate Speakeasy PDF: ${errorText}`);
+      }
 
-    // Send email with PDF attachment
-    console.log('[send-receipt] Sending email to:', email);
-    console.log('[send-receipt] EMAIL_PASSWORD set:', !!process.env.EMAIL_PASSWORD);
-    console.log('[send-receipt] EMAIL_USER:', process.env.EMAIL_USER || 'cashier@seniorctr.org');
-    
-    const emailSubject = subjectPrefix 
-      ? `${subjectPrefix} Your Ukiah Senior Center Tickets - ${customerName}`
-      : `Your Ukiah Senior Center Tickets - ${customerName}`;
-    
-    const result = await sendEmail({
-      to: email,
-      subject: emailSubject,
-      html: emailHTML,
-      additionalCC,
-      attachments: [
-        {
-          filename: `UkiahSeniorCenter_Tickets_${firstName}${lastName}.pdf`,
-          content: pdfBuffer,
-          contentType: 'application/pdf',
-        },
-      ],
-    });
+      const speakeasyPdfBuffer = Buffer.from(await speakeasyPdfResponse.arrayBuffer());
+      console.log('[send-receipt] Speakeasy PDF generated, size:', speakeasyPdfBuffer.length, 'bytes');
 
-    if (result.success) {
-      console.log('[send-receipt] Email sent successfully! Message ID:', result.messageId);
-      return NextResponse.json({ success: true, messageId: result.messageId });
+      // Donation only goes on Speakeasy email if they ONLY bought Speakeasy tickets
+      const speakeasyDonation = hasValentines ? 0 : donationAmount;
+      const speakeasyGrandTotal = speakeasySubtotal + speakeasyDonation;
+
+      const speakeasyEmailHTML = generateSpeakeasyEmail({
+        customerName,
+        customerEmail: email,
+        customerPhone: phone,
+        ticketQuantity: speakeasy,
+        ticketPrice: speakeasyPrice,
+        ticketSubtotal: speakeasySubtotal,
+        donationAmount: speakeasyDonation,
+        grandTotal: speakeasyGrandTotal,
+        paymentMethod,
+        timestamp,
+      });
+
+      console.log('[send-receipt] Sending Speakeasy email...');
+      const speakeasyResult = await sendEmail({
+        to: email,
+        subject: `Your Speakeasy Gala Reservation is Confirmed! 🎭`,
+        html: speakeasyEmailHTML,
+        additionalCC,
+        attachments: [
+          {
+            filename: `Speakeasy_Tickets_${firstName}${lastName}.pdf`,
+            content: speakeasyPdfBuffer,
+            contentType: 'application/pdf',
+          },
+        ],
+      });
+
+      results.push({
+        event: 'speakeasy',
+        success: speakeasyResult.success,
+        messageId: speakeasyResult.messageId,
+        error: speakeasyResult.error instanceof Error ? speakeasyResult.error.message : undefined,
+      });
+    }
+
+    // Check results
+    const allSuccessful = results.every(r => r.success);
+    const anySuccessful = results.some(r => r.success);
+
+    if (allSuccessful) {
+      console.log('[send-receipt] All emails sent successfully!');
+      return NextResponse.json({ 
+        success: true, 
+        results,
+        message: `Sent ${results.length} email(s) successfully`
+      });
+    } else if (anySuccessful) {
+      console.warn('[send-receipt] Some emails failed:', results);
+      return NextResponse.json({ 
+        success: true, 
+        partial: true,
+        results,
+        message: 'Some emails sent successfully, but some failed'
+      });
     } else {
-      console.error('[send-receipt] Email failed:', result.error);
-      const errorMessage = result.error instanceof Error ? result.error.message : 'Unknown error';
+      console.error('[send-receipt] All emails failed:', results);
       return NextResponse.json(
-        { error: 'Failed to send email', details: errorMessage },
+        { error: 'Failed to send all emails', results },
         { status: 500 }
       );
     }

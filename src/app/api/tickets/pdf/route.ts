@@ -10,7 +10,9 @@ import { validateTicketRequest } from '@/lib/ticketValidation';
 
 /**
  * POST /api/tickets/pdf
- * Generate event ticket PDFs with enterprise-grade error handling
+ * Generate event ticket PDFs for 2026 events
+ * - Valentine's Day Dance (pink theme)
+ * - Speakeasy Gala (gold/dark theme)
  */
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
@@ -32,14 +34,12 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // TypeScript now knows validation.data is defined
     const {
       firstName,
       lastName,
-      christmasMember,
-      christmasNonMember,
-      nyeMember,
-      nyeNonMember,
+      valentinesMember,
+      valentinesNonMember,
+      speakeasy,
     } = validation.data;
 
     const customerName = `${firstName} ${lastName}`;
@@ -49,30 +49,29 @@ export async function POST(request: NextRequest) {
     
     const tickets: Array<{
       eventName: string;
-      isNYE: boolean;
+      eventType: 'valentines' | 'speakeasy';
       ticketNumber: number;
       totalTickets: number;
     }> = [];
 
-    // Generate Christmas tickets - each Christmas ticket numbered within Christmas group
-    const totalChristmas = christmasMember + christmasNonMember;
-    for (let i = 0; i < totalChristmas; i++) {
+    // Generate Valentine's tickets
+    const totalValentines = valentinesMember + valentinesNonMember;
+    for (let i = 0; i < totalValentines; i++) {
       tickets.push({
-        eventName: 'Christmas Prime Rib Meal',
-        isNYE: false,
+        eventName: "Valentine's Day Dance",
+        eventType: 'valentines',
         ticketNumber: i + 1,
-        totalTickets: totalChristmas,
+        totalTickets: totalValentines,
       });
     }
 
-    // Generate NYE tickets - each NYE ticket numbered within NYE group
-    const totalNYE = nyeMember + nyeNonMember;
-    for (let i = 0; i < totalNYE; i++) {
+    // Generate Speakeasy tickets
+    for (let i = 0; i < speakeasy; i++) {
       tickets.push({
-        eventName: "New Year's Eve Gala",
-        isNYE: true,
+        eventName: 'An Affair to Remember',
+        eventType: 'speakeasy',
         ticketNumber: i + 1,
-        totalTickets: totalNYE,
+        totalTickets: speakeasy,
       });
     }
 
@@ -81,120 +80,171 @@ export async function POST(request: NextRequest) {
       title: 'Event Tickets',
       author: 'Ukiah Senior Center',
       subject: `Tickets for ${customerName}`,
-      creator: 'USC Ticketing System v2.0',
+      creator: 'USC Ticketing System v3.0',
     });
 
-    // Helper function to draw a senior-friendly ticket
-    const drawTicket = (ticket: typeof tickets[0], x: number, y: number) => {
+    // Helper function to draw Valentine's ticket (PINK theme)
+    const drawValentinesTicket = (ticket: typeof tickets[0], x: number, y: number) => {
       const width = 3.5;
       const height = 2;
-      const isNYE = ticket.isNYE;
-      const borderColor = isNYE ? USC_COLORS.PURPLE : USC_COLORS.TEAL;
 
-      // Background - pure white like bookstore cards
-      doc.setFillColor(...USC_COLORS.WHITE);
+      // Pink gradient-like background
+      doc.setFillColor(...USC_COLORS.PINK_LIGHT);
       doc.rect(x, y, width, height, 'F');
 
-      // Border - thicker like bookstore (3px)
-      doc.setDrawColor(...borderColor);
-      doc.setLineWidth(0.04); // ~3pt to match bookstore
+      // Pink border
+      doc.setDrawColor(...USC_COLORS.PINK);
+      doc.setLineWidth(0.04);
       doc.roundedRect(x, y, width, height, 0.05, 0.05);
 
-      // Logo - 30% width on left side (gracefully handle missing logo)
+      // Logo
       if (logoBase64) {
-        const logoWidth = width * 0.3;
-        const logoHeight = logoWidth; // Keep square
+        const logoWidth = width * 0.28;
+        const logoHeight = logoWidth;
         const logoX = x + 0.1;
-        const logoY = y + (height - logoHeight) / 2; // Vertically centered
+        const logoY = y + (height - logoHeight) / 2;
         try {
           doc.addImage(logoBase64, 'PNG', logoX, logoY, logoWidth, logoHeight);
         } catch (e) {
           console.error('[Tickets PDF] Error adding logo:', e);
-          // Continue without logo
         }
       }
 
-      // Text area - right 70% with better spacing
-      const logoWidth = logoBase64 ? width * 0.3 : 0;
+      // Text area
+      const logoWidth = logoBase64 ? width * 0.28 : 0;
       const textStartX = x + logoWidth + 0.2;
-      const textWidth = width * (logoBase64 ? 0.7 : 1.0) - 0.3;
+      const textWidth = width * (logoBase64 ? 0.72 : 1.0) - 0.3;
       const textCenterX = textStartX + textWidth / 2;
       
-      let textY = y + 0.28;
+      let textY = y + 0.26;
 
-      // Event Title - 16pt centered in text area (balanced for 2" height)
-      doc.setFontSize(16);
+      // Event Title with heart
+      doc.setFontSize(15);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...borderColor);
-      const title = isNYE ? "New Year's Eve Gala" : 'Christmas Drive-Thru';
-      doc.text(title, textCenterX, textY, { align: 'center' });
+      doc.setTextColor(...USC_COLORS.PINK);
+      doc.text("💕 Valentine's Day Dance", textCenterX, textY, { align: 'center' });
 
-      textY += 0.20;
+      textY += 0.22;
 
-      // Date & Time - 11pt centered in text area
+      // Date
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...USC_COLORS.BLACK);
-      const dateTime = isNYE 
-        ? 'Wed Dec 31, 7-10pm'
-        : 'Tues Dec 23, 12-12:30pm';
-      doc.text(dateTime, textCenterX, textY, { align: 'center' });
+      doc.text('Saturday, February 14, 2026', textCenterX, textY, { align: 'center' });
 
       textY += 0.18;
 
-      // Key info lines - 10pt centered in text area
+      // Time & Details
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      doc.setTextColor(...USC_COLORS.BLACK);
-      
-      if (isNYE) {
-        // Music by Beatz Werkin - centered with italic band name
-        const musicText = 'Music by ';
-        const bandText = 'Beatz Werkin';
-        const musicWidth = doc.getTextWidth(musicText);
-        doc.setFont('helvetica', 'italic');
-        const bandWidth = doc.getTextWidth(bandText);
-        doc.setFont('helvetica', 'normal');
-        const totalWidth = musicWidth + bandWidth;
-        const startX = textCenterX - (totalWidth / 2);
-        
-        doc.text(musicText, startX, textY);
-        doc.setFont('helvetica', 'italic');
-        doc.text(bandText, startX + musicWidth, textY);
-        doc.setFont('helvetica', 'normal');
-        
-        textY += 0.16;
-        doc.text('Appetizers & Dessert', textCenterX, textY, { align: 'center' });
-        textY += 0.16;
-        doc.setFontSize(9);
-        doc.text('Ball Drops at 9pm', textCenterX, textY, { align: 'center' });
-      } else {
-        doc.text('Prime Rib & Dessert', textCenterX, textY, { align: 'center' });
-        textY += 0.16;
-        doc.text('Drive-Thru Pickup', textCenterX, textY, { align: 'center' });
-      }
+      doc.text('Doors Open 6pm • Dance 7-10pm', textCenterX, textY, { align: 'center' });
 
-      // Guest Name - 10pt centered in text area
+      textY += 0.16;
+      doc.setFontSize(9);
+      doc.text('Music • Dancing • Refreshments', textCenterX, textY, { align: 'center' });
+
+      // Guest Name
       const guestY = y + height - 0.42;
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...borderColor);
+      doc.setTextColor(...USC_COLORS.PINK);
       const guestText = `${customerName} • ${ticket.ticketNumber} of ${ticket.totalTickets}`;
       doc.text(guestText, textCenterX, guestY, { align: 'center' });
 
-      // Footer - 8pt centered
+      // Footer
       const footerY = y + height - 0.22;
       doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...USC_COLORS.BLACK);
       const footer = '495 Leslie St, Ukiah • (707) 462-4343 ext 209';
-      const footerWidth = doc.getTextWidth(footer);
-      doc.text(footer, x + (width - footerWidth) / 2, footerY);
+      doc.text(footer, x + width / 2, footerY, { align: 'center' });
     };
 
-    // Layout tickets in 2x4 grid (8 per page) - optimized for 8.5x11
-    // Available height: 11" - 1" margins = 10"
-    // 4 tickets at 2" + 3 gaps at 0.2" = 8.6"
+    // Helper function to draw Speakeasy ticket (Gold/Dark theme)
+    const drawSpeakeasyTicket = (ticket: typeof tickets[0], x: number, y: number) => {
+      const width = 3.5;
+      const height = 2;
+
+      // Dark navy background
+      doc.setFillColor(...USC_COLORS.DARK_NAVY);
+      doc.rect(x, y, width, height, 'F');
+
+      // Gold border
+      doc.setDrawColor(...USC_COLORS.GOLD);
+      doc.setLineWidth(0.05);
+      doc.roundedRect(x, y, width, height, 0.05, 0.05);
+
+      // Inner gold border for art deco feel
+      doc.setLineWidth(0.02);
+      doc.roundedRect(x + 0.08, y + 0.08, width - 0.16, height - 0.16, 0.03, 0.03);
+
+      // Logo (optional - may skip for dark theme)
+      if (logoBase64) {
+        const logoWidth = width * 0.22;
+        const logoHeight = logoWidth;
+        const logoX = x + 0.12;
+        const logoY = y + (height - logoHeight) / 2;
+        try {
+          doc.addImage(logoBase64, 'PNG', logoX, logoY, logoWidth, logoHeight);
+        } catch (e) {
+          console.error('[Tickets PDF] Error adding logo:', e);
+        }
+      }
+
+      // Text area
+      const logoWidth = logoBase64 ? width * 0.22 : 0;
+      const textStartX = x + logoWidth + 0.18;
+      const textWidth = width * (logoBase64 ? 0.78 : 1.0) - 0.3;
+      const textCenterX = textStartX + textWidth / 2;
+      
+      let textY = y + 0.24;
+
+      // Event Title
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...USC_COLORS.GOLD);
+      doc.text('An Affair to Remember', textCenterX, textY, { align: 'center' });
+
+      textY += 0.18;
+
+      // Subtitle
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+      doc.text('🎭 A Night at the Speakeasy', textCenterX, textY, { align: 'center' });
+
+      textY += 0.20;
+
+      // Date
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...USC_COLORS.WHITE);
+      doc.text('Saturday, April 11, 2026', textCenterX, textY, { align: 'center' });
+
+      textY += 0.16;
+
+      // Time
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Doors 6pm • Entertainment 7-10pm', textCenterX, textY, { align: 'center' });
+
+      // Guest Name
+      const guestY = y + height - 0.40;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...USC_COLORS.GOLD);
+      const guestText = `${customerName} • ${ticket.ticketNumber} of ${ticket.totalTickets}`;
+      doc.text(guestText, textCenterX, guestY, { align: 'center' });
+
+      // Footer
+      const footerY = y + height - 0.20;
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...USC_COLORS.WHITE);
+      const footer = '495 Leslie St, Ukiah • (707) 462-4343 ext 209';
+      doc.text(footer, x + width / 2, footerY, { align: 'center' });
+    };
+
+    // Layout tickets in 2x4 grid (8 per page)
     let ticketIndex = 0;
     const ticketsPerPage = 8;
     for (let pageIndex = 0; pageIndex < Math.ceil(tickets.length / ticketsPerPage); pageIndex++) {
@@ -204,8 +254,14 @@ export async function POST(request: NextRequest) {
         const row = Math.floor(i / 2);
         const col = i % 2;
         const x = 0.5 + col * 3.75;
-        const y = 0.5 + row * 2.2; // Reduced gap from 2.25 to 2.2
-        drawTicket(tickets[ticketIndex], x, y);
+        const y = 0.5 + row * 2.2;
+        
+        const ticket = tickets[ticketIndex];
+        if (ticket.eventType === 'valentines') {
+          drawValentinesTicket(ticket, x, y);
+        } else {
+          drawSpeakeasyTicket(ticket, x, y);
+        }
         ticketIndex++;
       }
     }
@@ -220,8 +276,8 @@ export async function POST(request: NextRequest) {
     console.info('[Tickets PDF] Generated successfully', {
       customerName,
       totalTickets: tickets.length,
-      christmasTickets: totalChristmas,
-      nyeTickets: totalNYE,
+      valentinesTickets: totalValentines,
+      speakeasyTickets: speakeasy,
       sizeBytes: pdfBuffer.length,
       sizeMB: (pdfBuffer.length / (1024 * 1024)).toFixed(2),
       durationMs: Date.now() - startTime,

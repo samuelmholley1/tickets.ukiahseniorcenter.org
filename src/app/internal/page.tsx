@@ -1,24 +1,38 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useMemo } from 'react';
 
 import { SiteNavigation } from '@/components/SiteNavigation';
 import { SiteFooterContent } from '@/components/SiteFooterContent';
 import { TicketList } from '@/components/TicketList';
 
+/* ========== 2026 EVENTS ==========
+ * Valentine's Day Dance - February 14, 2026
+ *   - Member: $30 until Feb 9, then $35
+ *   - Non-Member: $45 (always)
+ * 
+ * Speakeasy Gala - April 11, 2026
+ *   - All tickets: $100 until Mar 28, then $110
+ * ================================= */
+
 interface TicketQuantities {
+  valentinesMember: number;
+  valentinesNonMember: number;
+  speakeasy: number;
+  
+  /* ========== CHRISTMAS/NYE 2025 - COMMENTED OUT FOR 2026 ==========
   christmasMember: number;
   christmasNonMember: number;
   nyeMember: number;
   nyeNonMember: number;
+  ================================================================== */
 }
 
 export default function UnifiedSalesPage() {
   const [quantities, setQuantities] = useState<TicketQuantities>({
-    christmasMember: 0,
-    christmasNonMember: 0,
-    nyeMember: 0,
-    nyeNonMember: 0,
+    valentinesMember: 0,
+    valentinesNonMember: 0,
+    speakeasy: 0,
   });
 
   const [formData, setFormData] = useState({
@@ -34,39 +48,42 @@ export default function UnifiedSalesPage() {
     staffInitials: ''
   });
 
-  // Uncomment for next year's Christmas event:
-  // const [vegetarianMeals, setVegetarianMeals] = useState<boolean[]>([]);
-
   const [wantsDonation, setWantsDonation] = useState(false);
   const [donationAmount, setDonationAmount] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  // Pricing
-  const CHRISTMAS_MEMBER = 15;
-  const CHRISTMAS_NON_MEMBER = 20;
-  const NYE_MEMBER = 35;
-  const NYE_NON_MEMBER = 45;
+  // Dynamic pricing based on current date
+  const pricing = useMemo(() => {
+    const today = new Date();
+    const valentinesPriceChangeDate = new Date('2026-02-10T00:00:00');
+    const speakeasyPriceChangeDate = new Date('2026-03-29T00:00:00');
+    
+    return {
+      valentinesMember: today < valentinesPriceChangeDate ? 30 : 35,
+      valentinesNonMember: 45,
+      speakeasy: today < speakeasyPriceChangeDate ? 100 : 110,
+      isValentinesEarlyBird: today < valentinesPriceChangeDate,
+      isSpeakeasyEarlyBird: today < speakeasyPriceChangeDate,
+    };
+  }, []);
 
   // Calculate totals
-  const christmasTotal = 
-    (quantities.christmasMember * CHRISTMAS_MEMBER) + 
-    (quantities.christmasNonMember * CHRISTMAS_NON_MEMBER);
+  const valentinesTotal = 
+    (quantities.valentinesMember * pricing.valentinesMember) + 
+    (quantities.valentinesNonMember * pricing.valentinesNonMember);
   
-  const nyeTotal = 
-    (quantities.nyeMember * NYE_MEMBER) + 
-    (quantities.nyeNonMember * NYE_NON_MEMBER);
+  const speakeasyTotal = quantities.speakeasy * pricing.speakeasy;
   
-  const ticketSubtotal = christmasTotal + nyeTotal;
+  const ticketSubtotal = valentinesTotal + speakeasyTotal;
   const donation = wantsDonation ? (parseFloat(donationAmount) || 0) : 0;
   const grandTotal = (ticketSubtotal || 0) + (donation || 0);
   
   const totalTickets = 
-    quantities.christmasMember + 
-    quantities.christmasNonMember + 
-    quantities.nyeMember + 
-    quantities.nyeNonMember;
+    quantities.valentinesMember + 
+    quantities.valentinesNonMember + 
+    quantities.speakeasy;
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -104,7 +121,6 @@ export default function UnifiedSalesPage() {
           quantities,
           customer: formData,
           donation: wantsDonation ? parseFloat(donationAmount) : 0,
-          vegetarianMeals: 0 // vegetarianMeals.filter(Boolean).length - Uncomment for next year's Christmas event
         })
       });
 
@@ -130,16 +146,25 @@ export default function UnifiedSalesPage() {
       <div className="bg-[#fafbff]" style={{ paddingBlock: 'var(--space-4)' }}>
         <div className="container" style={{ maxWidth: '900px' }}>
           
-          {/* Action Button */}
+          {/* Zeffy Embed Links */}
           <div style={{ display: 'flex', gap: 'var(--space-2)', justifyContent: 'center', marginBottom: 'var(--space-3)', flexWrap: 'wrap' }}>
             <a
-              href="https://www.zeffy.com/en-US/ticketing/new-years-eve-gala-dance--2025"
+              href="https://www.zeffy.com/embed/ticketing/valentines-day-dance--2026-2"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block bg-[#5eb3a1] hover:bg-[#427d78] text-white font-['Jost',sans-serif] font-bold px-6 py-3 rounded-lg transition-colors duration-300 shadow-md hover:shadow-lg"
+              className="inline-block bg-pink-500 hover:bg-pink-600 text-white font-['Jost',sans-serif] font-bold px-6 py-3 rounded-lg transition-colors"
               style={{ fontSize: 'clamp(0.875rem, 2.5vw, 1rem)' }}
             >
-              💳 Card Payment? Click Here
+              💕 Valentine&apos;s Zeffy Page
+            </a>
+            <a
+              href="https://www.zeffy.com/embed/ticketing/an-affair-to-remember-2026-a-night-at-the-speakeasy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block bg-amber-600 hover:bg-amber-700 text-white font-['Jost',sans-serif] font-bold px-6 py-3 rounded-lg transition-colors"
+              style={{ fontSize: 'clamp(0.875rem, 2.5vw, 1rem)' }}
+            >
+              🎭 Speakeasy Zeffy Page
             </a>
           </div>
 
@@ -169,103 +194,102 @@ export default function UnifiedSalesPage() {
                 Select Tickets
               </h2>
 
-              {/* ========== CHRISTMAS DRIVE-THRU SECTION - COMMENTED OUT FOR 2026 ==========
-              <div style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-3)', background: '#f8f9fa', borderRadius: '8px' }}>
-                <h3 className="font-['Jost',sans-serif] font-bold text-gray-800 text-lg" style={{ marginBottom: 'var(--space-2)' }}>
-                  Christmas Drive-Thru Meal
+              {/* Valentine's Day Dance */}
+              <div style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-3)', background: 'linear-gradient(135deg, #fff0f5 0%, #ffe4ec 100%)', borderRadius: '8px', border: '2px solid #ffb6c1' }}>
+                <h3 className="font-['Jost',sans-serif] font-bold text-[#c41e3a] text-lg" style={{ marginBottom: 'var(--space-2)' }}>
+                  💕 Valentine&apos;s Day Dance
                 </h3>
                 <p className="font-['Bitter',serif] text-gray-600 text-sm" style={{ marginBottom: 'var(--space-3)' }}>
-                  December 23, 2025 • 12:00 PM - 12:30 PM
+                  February 14, 2026
+                  {pricing.isValentinesEarlyBird && (
+                    <span className="ml-2 inline-block bg-green-500 text-white text-xs font-bold px-2 py-1 rounded">
+                      🎉 EARLY BIRD until Feb 9!
+                    </span>
+                  )}
                 </p>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
                   <div>
                     <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">
-                      Member Tickets (${CHRISTMAS_MEMBER} each)
+                      Member Tickets (${pricing.valentinesMember} each)
+                      {pricing.isValentinesEarlyBird && (
+                        <span className="block text-xs text-green-600 mt-1">Regular price: $35 after Feb 9</span>
+                      )}
                     </label>
                     <input
                       type="number"
                       min="0"
-                      value={quantities.christmasMember}
-                      onChange={(e) => {
-                        const newVal = parseInt(e.target.value) || 0;
-                        const totalChristmas = newVal + quantities.christmasNonMember;
-                        setQuantities({...quantities, christmasMember: newVal});
-                        // Adjust vegetarian array to match new total
-                        setVegetarianMeals(prev => {
-                          const newArray = [...prev];
-                          newArray.length = totalChristmas;
-                          return newArray.fill(false, prev.length);
-                        });
-                      }}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif] text-lg"
+                      value={quantities.valentinesMember}
+                      onChange={(e) => setQuantities({...quantities, valentinesMember: parseInt(e.target.value) || 0})}
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#c41e3a] focus:outline-none font-['Bitter',serif] text-lg"
                     />
                   </div>
                   <div>
                     <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">
-                      Non-Member Tickets (${CHRISTMAS_NON_MEMBER} each)
+                      Non-Member Tickets (${pricing.valentinesNonMember} each)
                     </label>
                     <input
                       type="number"
                       min="0"
-                      value={quantities.christmasNonMember}
-                      onChange={(e) => {
-                        const newVal = parseInt(e.target.value) || 0;
-                        const totalChristmas = quantities.christmasMember + newVal;
-                        setQuantities({...quantities, christmasNonMember: newVal});
-                        // Adjust vegetarian array to match new total
-                        setVegetarianMeals(prev => {
-                          const newArray = [...prev];
-                          newArray.length = totalChristmas;
-                          return newArray.fill(false, prev.length);
-                        });
-                      }}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif] text-lg"
+                      value={quantities.valentinesNonMember}
+                      onChange={(e) => setQuantities({...quantities, valentinesNonMember: parseInt(e.target.value) || 0})}
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#c41e3a] focus:outline-none font-['Bitter',serif] text-lg"
                     />
                   </div>
                 </div>
-
-                {/* Vegetarian Meal Options - Individual Checkboxes *\/}
-                {(quantities.christmasMember + quantities.christmasNonMember) > 0 && (
-                  <div style={{ marginTop: 'var(--space-3)', padding: 'var(--space-3)', background: '#f1f8f4', border: '2px solid #4caf50', borderRadius: '8px' }}>
-                    <h4 className="font-['Jost',sans-serif] font-bold text-[#1b5e20] mb-3" style={{ fontSize: '16px' }}>
-                      🌱 Vegetarian Meal Options (Eggplant instead of Prime Rib)
-                    </h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {Array.from({ length: quantities.christmasMember + quantities.christmasNonMember }, (_, i) => (
-                        <label key={i} style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '8px', background: 'white', borderRadius: '6px' }}>
-                          <input
-                            type="checkbox"
-                            checked={vegetarianMeals[i] || false}
-                            onChange={(e) => {
-                              setVegetarianMeals(prev => {
-                                const newArray = [...prev];
-                                newArray[i] = e.target.checked;
-                                return newArray;
-                              });
-                            }}
-                            style={{ width: '18px', height: '18px', marginRight: '10px', cursor: 'pointer' }}
-                          />
-                          <span className="font-['Bitter',serif]" style={{ fontSize: '15px', color: '#2e7d32', fontWeight: '500' }}>
-                            Make Meal #{i + 1} vegetarian
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {christmasTotal > 0 && (
+                {valentinesTotal > 0 && (
                   <div style={{ marginTop: 'var(--space-2)', textAlign: 'right' }}>
-                    <span className="font-['Jost',sans-serif] font-bold text-[#427d78] text-lg">
-                      Subtotal: ${christmasTotal.toFixed(2)}
+                    <span className="font-['Jost',sans-serif] font-bold text-[#c41e3a] text-lg">
+                      Subtotal: ${valentinesTotal.toFixed(2)}
                     </span>
                   </div>
                 )}
               </div>
-              ========== END CHRISTMAS SECTION ========== */}
 
-              {/* NYE Gala Dance */}
+              {/* Speakeasy Gala */}
+              <div style={{ marginBottom: 'var(--space-3)', padding: 'var(--space-3)', background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)', borderRadius: '8px', border: '2px solid #d4af37' }}>
+                <h3 className="font-['Jost',sans-serif] font-bold text-amber-400 text-lg" style={{ marginBottom: 'var(--space-2)' }}>
+                  🎭 An Affair to Remember: A Night at the Speakeasy
+                </h3>
+                <p className="font-['Bitter',serif] text-gray-300 text-sm" style={{ marginBottom: 'var(--space-3)' }}>
+                  April 11, 2026
+                  {pricing.isSpeakeasyEarlyBird && (
+                    <span className="ml-2 inline-block bg-green-500 text-white text-xs font-bold px-2 py-1 rounded">
+                      🎉 EARLY BIRD until Mar 28!
+                    </span>
+                  )}
+                </p>
+
+                <div>
+                  <label className="block font-['Bitter',serif] text-gray-200 font-medium mb-2">
+                    Tickets (${pricing.speakeasy} each)
+                    {pricing.isSpeakeasyEarlyBird && (
+                      <span className="block text-xs text-green-400 mt-1">Regular price: $110 after Mar 28</span>
+                    )}
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={quantities.speakeasy}
+                    onChange={(e) => setQuantities({...quantities, speakeasy: parseInt(e.target.value) || 0})}
+                    className="w-full px-4 py-3 border-2 border-amber-500 rounded-lg focus:border-amber-400 focus:outline-none font-['Bitter',serif] text-lg bg-white/90"
+                    style={{ maxWidth: '200px' }}
+                  />
+                </div>
+                {speakeasyTotal > 0 && (
+                  <div style={{ marginTop: 'var(--space-2)', textAlign: 'right' }}>
+                    <span className="font-['Jost',sans-serif] font-bold text-amber-400 text-lg">
+                      Subtotal: ${speakeasyTotal.toFixed(2)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* ========== NYE GALA 2025 SECTION - COMMENTED OUT FOR 2026 ==========
+               * Event Period: December 31, 2025
+               * Disabled: January 13, 2026
+               * Reason: Event concluded, preserved for next year
+               * ====================================================================
               <div style={{ marginBottom: 'var(--space-3)', padding: 'var(--space-3)', background: '#f8f9fa', borderRadius: '8px' }}>
                 <h3 className="font-['Jost',sans-serif] font-bold text-gray-800 text-lg" style={{ marginBottom: 'var(--space-2)' }}>
                   New Year&apos;s Eve Gala Dance
@@ -277,7 +301,7 @@ export default function UnifiedSalesPage() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
                   <div>
                     <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">
-                      Member Tickets (${NYE_MEMBER} each)
+                      Member Tickets ($35 each)
                     </label>
                     <input
                       type="number"
@@ -289,7 +313,7 @@ export default function UnifiedSalesPage() {
                   </div>
                   <div>
                     <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">
-                      Non-Member Tickets (${NYE_NON_MEMBER} each)
+                      Non-Member Tickets ($45 each)
                     </label>
                     <input
                       type="number"
@@ -300,14 +324,8 @@ export default function UnifiedSalesPage() {
                     />
                   </div>
                 </div>
-                {nyeTotal > 0 && (
-                  <div style={{ marginTop: 'var(--space-2)', textAlign: 'right' }}>
-                    <span className="font-['Jost',sans-serif] font-bold text-[#427d78] text-lg">
-                      Subtotal: ${nyeTotal.toFixed(2)}
-                    </span>
-                  </div>
-                )}
               </div>
+              ========== END NYE SECTION ========== */}
 
               {/* Donation Section */}
               {ticketSubtotal > 0 && (

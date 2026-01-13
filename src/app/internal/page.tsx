@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, FormEvent, useMemo } from 'react';
+import Link from 'next/link';
 
 import { SiteNavigation } from '@/components/SiteNavigation';
 import { SiteFooterContent } from '@/components/SiteFooterContent';
@@ -146,6 +147,20 @@ export default function UnifiedSalesPage() {
       <div className="bg-[#fafbff]" style={{ paddingBlock: 'var(--space-4)' }}>
         <div className="container" style={{ maxWidth: '900px' }}>
           
+          {/* Link back to public tickets page */}
+          <div style={{ textAlign: 'center', marginBottom: 'var(--space-3)' }}>
+            <Link
+              href="/"
+              className="inline-flex items-center text-[#427d78] hover:text-[#5eb3a1] font-['Jost',sans-serif] font-semibold transition-colors"
+              style={{ fontSize: 'clamp(0.875rem, 2.5vw, 1rem)' }}
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Back to Public Tickets Page
+            </Link>
+          </div>
+
           {/* Zeffy Embed Links */}
           <div style={{ display: 'flex', gap: 'var(--space-2)', justifyContent: 'center', marginBottom: 'var(--space-3)', flexWrap: 'wrap' }}>
             <a

@@ -2,6 +2,8 @@
 
 **Last Updated:** January 13, 2026
 
+> **AIRTABLE MANAGEMENT:** The AI assistant (GitHub Copilot) has full API access to create, edit, and manage all Airtable tables and fields. Do NOT manually create tables - ask the AI to do it.
+
 > **CRITICAL:** `Amount Paid` = ticket price ONLY. `Donation Amount` is a SEPARATE field for additional donations.  
 > Example: $35 ticket + $65 donation = `Amount Paid: 35`, `Donation Amount: 65` (NOT Amount Paid: 100)
 
@@ -11,13 +13,14 @@
 
 ### Valentine's Day Dance 2026 Table
 
-**Table ID:** `[TO BE CREATED - add to .env.local as AIRTABLE_VALENTINES_TABLE_ID]`
+**Table ID:** `tblgQA8BawIrlk2kh` ✅ Created via API  
+**URL:** https://airtable.com/appZ6HE5luAFV0Ot2/tblgQA8BawIrlk2kh
 
 #### Pricing
 - **Member:** $30 until Feb 9, 2026, then $35
 - **Non-Member:** $45 (always)
 
-#### Fields to Create
+#### Fields
 
 | Field Name | Type | Description | Example |
 |------------|------|-------------|---------|
@@ -31,9 +34,9 @@
 | **Payment Method** | Single select | Options: `Cash`, `Check`, `Zeffy`, `Comp`, `Other` | `Cash` |
 | **Check Number** | Single line text | For check payments | `1234` |
 | **Payment Notes** | Long text | Split payment details, other notes | `Cash: $30, Check: $45` |
-| **Amount Paid** | Number (currency) | **TICKET PRICE ONLY** | `75.00` |
-| **Donation Amount** | Number (currency) | **SEPARATE DONATION FIELD** | `25.00` |
-| **Purchase Date** | Date & Time | When purchase was made (with timestamp) | `1/15/2026 2:30 PM` |
+| **Amount Paid** | Currency | **TICKET PRICE ONLY** | `75.00` |
+| **Donation Amount** | Currency | **SEPARATE DONATION FIELD** | `25.00` |
+| **Purchase Date** | Date & Time | When purchase was made (Pacific time) | `1/15/2026 2:30 PM` |
 | **Transaction ID** | Single line text | Unique transaction identifier | `TXN-1234567890-ABC123` |
 | **Staff Initials** | Single line text | Who processed the sale | `JD` |
 | **Refunded** | Checkbox | Checked if transaction was refunded | ☐ |
@@ -42,12 +45,13 @@
 
 ### Speakeasy Gala 2026 Table
 
-**Table ID:** `[TO BE CREATED - add to .env.local as AIRTABLE_SPEAKEASY_TABLE_ID]`
+**Table ID:** `tblMmwD5JEE5iCfLl` ✅ Created via API  
+**URL:** https://airtable.com/appZ6HE5luAFV0Ot2/tblMmwD5JEE5iCfLl
 
 #### Pricing
 - **All Tickets:** $100 until Mar 28, 2026, then $110
 
-#### Fields to Create
+#### Fields
 
 | Field Name | Type | Description | Example |
 |------------|------|-------------|---------|
@@ -59,9 +63,9 @@
 | **Payment Method** | Single select | Options: `Cash`, `Check`, `Zeffy`, `Comp`, `Other` | `Zeffy` |
 | **Check Number** | Single line text | For check payments | `5678` |
 | **Payment Notes** | Long text | Split payment details, other notes | `` |
-| **Amount Paid** | Number (currency) | **TICKET PRICE ONLY** | `200.00` |
-| **Donation Amount** | Number (currency) | **SEPARATE DONATION FIELD** | `50.00` |
-| **Purchase Date** | Date & Time | When purchase was made (with timestamp) | `3/15/2026 10:00 AM` |
+| **Amount Paid** | Currency | **TICKET PRICE ONLY** | `200.00` |
+| **Donation Amount** | Currency | **SEPARATE DONATION FIELD** | `50.00` |
+| **Purchase Date** | Date & Time | When purchase was made (Pacific time) | `3/15/2026 10:00 AM` |
 | **Transaction ID** | Single line text | Unique transaction identifier | `zeffy-3/15/2026, 10:00 AM-John-Doe` |
 | **Staff Initials** | Single line text | Who processed the sale | `ZEFFY` |
 | **Refunded** | Checkbox | Checked if transaction was refunded | ☐ |

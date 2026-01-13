@@ -1,7 +1,7 @@
 # 2026 Events Setup Guide
 
 **Created:** January 13, 2026  
-**Status:** ✅ Code updated, awaiting Airtable table creation
+**Status:** ✅ COMPLETE - All code and Airtable tables ready
 
 **Events:**
 1. **Valentine's Day Dance** - February 14, 2026
@@ -32,6 +32,23 @@
 
 ---
 
+## ✅ Airtable Tables Created
+
+**The AI assistant (GitHub Copilot) manages all Airtable operations including creating tables, fields, and schema changes via the Airtable API.**
+
+| Table | Table ID | Status |
+|-------|----------|--------|
+| Valentine's Day Dance 2026 | `tblgQA8BawIrlk2kh` | ✅ Created |
+| Speakeasy Gala 2026 | `tblMmwD5JEE5iCfLl` | ✅ Created |
+
+Environment variables added to `.env.local`:
+```
+AIRTABLE_VALENTINES_TABLE_ID=tblgQA8BawIrlk2kh
+AIRTABLE_SPEAKEASY_TABLE_ID=tblMmwD5JEE5iCfLl
+```
+
+---
+
 ## ✅ Code Changes Completed
 
 ### 1. Internal Sales Page (`/src/app/internal/page.tsx`)
@@ -40,7 +57,7 @@
 - ✅ **Dynamic pricing** automatically switches after deadline dates
 - ✅ Early bird badges show when applicable
 - ✅ NYE 2025 section commented out (preserved for future)
-- ✅ Zeffy button placeholder (update when campaigns ready)
+- ✅ Zeffy links added
 
 ### 2. API Route (`/src/app/api/tickets/submit/route.ts`)
 - ✅ Updated to handle Valentine's and Speakeasy quantities
@@ -48,35 +65,59 @@
 - ✅ Submits to new Airtable tables
 - ✅ Christmas/NYE code preserved in comments
 
+### 3. PDF Tickets (`/src/app/api/tickets/pdf/route.ts`)
+- ✅ Pink theme for Valentine's tickets
+- ✅ Gold/dark art deco theme for Speakeasy tickets
+
+### 4. Email Templates (`/src/lib/email.ts`)
+- ✅ Separate emails for each event
+- ✅ Pink theme for Valentine's
+- ✅ Gold/dark theme for Speakeasy
+- ✅ Donation only attached to first event email
+
 ---
 
-## ⏳ Action Required: Create Airtable Tables
+## Valentine's Day Dance 2026 Table Schema
 
-### Step 1: Create Valentine's Day Dance 2026 Table
+| Field Name | Type | Notes |
+|------------|------|-------|
+| First Name | Single line text | |
+| Last Name | Single line text | |
+| Email | Email | |
+| Phone | Phone number | |
+| Ticket Quantity | Number (integer) | Total tickets |
+| Member Tickets | Number (integer) | Member-priced tickets |
+| Non-Member Tickets | Number (integer) | Non-member tickets |
+| Payment Method | Single select | Cash, Check, Zeffy, Comp, Other |
+| Check Number | Single line text | |
+| Payment Notes | Long text | Split payment details |
+| Amount Paid | Currency | Ticket price only |
+| Donation Amount | Currency | Separate field |
+| Purchase Date | Date & Time | Pacific time |
+| Transaction ID | Single line text | |
+| Staff Initials | Single line text | |
+| Refunded | Checkbox | |
 
-1. Go to your Airtable base: https://airtable.com/appZ6HE5luAFV0Ot2
-2. Click **+ Add or import** → **Create blank table**
-3. Name it: `Valentine's Day Dance 2026`
-4. Create these fields:
+---
 
-| Field Name | Type | Options/Notes |
-|------------|------|---------------|
-| **First Name** | Single line text | Required |
-| **Last Name** | Single line text | Required |
-| **Email** | Email | Required |
-| **Phone** | Phone number | Required |
-| **Ticket Quantity** | Number (integer) | Total tickets purchased |
-| **Member Tickets** | Number (integer) | Count of member-priced tickets |
-| **Non-Member Tickets** | Number (integer) | Count of non-member-priced tickets |
-| **Payment Method** | Single select | Options: `Cash`, `Check`, `Zeffy`, `Comp`, `Other` |
-| **Check Number** | Single line text | For check payments |
-| **Payment Notes** | Long text | Split payment details, other notes |
-| **Amount Paid** | Number (currency) | Ticket price only |
-| **Donation Amount** | Number (currency) | Separate donation field |
-| **Purchase Date** | Date & Time | With timestamp |
-| **Transaction ID** | Single line text | Unique identifier |
-| **Staff Initials** | Single line text | Who processed the sale |
-| **Refunded** | Checkbox | For tracking refunds |
+## Speakeasy Gala 2026 Table Schema
+
+| Field Name | Type | Notes |
+|------------|------|-------|
+| First Name | Single line text | |
+| Last Name | Single line text | |
+| Email | Email | |
+| Phone | Phone number | |
+| Ticket Quantity | Number (integer) | Single ticket type |
+| Payment Method | Single select | Cash, Check, Zeffy, Comp, Other |
+| Check Number | Single line text | |
+| Payment Notes | Long text | |
+| Amount Paid | Currency | Ticket price only |
+| Donation Amount | Currency | Separate field |
+| Purchase Date | Date & Time | Pacific time |
+| Transaction ID | Single line text | |
+| Staff Initials | Single line text | |
+| Refunded | Checkbox | |
 
 #### Table 2: Speakeasy Gala 2026
 

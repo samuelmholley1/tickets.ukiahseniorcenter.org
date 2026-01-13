@@ -1,12 +1,20 @@
 # Airtable API Guide - Ukiah Senior Center Tickets
 
-**Last Updated:** December 30, 2025
+**Last Updated:** January 13, 2026
+
+> **IMPORTANT:** The AI assistant (GitHub Copilot) has full Airtable API access and is responsible for creating, editing, and managing all tables and fields. Do NOT manually create tables in Airtable - ask the AI to do it via API.
 
 ## Environment Variables
 
 ```bash
 AIRTABLE_API_KEY=your_airtable_personal_access_token_here
 AIRTABLE_BASE_ID=appZ6HE5luAFV0Ot2
+
+# 2026 Events
+AIRTABLE_VALENTINES_TABLE_ID=tblgQA8BawIrlk2kh
+AIRTABLE_SPEAKEASY_TABLE_ID=tblMmwD5JEE5iCfLl
+
+# 2025 Events (archived)
 AIRTABLE_CHRISTMAS_TICKETS_TABLE_ID=tbljtMTsXvSP3MDt4
 AIRTABLE_NYE_TICKETS_TABLE_ID=tbl5OyCybJCfrebOb
 ```
@@ -14,8 +22,10 @@ AIRTABLE_NYE_TICKETS_TABLE_ID=tbl5OyCybJCfrebOb
 ## Database IDs
 
 - **Base ID:** `appZ6HE5luAFV0Ot2`
-- **Christmas Table ID:** `tbljtMTsXvSP3MDt4`
-- **NYE Table ID:** `tbl5OyCybJCfrebOb`
+- **Valentine's 2026 Table ID:** `tblgQA8BawIrlk2kh`
+- **Speakeasy 2026 Table ID:** `tblMmwD5JEE5iCfLl`
+- **Christmas 2025 Table ID:** `tbljtMTsXvSP3MDt4`
+- **NYE 2025 Table ID:** `tbl5OyCybJCfrebOb`
 
 ## Complete Field Schema
 

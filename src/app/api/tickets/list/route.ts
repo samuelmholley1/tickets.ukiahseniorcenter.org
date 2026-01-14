@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
       }
 
       const valentinesData = await valentinesResponse.json();
-      const valentinesRecords = valentinesData.records.filter((r: AirtableRecord) => !r.fields.Refunded);
+      const valentinesRecords = (valentinesData.records || []).filter((r: AirtableRecord) => r.fields && !r.fields.Refunded);
       records.push(...valentinesRecords.map((r: AirtableRecord) => ({ ...r, event: "Valentine's Day Dance" })));
     }
 
@@ -121,7 +121,7 @@ export async function GET(request: NextRequest) {
       }
 
       const speakeasyData = await speakeasyResponse.json();
-      const speakeasyRecords = speakeasyData.records.filter((r: AirtableRecord) => !r.fields.Refunded);
+      const speakeasyRecords = (speakeasyData.records || []).filter((r: AirtableRecord) => r.fields && !r.fields.Refunded);
       records.push(...speakeasyRecords.map((r: AirtableRecord) => ({ ...r, event: 'An Affair to Remember' })));
     }
 

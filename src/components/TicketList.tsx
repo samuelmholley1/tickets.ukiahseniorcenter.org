@@ -187,7 +187,7 @@ export function TicketList() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
             {records.length === 0 ? (
               <div className="text-center text-gray-500 font-['Bitter',serif]" style={{ padding: 'var(--space-4)' }}>
-                No tickets found
+                No tickets sold yet for this event
               </div>
             ) : (
               records.map((record) => (

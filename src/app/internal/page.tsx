@@ -261,11 +261,11 @@ export default function UnifiedSalesPage() {
               </div>
 
               {/* Speakeasy Gala */}
-              <div style={{ marginBottom: 'var(--space-3)', padding: 'var(--space-3)', background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)', borderRadius: '8px', border: '2px solid #d4af37' }}>
-                <h3 className="font-['Jost',sans-serif] font-bold text-amber-400 text-lg" style={{ marginBottom: 'var(--space-2)' }}>
+              <div style={{ marginBottom: 'var(--space-3)', padding: 'var(--space-3)', background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)', borderRadius: '8px', border: '2px solid #d97706' }}>
+                <h3 className="font-['Jost',sans-serif] font-bold text-amber-800 text-lg" style={{ marginBottom: 'var(--space-2)' }}>
                   🎭 An Affair to Remember: A Night at the Speakeasy
                 </h3>
-                <p className="font-['Bitter',serif] text-gray-300 text-sm" style={{ marginBottom: 'var(--space-3)' }}>
+                <p className="font-['Bitter',serif] text-amber-700 text-sm" style={{ marginBottom: 'var(--space-3)' }}>
                   April 11, 2026
                   {pricing.isSpeakeasyEarlyBird && (
                     <span className="ml-2 inline-block bg-green-500 text-white text-xs font-bold px-2 py-1 rounded">
@@ -275,10 +275,10 @@ export default function UnifiedSalesPage() {
                 </p>
 
                 <div>
-                  <label className="block font-['Bitter',serif] text-gray-200 font-medium mb-2">
+                  <label className="block font-['Bitter',serif] text-amber-900 font-medium mb-2">
                     Tickets (${pricing.speakeasy} each)
                     {pricing.isSpeakeasyEarlyBird && (
-                      <span className="block text-xs text-green-400 mt-1">Regular price: $110 after Mar 28</span>
+                      <span className="block text-xs text-green-700 mt-1">Regular price: $110 after Mar 28</span>
                     )}
                   </label>
                   <input
@@ -292,7 +292,7 @@ export default function UnifiedSalesPage() {
                 </div>
                 {speakeasyTotal > 0 && (
                   <div style={{ marginTop: 'var(--space-2)', textAlign: 'right' }}>
-                    <span className="font-['Jost',sans-serif] font-bold text-amber-400 text-lg">
+                    <span className="font-['Jost',sans-serif] font-bold text-amber-800 text-lg">
                       Subtotal: ${speakeasyTotal.toFixed(2)}
                     </span>
                   </div>

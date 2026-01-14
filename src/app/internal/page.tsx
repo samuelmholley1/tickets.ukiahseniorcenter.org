@@ -2,7 +2,6 @@
 
 import { useState, FormEvent, useMemo } from 'react';
 import Link from 'next/link';
-
 import { SiteNavigation } from '@/components/SiteNavigation';
 import { SiteFooterContent } from '@/components/SiteFooterContent';
 import { TicketList } from '@/components/TicketList';

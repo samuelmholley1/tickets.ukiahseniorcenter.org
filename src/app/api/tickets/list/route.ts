@@ -17,10 +17,9 @@ interface AirtableRecord {
     'Donation Amount'?: number;
     'Amount Paid': number;
     'Ticket Quantity'?: number;
-    'Christmas Member Tickets'?: number;
-    'Christmas Non-Member Tickets'?: number;
-    'NYE Member Tickets'?: number;
-    'NYE Non-Member Tickets'?: number;
+    'Valentine Member Tickets'?: number;
+    'Valentine Non-Member Tickets'?: number;
+    'Speakeasy Tickets'?: number;
     'Staff Initials': string;
     'Purchase Date'?: string;
     'Refunded'?: boolean;
@@ -65,23 +64,23 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const event = searchParams.get('event') || 'all';
+    const event = searchParams.get('event') || 'valentines';
 
     // Validate event parameter
-    if (!['christmas', 'nye', 'all'].includes(event)) {
+    if (!['valentines', 'speakeasy'].includes(event)) {
       return NextResponse.json({ error: 'Invalid event parameter' }, { status: 400 });
     }
 
     const records: Array<AirtableRecord & { event: string }> = [];
 
-    // Fetch Christmas tickets
-    if (event === 'christmas' || event === 'all') {
-      if (!process.env.AIRTABLE_CHRISTMAS_TICKETS_TABLE_ID) {
-        throw new Error('AIRTABLE_CHRISTMAS_TICKETS_TABLE_ID is not configured');
+    // Fetch Valentine's Day Dance tickets
+    if (event === 'valentines') {
+      if (!process.env.AIRTABLE_VALENTINES_TABLE_ID) {
+        throw new Error('AIRTABLE_VALENTINES_TABLE_ID is not configured');
       }
 
-      const christmasResponse = await fetch(
-        `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_CHRISTMAS_TICKETS_TABLE_ID}`,
+      const valentinesResponse = await fetch(
+        `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_VALENTINES_TABLE_ID}`,
         {
           headers: {
             'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
@@ -89,25 +88,25 @@ export async function GET(request: NextRequest) {
         }
       );
 
-      if (!christmasResponse.ok) {
-        const errorText = await christmasResponse.text();
-        console.error('Christmas Airtable API Error:', errorText);
-        throw new Error(`Failed to fetch Christmas tickets: ${christmasResponse.status}`);
+      if (!valentinesResponse.ok) {
+        const errorText = await valentinesResponse.text();
+        console.error('Valentine Airtable API Error:', errorText);
+        throw new Error(`Failed to fetch Valentine tickets: ${valentinesResponse.status}`);
       }
 
-      const christmasData = await christmasResponse.json();
-      const christmasRecords = christmasData.records.filter((r: AirtableRecord) => !r.fields.Refunded);
-      records.push(...christmasRecords.map((r: AirtableRecord) => ({ ...r, event: 'Christmas Drive-Thru' })));
+      const valentinesData = await valentinesResponse.json();
+      const valentinesRecords = valentinesData.records.filter((r: AirtableRecord) => !r.fields.Refunded);
+      records.push(...valentinesRecords.map((r: AirtableRecord) => ({ ...r, event: "Valentine's Day Dance" })));
     }
 
-    // Fetch NYE tickets
-    if (event === 'nye' || event === 'all') {
-      if (!process.env.AIRTABLE_NYE_TICKETS_TABLE_ID) {
-        throw new Error('AIRTABLE_NYE_TICKETS_TABLE_ID is not configured');
+    // Fetch An Affair to Remember (Speakeasy) tickets
+    if (event === 'speakeasy') {
+      if (!process.env.AIRTABLE_SPEAKEASY_TABLE_ID) {
+        throw new Error('AIRTABLE_SPEAKEASY_TABLE_ID is not configured');
       }
 
-      const nyeResponse = await fetch(
-        `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_NYE_TICKETS_TABLE_ID}`,
+      const speakeasyResponse = await fetch(
+        `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_SPEAKEASY_TABLE_ID}`,
         {
           headers: {
             'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
@@ -115,15 +114,15 @@ export async function GET(request: NextRequest) {
         }
       );
 
-      if (!nyeResponse.ok) {
-        const errorText = await nyeResponse.text();
-        console.error('NYE Airtable API Error:', errorText);
-        throw new Error(`Failed to fetch NYE tickets: ${nyeResponse.status}`);
+      if (!speakeasyResponse.ok) {
+        const errorText = await speakeasyResponse.text();
+        console.error('Speakeasy Airtable API Error:', errorText);
+        throw new Error(`Failed to fetch Speakeasy tickets: ${speakeasyResponse.status}`);
       }
 
-      const nyeData = await nyeResponse.json();
-      const nyeRecords = nyeData.records.filter((r: AirtableRecord) => !r.fields.Refunded);
-      records.push(...nyeRecords.map((r: AirtableRecord) => ({ ...r, event: 'NYE Gala Dance' })));
+      const speakeasyData = await speakeasyResponse.json();
+      const speakeasyRecords = speakeasyData.records.filter((r: AirtableRecord) => !r.fields.Refunded);
+      records.push(...speakeasyRecords.map((r: AirtableRecord) => ({ ...r, event: 'An Affair to Remember' })));
     }
 
     // Sort all records by creation time (newest first)

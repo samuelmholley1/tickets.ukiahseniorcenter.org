@@ -20,18 +20,17 @@ interface TicketRecord {
     'Donation Amount'?: number;
     'Amount Paid': number;
     'Ticket Quantity'?: number;
-    'Christmas Member Tickets'?: number;
-    'Christmas Non-Member Tickets'?: number;
-    'NYE Member Tickets'?: number;
-    'NYE Non-Member Tickets'?: number;
+    'Valentine Member Tickets'?: number;
+    'Valentine Non-Member Tickets'?: number;
+    'Speakeasy Tickets'?: number;
     'Staff Initials': string;
   };
 }
 
-type EventFilter = 'christmas' | 'nye' | 'all';
+type EventFilter = 'valentines' | 'speakeasy';
 
 export function TicketList() {
-  const [eventFilter, setEventFilter] = useState<EventFilter>('all');
+  const [eventFilter, setEventFilter] = useState<EventFilter>('valentines');
   const [records, setRecords] = useState<TicketRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -75,17 +74,14 @@ export function TicketList() {
     const fields = record.fields;
     const parts: string[] = [];
     
-    if (fields['Christmas Member Tickets']) {
-      parts.push(`${fields['Christmas Member Tickets']} Xmas Member`);
+    if (fields['Valentine Member Tickets']) {
+      parts.push(`${fields['Valentine Member Tickets']} Valentine Member`);
     }
-    if (fields['Christmas Non-Member Tickets']) {
-      parts.push(`${fields['Christmas Non-Member Tickets']} Xmas Non-Member`);
+    if (fields['Valentine Non-Member Tickets']) {
+      parts.push(`${fields['Valentine Non-Member Tickets']} Valentine Non-Member`);
     }
-    if (fields['NYE Member Tickets']) {
-      parts.push(`${fields['NYE Member Tickets']} NYE Member`);
-    }
-    if (fields['NYE Non-Member Tickets']) {
-      parts.push(`${fields['NYE Non-Member Tickets']} NYE Non-Member`);
+    if (fields['Speakeasy Tickets']) {
+      parts.push(`${fields['Speakeasy Tickets']} Speakeasy`);
     }
     
     return parts.length > 0 ? parts.join(', ') : (fields['Ticket Quantity'] || 0).toString();
@@ -106,52 +102,30 @@ export function TicketList() {
         <p className="font-['Bitter',serif] text-[#666]" style={{ lineHeight: '1.6', fontSize: 'clamp(0.875rem, 2.5vw, 1rem)' }}>
           Scroll down to confirm your entry
         </p>
-        {/* Zeffy Import Notice */}
-        <div style={{ 
-          marginTop: 'var(--space-2)', 
-          padding: '4px 12px',
-          background: '#d4f4dd',
-          border: '1px solid #4ade80',
-          borderRadius: '4px',
-          display: 'inline-block',
-          fontSize: '12px'
-        }}>
-          <span className="font-['Jost',sans-serif] text-[#15803d]">💳 Last Zeffy Import: 12/23/25 at 7:35 AM</span>
-        </div>
       </div>
 
       {/* Event Filter Tabs */}
       <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
         <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', justifyContent: 'center' }}>
           <button
-            onClick={() => setEventFilter('all')}
+            onClick={() => setEventFilter('valentines')}
             className={`px-6 py-3 rounded-lg font-['Jost',sans-serif] font-bold transition-all ${
-              eventFilter === 'all' 
-                ? 'bg-[#427d78] text-white' 
+              eventFilter === 'valentines' 
+                ? 'bg-pink-500 text-white' 
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
-            All Events
+            💕 Valentine&apos;s Day Dance
           </button>
           <button
-            onClick={() => setEventFilter('christmas')}
+            onClick={() => setEventFilter('speakeasy')}
             className={`px-6 py-3 rounded-lg font-['Jost',sans-serif] font-bold transition-all ${
-              eventFilter === 'christmas' 
-                ? 'bg-[#427d78] text-white' 
+              eventFilter === 'speakeasy' 
+                ? 'bg-amber-600 text-white' 
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
-            Christmas Drive-Thru
-          </button>
-          <button
-            onClick={() => setEventFilter('nye')}
-            className={`px-6 py-3 rounded-lg font-['Jost',sans-serif] font-bold transition-all ${
-              eventFilter === 'nye' 
-                ? 'bg-[#427d78] text-white' 
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
-            NYE Gala Dance
+            🎭 An Affair to Remember
           </button>
         </div>
       </div>
@@ -241,11 +215,6 @@ export function TicketList() {
                       <div className="font-['Jost',sans-serif] font-bold text-xl text-gray-900">
                         {record.fields['First Name']} {record.fields['Last Name']}
                       </div>
-                      {eventFilter === 'all' && (
-                        <div className="font-['Jost',sans-serif] text-sm font-bold" style={{ marginTop: '2px', color: record.event === 'Christmas Drive-Thru' ? '#427d78' : '#7c3aed' }}>
-                          {record.event}
-                        </div>
-                      )}
                       <div className="font-['Bitter',serif] text-xs text-gray-500" style={{ marginTop: '4px' }}>
                         {formatDate(record.fields['Purchase Date'] || record.createdTime)} • Processed by: {record.fields['Staff Initials']?.toUpperCase()}
                       </div>
@@ -260,10 +229,9 @@ export function TicketList() {
                               body: JSON.stringify({
                                 firstName: record.fields['First Name'],
                                 lastName: record.fields['Last Name'],
-                                christmasMember: record.fields['Christmas Member Tickets'] || 0,
-                                christmasNonMember: record.fields['Christmas Non-Member Tickets'] || 0,
-                                nyeMember: record.fields['NYE Member Tickets'] || 0,
-                                nyeNonMember: record.fields['NYE Non-Member Tickets'] || 0
+                                valentinesMember: record.fields['Valentine Member Tickets'] || 0,
+                                valentinesNonMember: record.fields['Valentine Non-Member Tickets'] || 0,
+                                speakeasy: record.fields['Speakeasy Tickets'] || 0
                               })
                             });
                             

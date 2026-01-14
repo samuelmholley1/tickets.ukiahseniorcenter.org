@@ -51,10 +51,11 @@ export default function Tickets() {
               onClick={() => scrollToForm('speakeasy-section')}
               className="group flex flex-col items-center justify-center text-center bg-white rounded-lg border-4 border-amber-600 hover:bg-amber-600 transition-all duration-300 shadow-lg hover:shadow-xl cursor-pointer"
               style={{ padding: '24px 20px', minHeight: '180px' }}
-              aria-label="Purchase Speakeasy Gala tickets"
+              aria-label="Purchase An Affair to Remember tickets"
             >
               <div className="text-4xl" style={{ marginBottom: 'var(--space-2)' }}>🎭</div>
-              <div className="text-lg md:text-xl font-['Jost',sans-serif] font-bold text-gray-900 group-hover:text-white transition-colors" style={{ marginBottom: 'var(--space-1)', lineHeight: '1.2' }}>Speakeasy Gala</div>
+              <div className="text-lg md:text-xl font-['Jost',sans-serif] font-bold text-gray-900 group-hover:text-white transition-colors" style={{ marginBottom: 'var(--space-1)', lineHeight: '1.2' }}>An Affair to Remember</div>
+              <div className="text-xs md:text-sm text-[#666] group-hover:text-white transition-colors font-['Bitter',serif]" style={{ lineHeight: '1.4' }}>A Night at the Speakeasy</div>
               <div className="text-sm text-[#666] group-hover:text-white transition-colors font-['Bitter',serif]" style={{ lineHeight: '1.4' }}>April 11, 2026</div>
               <div className="text-base md:text-lg font-bold text-amber-600 group-hover:text-white transition-colors font-['Jost',sans-serif]" style={{ marginTop: 'var(--space-1)' }}>$100 per person</div>
             </button>
@@ -105,7 +106,7 @@ export default function Tickets() {
                     <iframe
                       title="Valentine's Day Dance tickets powered by Zeffy"
                       style={{ position: 'absolute', border: 0, top: 0, left: 0, bottom: 0, right: 0, width: '100%', height: '100%' }}
-                      src="https://www.zeffy.com/embed/ticketing/valentines-day-dance-2026"
+                      src="https://www.zeffy.com/embed/ticketing/valentines-day-dance--2026-2"
                       allow="payment"
                       onLoad={() => setIsValentinesLoading(false)}
                     />
@@ -114,7 +115,7 @@ export default function Tickets() {
               </div>
             </div>
 
-            {/* Speakeasy Gala Section */}
+            {/* An Affair to Remember Section */}
             <div id="speakeasy-section" className="scroll-mt-8">
               {/* Tip Notice */}
               <div className="bg-red-50 border-2 border-red-400 rounded-lg" style={{ padding: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
@@ -134,11 +135,11 @@ export default function Tickets() {
                 </div>
               </div>
 
-              {/* Speakeasy Form */}
+              {/* An Affair to Remember Form */}
               <div className="card">
                 <div className="text-center" style={{ marginBottom: 'var(--space-3)' }}>
-                  <h2 className="text-xl md:text-2xl lg:text-3xl font-['Jost',sans-serif] font-bold text-amber-700" style={{ marginBottom: 'var(--space-2)', lineHeight: '1.2' }}>🎭 Speakeasy Gala</h2>
-                  <p className="text-base md:text-lg text-[#666] font-['Bitter',serif]" style={{ marginBottom: 0, maxWidth: '600px', marginInline: 'auto', lineHeight: '1.5' }}>April 11, 2026 • $100 per person</p>
+                  <h2 className="text-xl md:text-2xl lg:text-3xl font-['Jost',sans-serif] font-bold text-amber-700" style={{ marginBottom: 'var(--space-2)', lineHeight: '1.2' }}>🎭 An Affair to Remember</h2>
+                  <p className="text-base md:text-lg text-[#666] font-['Bitter',serif]" style={{ marginBottom: 0, maxWidth: '600px', marginInline: 'auto', lineHeight: '1.5' }}>A Night at the Speakeasy • April 11, 2026 • $100 per person</p>
                 </div>
                 <div className="bg-amber-50 rounded-lg border-4 border-amber-600 relative" style={{ padding: 'var(--space-3)' }}>
                   {isSpeakeasyLoading && (
@@ -155,9 +156,9 @@ export default function Tickets() {
                   )}
                   <div style={{ position: 'relative', overflow: 'hidden', height: '1400px', width: '100%' }}>
                     <iframe
-                      title="Speakeasy Gala tickets powered by Zeffy"
+                      title="An Affair to Remember tickets powered by Zeffy"
                       style={{ position: 'absolute', border: 0, top: 0, left: 0, bottom: 0, right: 0, width: '100%', height: '100%' }}
-                      src="https://www.zeffy.com/embed/ticketing/speakeasy-gala-2026"
+                      src="https://www.zeffy.com/embed/ticketing/an-affair-to-remember-2026-a-night-at-the-speakeasy"
                       allow="payment"
                       onLoad={() => setIsSpeakeasyLoading(false)}
                     />

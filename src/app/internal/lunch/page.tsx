@@ -718,7 +718,7 @@ export default function LunchPage() {
               )}
 
               <div>
-                <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">Staff Initials *</label>
+                <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">Staff/Volunteer Initials *</label>
                 <input
                   type="text"
                   required

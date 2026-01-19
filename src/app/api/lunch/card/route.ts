@@ -11,20 +11,20 @@ const AIRTABLE_API_BASE = 'https://api.airtable.com/v0';
 
 const CARD_PRICING = {
   5: {
-    member:    { dineIn: 40,  pickup: 45,  delivery: 50 },
-    nonMember: { dineIn: 45,  pickup: 50,  delivery: 55 },
+    member:    { dineIn: 40,  pickup: 45,  delivery: 60 },
+    nonMember: { dineIn: 50,  pickup: 55,  delivery: 70 },
   },
   10: {
-    member:    { dineIn: 80,  pickup: 90,  delivery: 100 },
-    nonMember: { dineIn: 90,  pickup: 100, delivery: 110 },
+    member:    { dineIn: 80,  pickup: 90,  delivery: 120 },
+    nonMember: { dineIn: 100, pickup: 110, delivery: 140 },
   },
   15: {
-    member:    { dineIn: 120, pickup: 135, delivery: 150 },
-    nonMember: { dineIn: 135, pickup: 150, delivery: 165 },
+    member:    { dineIn: 120, pickup: 135, delivery: 180 },
+    nonMember: { dineIn: 150, pickup: 165, delivery: 210 },
   },
   20: {
-    member:    { dineIn: 160, pickup: 180, delivery: 200 },
-    nonMember: { dineIn: 180, pickup: 200, delivery: 220 },
+    member:    { dineIn: 160, pickup: 180, delivery: 240 },
+    nonMember: { dineIn: 200, pickup: 220, delivery: 280 },
   },
 } as const;
 
@@ -204,9 +204,11 @@ export async function GET(request: NextRequest) {
     // Search by name or phone
     let filterFormula = '';
     if (search) {
+      // Sanitize input to prevent formula injection - escape quotes and backslashes
+      const sanitizedSearch = search.replace(/\\/g, '\\\\').replace(/"/g, '\\"').toLowerCase();
       // Search in both Name and Phone fields, only cards with remaining meals
       filterFormula = `?filterByFormula=${encodeURIComponent(
-        `AND({Remaining Meals}>0, OR(SEARCH("${search.toLowerCase()}", LOWER({Name})), SEARCH("${search}", {Phone})))`
+        `AND({Remaining Meals}>0, OR(SEARCH("${sanitizedSearch}", LOWER({Name})), SEARCH("${sanitizedSearch}", {Phone})))`
       )}`;
     } else {
       // Just get cards with remaining meals

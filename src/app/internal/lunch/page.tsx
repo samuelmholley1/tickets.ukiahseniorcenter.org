@@ -64,6 +64,61 @@ type MembershipType = 'member' | 'nonMember';
 type TransactionType = 'individual' | 'lunchCard';
 type PaymentMethodType = 'cash' | 'check' | 'card' | 'lunchCard';
 
+/* ========== RESERVATION DEADLINE LOGIC ==========
+ * All meals must be reserved by 2pm the BUSINESS DAY before
+ * Closed on Fridays
+ * So Thursday 2pm is the deadline for Monday lunch
+ * ================================================ */
+
+// Get the next available lunch date based on 2pm deadline rule
+const getNextAvailableLunch = (): string => {
+  const now = new Date();
+  const currentDay = now.getDay(); // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+  const currentHour = now.getHours();
+  const isBefore2pm = currentHour < 14;
+  
+  // Logic:
+  // - Mon before 2pm → Tuesday
+  // - Mon after 2pm → Wednesday  
+  // - Tue before 2pm → Wednesday
+  // - Tue after 2pm → Thursday
+  // - Wed before 2pm → Thursday
+  // - Wed after 2pm → Monday (skip Fri)
+  // - Thu before 2pm → Monday (Thu 2pm is Monday deadline)
+  // - Thu after 2pm → Tuesday
+  // - Fri/Sat/Sun → Tuesday (Monday deadline was Thu 2pm)
+  
+  let daysToAdd = 1; // Default: tomorrow
+  
+  switch (currentDay) {
+    case 0: // Sunday
+      daysToAdd = 2; // Tuesday
+      break;
+    case 1: // Monday
+      daysToAdd = isBefore2pm ? 1 : 2; // Tue or Wed
+      break;
+    case 2: // Tuesday  
+      daysToAdd = isBefore2pm ? 1 : 2; // Wed or Thu
+      break;
+    case 3: // Wednesday
+      daysToAdd = isBefore2pm ? 1 : 5; // Thu or Monday (skip Fri/Sat/Sun)
+      break;
+    case 4: // Thursday
+      daysToAdd = isBefore2pm ? 4 : 5; // Monday or Tuesday
+      break;
+    case 5: // Friday
+      daysToAdd = 4; // Tuesday
+      break;
+    case 6: // Saturday
+      daysToAdd = 3; // Tuesday
+      break;
+  }
+  
+  const nextLunch = new Date(now);
+  nextLunch.setDate(now.getDate() + daysToAdd);
+  return nextLunch.toISOString().split('T')[0];
+};
+
 interface CustomerInfo {
   firstName: string;
   lastName: string;
@@ -104,7 +159,35 @@ export default function LunchPage() {
   const [checkNumber, setCheckNumber] = useState('');
   const [staffInitials, setStaffInitials] = useState('');
   const [notes, setNotes] = useState('');
-  const [reservationDate, setReservationDate] = useState(new Date().toISOString().split('T')[0]);
+  
+  // Multiple dates support - defaults to next available lunch based on 2pm deadline
+  const [selectedDates, setSelectedDates] = useState<string[]>([getNextAvailableLunch()]);
+  
+  // Generate next 14 days for selection (Mon-Thu only, closed Fri-Sun)
+  const getNext14Days = () => {
+    const days = [];
+    for (let i = 0; i < 14; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() + i);
+      const dayOfWeek = date.getDay();
+      // Closed Friday (5), Saturday (6), Sunday (0)
+      const isClosed = dayOfWeek === 0 || dayOfWeek === 5 || dayOfWeek === 6;
+      days.push({
+        value: date.toISOString().split('T')[0],
+        label: date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+        isClosed,
+      });
+    }
+    return days;
+  };
+  
+  const toggleDate = (date: string) => {
+    if (selectedDates.includes(date)) {
+      setSelectedDates(selectedDates.filter(d => d !== date));
+    } else {
+      setSelectedDates([...selectedDates, date].sort());
+    }
+  };
 
   // Lunch card lookup
   const [lunchCardSearch, setLunchCardSearch] = useState('');
@@ -138,7 +221,17 @@ export default function LunchPage() {
   // Get total
   const getTotal = () => {
     if (paymentMethod === 'lunchCard') return 0;
-    return transactionType === 'individual' ? calculateIndividualPrice() : calculateCardPrice();
+    if (transactionType === 'individual') {
+      // Price per meal × quantity × number of dates
+      const pricePerMeal = calculateIndividualPrice() / quantity; // get single meal price
+      return pricePerMeal * quantity * selectedDates.length;
+    }
+    return calculateCardPrice();
+  };
+
+  // Get total meals being ordered
+  const getTotalMeals = () => {
+    return quantity * selectedDates.length;
   };
 
   // Search for lunch cards
@@ -176,6 +269,7 @@ export default function LunchPage() {
   const resetForm = () => {
     setCustomer({ firstName: '', lastName: '', email: '', phone: '' });
     setQuantity(1);
+    setSelectedDates([getNextAvailableLunch()]);
     setNotes('');
     setCheckNumber('');
     setSelectedLunchCard(null);
@@ -191,36 +285,52 @@ export default function LunchPage() {
 
     try {
       if (transactionType === 'individual') {
-        // Create lunch reservation
-        const response = await fetch('/api/lunch/reservation', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: `${customer.firstName} ${customer.lastName}`.trim(),
-            date: reservationDate,
-            mealType: mealType === 'pickup' ? 'toGo' : mealType,
-            memberStatus: isMember,
-            paymentMethod: paymentMethod,
-            lunchCardId: selectedLunchCard?.id,
-            notes: notes + (checkNumber ? ` Check #${checkNumber}` : ''),
-            staff: staffInitials,
-            quantity: quantity,
-          }),
-        });
+        // Create lunch reservations - one record per date per quantity
+        const totalMeals = getTotalMeals();
+        let successCount = 0;
+        let errorMessage = '';
 
-        const result = await response.json();
-        
-        if (response.ok && result.success) {
+        for (const date of selectedDates) {
+          for (let i = 0; i < quantity; i++) {
+            const response = await fetch('/api/lunch/reservation', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name: `${customer.firstName} ${customer.lastName}`.trim(),
+                date: date,
+                mealType: mealType === 'pickup' ? 'toGo' : mealType,
+                memberStatus: isMember,
+                paymentMethod: paymentMethod,
+                lunchCardId: selectedLunchCard?.id,
+                notes: notes + (checkNumber ? ` Check #${checkNumber}` : ''),
+                staff: staffInitials,
+                quantity: 1, // Always 1 per record now
+              }),
+            });
+
+            const result = await response.json();
+            
+            if (response.ok && result.success) {
+              successCount++;
+            } else {
+              errorMessage = result.error || 'Failed to create reservation';
+              break;
+            }
+          }
+          if (errorMessage) break;
+        }
+
+        if (successCount === totalMeals) {
           setSubmitResult({
             success: true,
-            message: result.message,
-            amount: result.amount,
+            message: `Created ${totalMeals} reservation(s) for ${selectedDates.length} date(s). Total: $${getTotal().toFixed(2)}`,
+            amount: getTotal(),
           });
           resetForm();
         } else {
           setSubmitResult({
             success: false,
-            message: result.error || 'Failed to create reservation',
+            message: errorMessage || `Only created ${successCount} of ${totalMeals} reservations`,
           });
         }
       } else {
@@ -409,17 +519,33 @@ export default function LunchPage() {
                   Meal Details
                 </h2>
 
-                {/* Date */}
+                {/* Multiple Dates Selection */}
                 <div style={{ marginBottom: 'var(--space-3)' }}>
-                  <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">Meal Date *</label>
-                  <input
-                    type="date"
-                    required
-                    value={reservationDate}
-                    onChange={(e) => setReservationDate(e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif] text-lg"
-                    style={{ maxWidth: '200px' }}
-                  />
+                  <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">
+                    Meal Date(s) * <span className="text-sm text-gray-500">({selectedDates.length} selected)</span>
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '8px' }}>
+                    {getNext14Days().map((day) => (
+                      <button
+                        key={day.value}
+                        type="button"
+                        onClick={() => toggleDate(day.value)}
+                        disabled={day.isClosed}
+                        className={`p-2 rounded-lg font-['Jost',sans-serif] text-sm transition-all border-2 ${
+                          day.isClosed 
+                            ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                            : selectedDates.includes(day.value)
+                              ? 'bg-[#427d78] text-white border-[#427d78]'
+                              : 'bg-white text-gray-700 border-gray-300 hover:border-[#427d78]'
+                        }`}
+                      >
+                        {day.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-sm text-gray-500 mt-2 font-['Bitter',serif]">
+                    💡 Click multiple dates to reserve for multiple days. Closed Fri-Sun. Must reserve by 2pm day before.
+                  </p>
                 </div>
                 
                 {/* Membership Status */}
@@ -481,9 +607,11 @@ export default function LunchPage() {
                   </div>
                 </div>
 
-                {/* Quantity */}
+                {/* Quantity per day (for multiple people) */}
                 <div>
-                  <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">Quantity</label>
+                  <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">
+                    Meals per Day <span className="text-sm text-gray-500">(for multiple people)</span>
+                  </label>
                   <input
                     type="number"
                     min="1"
@@ -493,6 +621,9 @@ export default function LunchPage() {
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif] text-lg"
                     style={{ maxWidth: '150px' }}
                   />
+                  <p className="text-sm text-gray-500 mt-1 font-['Bitter',serif]">
+                    💡 Set to 2+ if ordering for multiple people on each selected date.
+                  </p>
                 </div>
               </div>
             )}
@@ -749,7 +880,7 @@ export default function LunchPage() {
               <h2 className="font-['Jost',sans-serif] font-bold text-white text-xl" style={{ marginBottom: 'var(--space-3)' }}>
                 Order Summary
               </h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
                 <div>
                   <div className="text-white/80 font-['Bitter',serif] text-sm" style={{ marginBottom: '4px' }}>Type</div>
                   <div className="text-white font-['Jost',sans-serif] font-bold text-lg">
@@ -760,11 +891,33 @@ export default function LunchPage() {
                   <div className="text-white/80 font-['Bitter',serif] text-sm" style={{ marginBottom: '4px' }}>Details</div>
                   <div className="text-white font-['Jost',sans-serif] font-bold text-lg">
                     {transactionType === 'individual' 
-                      ? `${isMember === 'member' ? 'Member' : 'Non-Member'} - ${mealType === 'dineIn' ? 'Dine In' : mealType === 'pickup' ? 'To Go' : 'Delivery'} × ${quantity}`
+                      ? `${isMember === 'member' ? 'Member' : 'Non-Member'} - ${mealType === 'dineIn' ? 'Dine In' : mealType === 'pickup' ? 'To Go' : 'Delivery'}`
                       : `${cardMemberType === 'member' ? 'Member' : 'Non-Member'} - ${cardMealType === 'dineIn' ? 'Dine In' : cardMealType === 'pickup' ? 'Pickup' : 'Delivery'}`
                     }
                   </div>
                 </div>
+                {transactionType === 'individual' && (
+                  <>
+                    <div>
+                      <div className="text-white/80 font-['Bitter',serif] text-sm" style={{ marginBottom: '4px' }}>Dates</div>
+                      <div className="text-white font-['Jost',sans-serif] font-bold text-lg">
+                        {selectedDates.length} day(s)
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-white/80 font-['Bitter',serif] text-sm" style={{ marginBottom: '4px' }}>Meals/Day</div>
+                      <div className="text-white font-['Jost',sans-serif] font-bold text-lg">
+                        {quantity}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-white/80 font-['Bitter',serif] text-sm" style={{ marginBottom: '4px' }}>Total Meals</div>
+                      <div className="text-white font-['Jost',sans-serif] font-bold text-2xl">
+                        {getTotalMeals()}
+                      </div>
+                    </div>
+                  </>
+                )}
                 <div>
                   <div className="text-white/80 font-['Bitter',serif] text-sm" style={{ marginBottom: '4px' }}>Total</div>
                   <div className="text-white font-['Jost',sans-serif] font-bold text-3xl">
@@ -782,6 +935,7 @@ export default function LunchPage() {
                 !customer.firstName || 
                 !customer.lastName || 
                 !staffInitials ||
+                (transactionType === 'individual' && selectedDates.length === 0) ||
                 (paymentMethod === 'lunchCard' && !selectedLunchCard)
               }
               className="w-full bg-[#427d78] hover:bg-[#5eb3a1] disabled:bg-gray-400 text-white font-['Jost',sans-serif] font-bold text-xl py-4 rounded-lg transition-colors shadow-lg"
@@ -789,8 +943,8 @@ export default function LunchPage() {
               {isSubmitting 
                 ? '⏳ Processing...' 
                 : paymentMethod === 'lunchCard' 
-                  ? `Deduct ${quantity} Meal(s) from Lunch Card` 
-                  : `Complete Transaction - $${getTotal().toFixed(2)}`
+                  ? `Deduct ${getTotalMeals()} Meal(s) from Lunch Card` 
+                  : `Complete Transaction - ${getTotalMeals()} meal(s) - $${getTotal().toFixed(2)}`
               }
             </button>
           </form>

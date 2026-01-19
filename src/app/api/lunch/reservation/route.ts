@@ -3,15 +3,15 @@ import { NextRequest, NextResponse } from 'next/server';
 const AIRTABLE_API_BASE = 'https://api.airtable.com/v0';
 
 /* ========== LUNCH PRICING ==========
- * Dine In:  Member $8,  Non-Member $9
- * To Go:    Member $9,  Non-Member $10
- * Delivery: Member $11, Non-Member $12
+ * Dine In:  Member $8,  Non-Member $10
+ * To Go:    Member $9,  Non-Member $11
+ * Delivery: To Go price + $3
  * =================================== */
 
 const PRICING = {
-  dineIn:   { member: 8,  nonMember: 9 },
-  toGo:     { member: 9,  nonMember: 10 },
-  delivery: { member: 11, nonMember: 12 },
+  dineIn:   { member: 8,  nonMember: 10 },
+  toGo:     { member: 9,  nonMember: 11 },
+  delivery: { member: 12, nonMember: 14 }, // To Go + $3 delivery
 } as const;
 
 type MealType = 'dineIn' | 'toGo' | 'delivery';

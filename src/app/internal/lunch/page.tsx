@@ -1,9 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { SiteNavigation } from '@/components/SiteNavigation';
 import { SiteFooterContent } from '@/components/SiteFooterContent';
+
+interface LunchCard {
+  id: string;
+  name: string;
+  phone: string;
+  cardType: string;
+  totalMeals: number;
+  remainingMeals: number;
+  memberStatus: string;
+}
 
 /* ========== LUNCH PRICING ==========
  * Individual Meals:
@@ -52,12 +62,19 @@ type MealCount = 5 | 10 | 15 | 20;
 type MealType = 'dineIn' | 'pickup' | 'delivery';
 type MembershipType = 'member' | 'nonMember';
 type TransactionType = 'individual' | 'lunchCard';
+type PaymentMethodType = 'cash' | 'check' | 'card' | 'lunchCard';
 
 interface CustomerInfo {
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
+}
+
+interface SubmitResult {
+  success: boolean;
+  message: string;
+  amount?: number;
 }
 
 export default function LunchPage() {
@@ -83,9 +100,21 @@ export default function LunchPage() {
   const [cardMemberType, setCardMemberType] = useState<MembershipType>('member');
 
   // Payment
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'check' | 'card' | 'lunchCard'>('cash');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('cash');
   const [checkNumber, setCheckNumber] = useState('');
   const [staffInitials, setStaffInitials] = useState('');
+  const [notes, setNotes] = useState('');
+  const [reservationDate, setReservationDate] = useState(new Date().toISOString().split('T')[0]);
+
+  // Lunch card lookup
+  const [lunchCardSearch, setLunchCardSearch] = useState('');
+  const [availableLunchCards, setAvailableLunchCards] = useState<LunchCard[]>([]);
+  const [selectedLunchCard, setSelectedLunchCard] = useState<LunchCard | null>(null);
+  const [isSearchingCards, setIsSearchingCards] = useState(false);
+
+  // Submission state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitResult, setSubmitResult] = useState<SubmitResult | null>(null);
 
   // Calculate individual meal price
   const calculateIndividualPrice = () => {
@@ -108,13 +137,134 @@ export default function LunchPage() {
 
   // Get total
   const getTotal = () => {
+    if (paymentMethod === 'lunchCard') return 0;
     return transactionType === 'individual' ? calculateIndividualPrice() : calculateCardPrice();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Search for lunch cards
+  const searchLunchCards = async (query: string) => {
+    if (!query || query.length < 2) {
+      setAvailableLunchCards([]);
+      return;
+    }
+    
+    setIsSearchingCards(true);
+    try {
+      const response = await fetch(`/api/lunch/card?search=${encodeURIComponent(query)}`);
+      const data = await response.json();
+      if (data.success) {
+        setAvailableLunchCards(data.cards);
+      }
+    } catch (error) {
+      console.error('Error searching lunch cards:', error);
+    } finally {
+      setIsSearchingCards(false);
+    }
+  };
+
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (paymentMethod === 'lunchCard' && lunchCardSearch) {
+        searchLunchCards(lunchCardSearch);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [lunchCardSearch, paymentMethod]);
+
+  // Reset form after successful submission
+  const resetForm = () => {
+    setCustomer({ firstName: '', lastName: '', email: '', phone: '' });
+    setQuantity(1);
+    setNotes('');
+    setCheckNumber('');
+    setSelectedLunchCard(null);
+    setLunchCardSearch('');
+    setAvailableLunchCards([]);
+    setSubmitResult(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Connect to API
-    alert('Form submitted! API integration coming soon.');
+    setIsSubmitting(true);
+    setSubmitResult(null);
+
+    try {
+      if (transactionType === 'individual') {
+        // Create lunch reservation
+        const response = await fetch('/api/lunch/reservation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: `${customer.firstName} ${customer.lastName}`.trim(),
+            date: reservationDate,
+            mealType: mealType === 'pickup' ? 'toGo' : mealType,
+            memberStatus: isMember,
+            paymentMethod: paymentMethod,
+            lunchCardId: selectedLunchCard?.id,
+            notes: notes + (checkNumber ? ` Check #${checkNumber}` : ''),
+            staff: staffInitials,
+            quantity: quantity,
+          }),
+        });
+
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+          setSubmitResult({
+            success: true,
+            message: result.message,
+            amount: result.amount,
+          });
+          resetForm();
+        } else {
+          setSubmitResult({
+            success: false,
+            message: result.error || 'Failed to create reservation',
+          });
+        }
+      } else {
+        // Create lunch card
+        const response = await fetch('/api/lunch/card', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: `${customer.firstName} ${customer.lastName}`.trim(),
+            phone: customer.phone,
+            cardType: cardMealCount,
+            mealType: cardMealType,
+            memberStatus: cardMemberType,
+            paymentMethod: paymentMethod === 'lunchCard' ? 'cash' : paymentMethod,
+            checkNumber: checkNumber || undefined,
+            staff: staffInitials,
+          }),
+        });
+
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+          setSubmitResult({
+            success: true,
+            message: result.message,
+            amount: result.amount,
+          });
+          resetForm();
+        } else {
+          setSubmitResult({
+            success: false,
+            message: result.error || 'Failed to create lunch card',
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Submission error:', error);
+      setSubmitResult({
+        success: false,
+        message: 'Network error. Please try again.',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -144,6 +294,32 @@ export default function LunchPage() {
               Staff use only - Record lunch purchases and lunch card sales
             </p>
           </div>
+
+          {/* Success/Error Message */}
+          {submitResult && (
+            <div className={`card ${submitResult.success ? 'bg-green-100 border-green-500' : 'bg-red-100 border-red-500'}`} style={{ marginBottom: 'var(--space-4)', borderWidth: '3px' }}>
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">{submitResult.success ? '✅' : '❌'}</span>
+                <div>
+                  <div className={`font-['Jost',sans-serif] font-bold text-lg ${submitResult.success ? 'text-green-800' : 'text-red-800'}`}>
+                    {submitResult.success ? 'Success!' : 'Error'}
+                  </div>
+                  <div className={`font-['Bitter',serif] ${submitResult.success ? 'text-green-700' : 'text-red-700'}`}>
+                    {submitResult.message}
+                  </div>
+                </div>
+              </div>
+              {submitResult.success && (
+                <button
+                  type="button"
+                  onClick={() => setSubmitResult(null)}
+                  className="mt-3 bg-green-600 hover:bg-green-700 text-white font-['Jost',sans-serif] font-bold px-4 py-2 rounded-lg"
+                >
+                  Start New Transaction
+                </button>
+              )}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit}>
             {/* Transaction Type Selection */}
@@ -232,6 +408,19 @@ export default function LunchPage() {
                 <h2 className="font-['Jost',sans-serif] font-bold text-[#427d78] text-xl" style={{ marginBottom: 'var(--space-3)' }}>
                   Meal Details
                 </h2>
+
+                {/* Date */}
+                <div style={{ marginBottom: 'var(--space-3)' }}>
+                  <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">Meal Date *</label>
+                  <input
+                    type="date"
+                    required
+                    value={reservationDate}
+                    onChange={(e) => setReservationDate(e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif] text-lg"
+                    style={{ maxWidth: '200px' }}
+                  />
+                </div>
                 
                 {/* Membership Status */}
                 <div style={{ marginBottom: 'var(--space-3)' }}>
@@ -465,10 +654,66 @@ export default function LunchPage() {
 
               {paymentMethod === 'lunchCard' && (
                 <div className="bg-amber-50 border-2 border-amber-400 rounded-lg p-4" style={{ marginBottom: 'var(--space-3)' }}>
-                  <p className="font-['Bitter',serif] text-amber-800">
-                    <strong>Note:</strong> Customer&apos;s lunch card balance will be deducted. Ensure they have sufficient meals remaining.
+                  <p className="font-['Bitter',serif] text-amber-800 mb-3">
+                    <strong>Search for customer&apos;s lunch card:</strong>
                   </p>
-                  {/* TODO: Show customer's current balance when API is connected */}
+                  <input
+                    type="text"
+                    placeholder="Search by name or phone..."
+                    value={lunchCardSearch}
+                    onChange={(e) => setLunchCardSearch(e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-amber-300 rounded-lg focus:border-amber-500 focus:outline-none font-['Bitter',serif]"
+                  />
+                  
+                  {isSearchingCards && (
+                    <p className="mt-2 text-amber-700 font-['Bitter',serif]">Searching...</p>
+                  )}
+                  
+                  {availableLunchCards.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      {availableLunchCards.map((card) => (
+                        <button
+                          key={card.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedLunchCard(card);
+                            setLunchCardSearch('');
+                            setAvailableLunchCards([]);
+                          }}
+                          className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
+                            selectedLunchCard?.id === card.id
+                              ? 'bg-amber-200 border-amber-500'
+                              : 'bg-white border-gray-200 hover:border-amber-400'
+                          }`}
+                        >
+                          <div className="font-['Jost',sans-serif] font-bold">{card.name}</div>
+                          <div className="font-['Bitter',serif] text-sm text-gray-600">
+                            {card.phone} • {card.cardType} • <span className="text-green-600 font-bold">{card.remainingMeals} meals left</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {selectedLunchCard && (
+                    <div className="mt-3 bg-green-100 border-2 border-green-400 rounded-lg p-3">
+                      <div className="font-['Jost',sans-serif] font-bold text-green-800">Selected Card:</div>
+                      <div className="font-['Bitter',serif] text-green-700">
+                        {selectedLunchCard.name} - {selectedLunchCard.remainingMeals} meals remaining
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedLunchCard(null)}
+                        className="mt-2 text-sm text-red-600 hover:text-red-800 font-['Jost',sans-serif]"
+                      >
+                        ✕ Remove selection
+                      </button>
+                    </div>
+                  )}
+                  
+                  {!selectedLunchCard && lunchCardSearch.length >= 2 && availableLunchCards.length === 0 && !isSearchingCards && (
+                    <p className="mt-2 text-red-600 font-['Bitter',serif]">No lunch cards found with remaining meals.</p>
+                  )}
                 </div>
               )}
 
@@ -483,6 +728,18 @@ export default function LunchPage() {
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif] text-lg uppercase"
                   style={{ maxWidth: '100px' }}
                   placeholder="ABC"
+                />
+              </div>
+
+              {/* Notes */}
+              <div style={{ marginTop: 'var(--space-3)' }}>
+                <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">Notes (optional)</label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Special requests, delivery address, etc."
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
+                  rows={2}
                 />
               </div>
             </div>
@@ -520,10 +777,21 @@ export default function LunchPage() {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={!customer.firstName || !customer.lastName || !staffInitials}
+              disabled={
+                isSubmitting || 
+                !customer.firstName || 
+                !customer.lastName || 
+                !staffInitials ||
+                (paymentMethod === 'lunchCard' && !selectedLunchCard)
+              }
               className="w-full bg-[#427d78] hover:bg-[#5eb3a1] disabled:bg-gray-400 text-white font-['Jost',sans-serif] font-bold text-xl py-4 rounded-lg transition-colors shadow-lg"
             >
-              {paymentMethod === 'lunchCard' ? 'Deduct from Lunch Card' : 'Complete Transaction'}
+              {isSubmitting 
+                ? '⏳ Processing...' 
+                : paymentMethod === 'lunchCard' 
+                  ? `Deduct ${quantity} Meal(s) from Lunch Card` 
+                  : `Complete Transaction - $${getTotal().toFixed(2)}`
+              }
             </button>
           </form>
 

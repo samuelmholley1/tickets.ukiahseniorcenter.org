@@ -230,7 +230,112 @@ Once fields are created, you can create views:
 - This matches Zeffy's "Total Amount" field
 
 
+---
+
+## Lunch Program Tables
+
+### Lunch Reservations Table
+
+**Table ID:** `tblF83nL5KPuPUDqx` ✅ Created via API  
+**URL:** https://airtable.com/appZ6HE5luAFV0Ot2/tblF83nL5KPuPUDqx
+
+#### Pricing
+| Meal Type | Member | Non-Member |
+|-----------|--------|------------|
+| Dine In | $8 | $9 |
+| To Go | $9 | $10 |
+| Delivery | $10 | $11 |
+
+#### Fields
+
+| Field Name | Type | Options | Description |
+|------------|------|---------|-------------|
+| **Name** | Single line text | | Customer name |
+| **Date** | Date | local format | Date of the meal |
+| **Meal Type** | Single select | `Dine In`, `To Go`, `Delivery` | How they receive the meal |
+| **Member Status** | Single select | `Member`, `Non-Member` | Pricing tier |
+| **Amount** | Currency | $ | Amount paid for this meal |
+| **Payment Method** | Single select | `Cash`, `Check`, `Card (Zeffy)`, `Lunch Card` | How they paid |
+| **Lunch Card** | Linked record | → Lunch Cards | Link to prepaid card (if applicable) |
+| **Notes** | Long text | | Special requests, delivery address, check number |
+| **Staff** | Single line text | | Staff initials who took the order |
+| **Status** | Single select | `Reserved`, `Picked Up`, `No Show` | Reservation status |
+
+---
+
+### Lunch Cards Table
+
+**Table ID:** `tblOBnt2ZatrSugbj` ✅ Created via API  
+**URL:** https://airtable.com/appZ6HE5luAFV0Ot2/tblOBnt2ZatrSugbj
+
+#### Pricing
+| Card Type | Member | Non-Member |
+|-----------|--------|------------|
+| 5 Meals (Dine In) | $40 | $45 |
+| 10 Meals (Dine In) | $80 | $90 |
+| 15 Meals (Dine In) | $120 | $135 |
+| 20 Meals (Dine In) | $160 | $180 |
+| 5 Meals (Pickup) | $45 | $50 |
+| 10 Meals (Pickup) | $90 | $100 |
+| 15 Meals (Pickup) | $135 | $150 |
+| 20 Meals (Pickup) | $180 | $200 |
+| 5 Meals (Delivery) | $50 | $55 |
+| 10 Meals (Delivery) | $100 | $110 |
+| 15 Meals (Delivery) | $150 | $165 |
+| 20 Meals (Delivery) | $200 | $220 |
+
+#### Fields
+
+| Field Name | Type | Options | Description |
+|------------|------|---------|-------------|
+| **Name** | Single line text | | Cardholder name |
+| **Phone** | Phone number | | Contact phone |
+| **Card Type** | Single select | `5 Meals`, `10 Meals`, `15 Meals`, `20 Meals` | Number of meals |
+| **Member Status** | Single select | `Member`, `Non-Member` | Pricing tier |
+| **Total Meals** | Number | integer | Total meals on card (5/10/15/20) |
+| **Remaining Meals** | Number | integer | Meals left on card |
+| **Amount Paid** | Currency | $ | Total amount paid |
+| **Payment Method** | Single select | `Cash`, `Check`, `Card (Zeffy)` | How they paid |
+| **Purchase Date** | Date | local format | When card was purchased |
+| **Staff** | Single line text | | Staff initials who sold card |
+| **Lunch Reservations** | Linked record | ← Lunch Reservations | Auto-created inverse link |
+
+---
+
 ## API Integration Notes
+
+### Creating Linked Record Fields via API
+
+**IMPORTANT:** When creating linked record fields, use MINIMAL options. The API is picky.
+
+✅ **CORRECT - This works:**
+```javascript
+{
+  name: 'Lunch Card',
+  type: 'multipleRecordLinks',
+  options: {
+    linkedTableId: 'tblOBnt2ZatrSugbj'  // Just the table ID, nothing else!
+  }
+}
+```
+
+❌ **WRONG - These cause errors:**
+```javascript
+// Don't add prefersSingleRecordLink
+options: { linkedTableId: '...', prefersSingleRecordLink: true }
+
+// Don't add isReversed
+options: { linkedTableId: '...', isReversed: false }
+
+// Don't add description with linked fields
+{ name: '...', type: 'multipleRecordLinks', description: '...', options: {...} }
+```
+
+**Key rules:**
+1. Only include `linkedTableId` in options
+2. Don't add `prefersSingleRecordLink` or `isReversed` - Airtable sets these automatically
+3. Create linked fields AFTER both tables exist
+4. The inverse link field is auto-created in the target table
 
 ### Current Features
 - ✅ Automatic email receipts (NYE Gala only)
@@ -239,6 +344,8 @@ Once fields are created, you can create views:
 - ✅ Separate donation tracking
 - ✅ Duplicate detection on import
 - ✅ Refund tracking
+- ✅ Lunch reservations system
+- ✅ Prepaid lunch cards with balance tracking
 
 ### Import History
 - **12/30/2025:** Imported from `Holidays 2025_12-29-2025.xlsx`

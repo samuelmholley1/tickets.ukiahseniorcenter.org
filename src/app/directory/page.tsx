@@ -50,6 +50,17 @@ const DIRECTORY_SECTIONS = [
     ]
   },
   {
+    title: '📚 Bookstore Tickets',
+    description: 'Pre-printed tickets for Mendocino Book Company',
+    links: [
+      { name: 'Speakeasy Box Card', url: '/bookstore-speakeasy-info', description: 'An Affair to Remember summary card (5x3)' },
+      { name: 'Valentine\'s Tickets PDF', url: '/bookstore-valentines', description: '20 Valentine\'s Day Dance tickets' },
+      { name: 'Valentine\'s Box Card', url: '/bookstore-valentines-info', description: 'Event summary card for box (5x3)' },
+      { name: 'Xmas/NYE Tickets PDF', url: '/bookstore', description: '20 Christmas + 20 NYE tickets' },
+      { name: 'Xmas/NYE Box Cards', url: '/bookstore2', description: 'Event summary cards for box (5x3)' },
+    ]
+  },
+  {
     title: '🔗 Zeffy Campaigns',
     description: 'Direct links to Zeffy payment pages',
     links: [

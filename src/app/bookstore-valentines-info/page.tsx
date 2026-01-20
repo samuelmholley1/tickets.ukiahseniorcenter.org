@@ -59,7 +59,7 @@ export default function BookstoreValentinesInfoPage() {
               💕 Sat, February 14 • 6pm-10pm
             </p>
             <p style={{ margin: '8px 0', fontSize: '20px' }}>
-              Live Music • Dancing • Light Refreshments
+              Live Music • Dancing • Appetizers & Desserts
             </p>
           </div>
           

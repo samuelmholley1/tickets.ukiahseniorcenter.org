@@ -94,7 +94,7 @@ export async function POST() {
       doc.text('Live Music & Dancing', textCenterX, y + 0.85, { align: 'center' });
       doc.text('Doors Open 6pm • Dance 7-10pm', textCenterX, y + 1.03, { align: 'center' });
       doc.setFontSize(9);
-      doc.text('Light Refreshments', textCenterX, y + 1.21, { align: 'center' });
+      doc.text('Appetizers & Desserts', textCenterX, y + 1.21, { align: 'center' });
 
       // Guest name - anchored from bottom like customer PDF
       const guestY = y + height - 0.5;

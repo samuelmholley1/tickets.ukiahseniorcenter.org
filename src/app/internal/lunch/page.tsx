@@ -466,6 +466,58 @@ export default function LunchPage() {
               </div>
             </div>
 
+            {/* Quick Lunch Card Lookup */}
+            <div className="card" style={{ marginBottom: 'var(--space-4)', background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)', border: '2px solid #f59e0b' }}>
+              <h2 className="font-['Jost',sans-serif] font-bold text-amber-700 text-xl" style={{ marginBottom: 'var(--space-3)' }}>
+                🔍 Quick Lunch Card Lookup
+              </h2>
+              <p className="font-['Bitter',serif] text-amber-800 text-sm mb-3">
+                Search for a customer&apos;s lunch card to check their balance
+              </p>
+              <input
+                type="text"
+                placeholder="Search by name or phone..."
+                value={lunchCardSearch}
+                onChange={(e) => {
+                  setLunchCardSearch(e.target.value);
+                  if (e.target.value.length >= 2) {
+                    searchLunchCards(e.target.value);
+                  } else {
+                    setAvailableLunchCards([]);
+                  }
+                }}
+                className="w-full px-4 py-3 border-2 border-amber-300 rounded-lg focus:border-amber-500 focus:outline-none font-['Bitter',serif]"
+              />
+              
+              {isSearchingCards && (
+                <p className="mt-2 text-amber-700 font-['Bitter',serif]">Searching...</p>
+              )}
+              
+              {availableLunchCards.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {availableLunchCards.map((card) => (
+                    <div
+                      key={card.id}
+                      className="w-full text-left p-3 rounded-lg border-2 bg-white border-amber-200"
+                    >
+                      <div className="font-['Jost',sans-serif] font-bold text-gray-800">{card.name}</div>
+                      <div className="font-['Bitter',serif] text-sm text-gray-600">
+                        📞 {card.phone} • {card.cardType} • {card.memberStatus}
+                      </div>
+                      <div className="font-['Jost',sans-serif] font-bold text-lg mt-1">
+                        <span className="text-green-600">{card.remainingMeals} meals remaining</span>
+                        <span className="text-gray-400 text-sm ml-2">/ {card.totalMeals} total</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {lunchCardSearch.length >= 2 && availableLunchCards.length === 0 && !isSearchingCards && (
+                <p className="mt-2 text-gray-500 font-['Bitter',serif]">No lunch cards found.</p>
+              )}
+            </div>
+
             {/* Customer Information */}
             <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
               <h2 className="font-['Jost',sans-serif] font-bold text-[#427d78] text-xl" style={{ marginBottom: 'var(--space-3)' }}>

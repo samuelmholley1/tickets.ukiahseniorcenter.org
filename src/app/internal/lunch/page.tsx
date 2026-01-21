@@ -181,11 +181,20 @@ export default function LunchPage() {
     return days;
   };
   
-  const toggleDate = (date: string) => {
-    if (selectedDates.includes(date)) {
-      setSelectedDates(selectedDates.filter(d => d !== date));
+  // Multi-date mode toggle
+  const [multiDateMode, setMultiDateMode] = useState(false);
+  
+  const handleDateClick = (date: string) => {
+    if (multiDateMode) {
+      // Multi-select: toggle dates
+      if (selectedDates.includes(date)) {
+        setSelectedDates(selectedDates.filter(d => d !== date));
+      } else {
+        setSelectedDates([...selectedDates, date].sort());
+      }
     } else {
-      setSelectedDates([...selectedDates, date].sort());
+      // Single-select: replace selection
+      setSelectedDates([date]);
     }
   };
 
@@ -519,17 +528,33 @@ export default function LunchPage() {
                   Meal Details
                 </h2>
 
-                {/* Multiple Dates Selection */}
+                {/* Date Selection */}
                 <div style={{ marginBottom: 'var(--space-3)' }}>
-                  <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">
-                    Meal Date(s) * <span className="text-sm text-gray-500">({selectedDates.length} selected)</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block font-['Bitter',serif] text-gray-700 font-medium">
+                      Meal Date{multiDateMode ? '(s)' : ''} * 
+                      {selectedDates.length > 0 && (
+                        <span className="text-sm text-gray-500 ml-1">({selectedDates.length} selected)</span>
+                      )}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setMultiDateMode(!multiDateMode)}
+                      className={`text-sm px-3 py-1 rounded-full font-['Jost',sans-serif] transition-all ${
+                        multiDateMode 
+                          ? 'bg-[#427d78] text-white' 
+                          : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                      }`}
+                    >
+                      {multiDateMode ? '✓ Multi-day mode' : 'Add multiple days'}
+                    </button>
+                  </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '8px' }}>
                     {getNext14Days().map((day) => (
                       <button
                         key={day.value}
                         type="button"
-                        onClick={() => toggleDate(day.value)}
+                        onClick={() => handleDateClick(day.value)}
                         disabled={day.isClosed}
                         className={`p-2 rounded-lg font-['Jost',sans-serif] text-sm transition-all border-2 ${
                           day.isClosed 
@@ -544,7 +569,10 @@ export default function LunchPage() {
                     ))}
                   </div>
                   <p className="text-sm text-gray-500 mt-2 font-['Bitter',serif]">
-                    💡 Click multiple dates to reserve for multiple days. Closed Fri-Sun. Must reserve by 2pm day before.
+                    {multiDateMode 
+                      ? '💡 Click dates to add/remove. Closed Fri-Sun.'
+                      : '💡 Click a date to select. Use "Add multiple days" for recurring reservations.'
+                    }
                   </p>
                 </div>
                 

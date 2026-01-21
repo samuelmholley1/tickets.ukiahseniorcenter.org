@@ -9,7 +9,7 @@ export default function BookstoreValentinesInfoPage() {
         {/* Valentine's Day Dance Card */}
         <div style={{
           width: '5in',
-          height: '3in',
+          height: '3.25in',
           border: '3px solid #db2777',
           padding: '15px',
           backgroundColor: '#fdf2f8',
@@ -21,7 +21,7 @@ export default function BookstoreValentinesInfoPage() {
           overflow: 'hidden'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
               <img 
                 src="/logo.png" 
                 alt="Ukiah Senior Center" 
@@ -31,18 +31,20 @@ export default function BookstoreValentinesInfoPage() {
                   flexShrink: 0
                 }} 
               />
-              <h1 style={{
-                fontSize: '32px',
-                fontWeight: 'bold',
-                margin: '0',
-                textTransform: 'uppercase',
-                letterSpacing: '1px',
-                lineHeight: '1.1',
-                color: '#db2777'
-              }}>
-                VALENTINE&apos;S<br/>DAY DANCE
-              </h1>
+              <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#666' }}>Ukiah Senior Center</span>
             </div>
+            <h1 style={{
+              fontSize: '32px',
+              fontWeight: 'bold',
+              margin: '0',
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              lineHeight: '1.1',
+              color: '#db2777',
+              textAlign: 'center'
+            }}>
+              VALENTINE&apos;S<br/>DAY DANCE
+            </h1>
             <div style={{ fontSize: '48px', fontWeight: 'bold', color: '#000' }}>
               $45
             </div>
@@ -65,7 +67,7 @@ export default function BookstoreValentinesInfoPage() {
               Checks Payable to Ukiah Senior Center
             </p>
             <p style={{ fontSize: '14px', margin: '0', textAlign: 'center', fontWeight: 'bold' }}>
-              (707) 462-4343 ext 209
+              Contact: (707) 462-4343 ext 209
             </p>
           </div>
         </div>

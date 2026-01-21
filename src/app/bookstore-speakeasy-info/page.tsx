@@ -9,17 +9,19 @@ export default function BookstoreSpeakeasyInfoPage() {
         {/* Speakeasy Gala Card */}
         <div style={{
           width: '5in',
-          height: '3in',
+          height: '3.25in',
           border: '3px solid #d4af37',
           padding: '15px',
           backgroundColor: '#fefce8',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
-          pageBreakAfter: 'avoid'
+          pageBreakAfter: 'avoid',
+          boxSizing: 'border-box',
+          overflow: 'hidden'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
               <img 
                 src="/logo.png" 
                 alt="Ukiah Senior Center" 
@@ -29,27 +31,28 @@ export default function BookstoreSpeakeasyInfoPage() {
                   flexShrink: 0
                 }} 
               />
-              <div>
-                <h1 style={{
-                  fontSize: '28px',
-                  fontWeight: 'bold',
-                  margin: '0',
-                  textTransform: 'uppercase',
-                  letterSpacing: '1px',
-                  lineHeight: '1.1',
-                  color: '#d4af37'
-                }}>
-                  AN AFFAIR TO<br/>REMEMBER
-                </h1>
-                <p style={{
-                  fontSize: '16px',
-                  margin: '4px 0 0 0',
-                  color: '#92400e',
-                  fontStyle: 'italic'
-                }}>
-                  A Night at the Speakeasy
-                </p>
-              </div>
+              <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#666' }}>Ukiah Senior Center</span>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <h1 style={{
+                fontSize: '28px',
+                fontWeight: 'bold',
+                margin: '0',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                lineHeight: '1.1',
+                color: '#d4af37'
+              }}>
+                AN AFFAIR TO<br/>REMEMBER
+              </h1>
+              <p style={{
+                fontSize: '16px',
+                margin: '4px 0 0 0',
+                color: '#92400e',
+                fontStyle: 'italic'
+              }}>
+                A Night at the Speakeasy
+              </p>
             </div>
             <div style={{ fontSize: '48px', fontWeight: 'bold', color: '#000' }}>
               $100
@@ -73,7 +76,7 @@ export default function BookstoreSpeakeasyInfoPage() {
               Checks Payable to Ukiah Senior Center
             </p>
             <p style={{ fontSize: '16px', margin: '0', textAlign: 'center', fontWeight: 'bold' }}>
-              (707) 462-4343 ext 209
+              Contact: (707) 462-4343 ext 209
             </p>
           </div>
         </div>

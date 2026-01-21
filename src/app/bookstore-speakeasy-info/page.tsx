@@ -59,9 +59,9 @@ export default function BookstoreSpeakeasyInfoPage() {
             </div>
           </div>
           
-          <div style={{ lineHeight: '1.4' }}>
+          <div style={{ lineHeight: '1.4', textAlign: 'center' }}>
             <p style={{ margin: '8px 0', fontWeight: 'bold', fontSize: '22px' }}>
-              🎭 Sat, April 11 • 6pm-10pm
+              🎭 Sat, April 11 • Doors 4:30pm
             </p>
             <p style={{ margin: '8px 0', fontSize: '18px' }}>
               Live Entertainment • Dancing • Appetizers

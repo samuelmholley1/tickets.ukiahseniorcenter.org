@@ -50,7 +50,7 @@ export default function BookstoreValentinesInfoPage() {
             </div>
           </div>
           
-          <div style={{ lineHeight: '1.3' }}>
+          <div style={{ lineHeight: '1.3', textAlign: 'center' }}>
             <p style={{ margin: '6px 0', fontWeight: 'bold', fontSize: '22px' }}>
               💕 Sat, February 14 • 6pm-10pm
             </p>

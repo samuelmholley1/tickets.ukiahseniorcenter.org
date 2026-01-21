@@ -532,9 +532,18 @@ export default function LunchPage() {
 
             {/* Customer Information */}
             <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
-              <h2 className="font-['Jost',sans-serif] font-bold text-[#427d78] text-xl" style={{ marginBottom: 'var(--space-3)' }}>
-                Customer Information
-              </h2>
+              <div className="flex items-center justify-between" style={{ marginBottom: 'var(--space-3)' }}>
+                <h2 className="font-['Jost',sans-serif] font-bold text-[#427d78] text-xl">
+                  Customer Information
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setCustomer({ firstName: '', lastName: '', email: 'cashier@seniorctr.org', phone: '' })}
+                  className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-['Jost',sans-serif] font-bold rounded-lg transition-all text-sm"
+                >
+                  🗑️ Clear All
+                </button>
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-3)' }}>
                 <div>
                   <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">First Name *</label>
@@ -545,6 +554,13 @@ export default function LunchPage() {
                     onChange={(e) => setCustomer({ ...customer, firstName: e.target.value })}
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
                   />
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard.writeText(customer.firstName)}
+                    className="mt-1 px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-['Jost',sans-serif] rounded text-xs transition-all"
+                  >
+                    📋 Copy
+                  </button>
                 </div>
                 <div>
                   <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">Last Name *</label>
@@ -555,6 +571,13 @@ export default function LunchPage() {
                     onChange={(e) => setCustomer({ ...customer, lastName: e.target.value })}
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
                   />
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard.writeText(customer.lastName)}
+                    className="mt-1 px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-['Jost',sans-serif] rounded text-xs transition-all"
+                  >
+                    📋 Copy
+                  </button>
                 </div>
                 <div>
                   <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">Email *</label>
@@ -565,6 +588,13 @@ export default function LunchPage() {
                     onChange={(e) => setCustomer({ ...customer, email: e.target.value })}
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
                   />
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard.writeText(customer.email)}
+                    className="mt-1 px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-['Jost',sans-serif] rounded text-xs transition-all"
+                  >
+                    📋 Copy
+                  </button>
                 </div>
                 <div>
                   <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">Phone *</label>
@@ -575,8 +605,18 @@ export default function LunchPage() {
                     onChange={(e) => setCustomer({ ...customer, phone: e.target.value })}
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
                   />
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard.writeText(customer.phone)}
+                    className="mt-1 px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-['Jost',sans-serif] rounded text-xs transition-all"
+                  >
+                    📋 Copy
+                  </button>
                 </div>
               </div>
+              <p className="text-xs text-gray-500 mt-3 font-['Bitter',serif]">
+                💡 To copy/paste: Right-click → Copy/Paste, or use <strong>Ctrl+C</strong> (copy) / <strong>Ctrl+V</strong> (paste)
+              </p>
             </div>
 
             {/* Individual Meal Options */}

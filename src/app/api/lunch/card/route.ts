@@ -172,17 +172,31 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const id = searchParams.get('id');
 
-    if (!process.env.AIRTABLE_API_KEY || !process.env.AIRTABLE_BASE_ID || !process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID) {
-      throw new Error('Airtable environment variables not configured');
+    // More detailed env var checking with specific errors
+    const apiKey = process.env.AIRTABLE_API_KEY;
+    const baseId = process.env.AIRTABLE_BASE_ID;
+    const tableId = process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID;
+    
+    if (!apiKey) {
+      console.error('Missing AIRTABLE_API_KEY');
+      return NextResponse.json({ error: 'Server configuration error: Missing API key' }, { status: 500 });
+    }
+    if (!baseId) {
+      console.error('Missing AIRTABLE_BASE_ID');
+      return NextResponse.json({ error: 'Server configuration error: Missing base ID' }, { status: 500 });
+    }
+    if (!tableId) {
+      console.error('Missing AIRTABLE_LUNCH_CARDS_TABLE_ID');
+      return NextResponse.json({ error: 'Server configuration error: Missing lunch cards table ID' }, { status: 500 });
     }
 
     // If specific ID requested, fetch that record
     if (id) {
       const response = await fetch(
-        `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID}/${id}`,
+        `${AIRTABLE_API_BASE}/${baseId}/${tableId}/${id}`,
         {
           headers: {
-            'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
+            'Authorization': `Bearer ${apiKey}`,
           },
         }
       );
@@ -216,10 +230,10 @@ export async function GET(request: NextRequest) {
     }
 
     const response = await fetch(
-      `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID}${filterFormula}`,
+      `${AIRTABLE_API_BASE}/${baseId}/${tableId}${filterFormula}`,
       {
         headers: {
-          'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
+          'Authorization': `Bearer ${apiKey}`,
         },
       }
     );

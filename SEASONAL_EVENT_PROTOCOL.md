@@ -1,10 +1,44 @@
 # Seasonal Event Management Protocol
 
-**Last Updated:** December 30, 2025
+**Last Updated:** January 21, 2026
 
 ## Purpose
 
 This document establishes the protocol for managing seasonal events in the codebase to maintain an evergreen, reusable foundation.
+
+---
+
+## ⚠️ ONE-TIME OPERATIONS: Use Terminal Commands, NOT Scripts
+
+**CRITICAL:** For one-time operations like manually adding a record to Airtable or sending an email, **use direct terminal commands** instead of creating scripts.
+
+### Why?
+- Scripts clutter the repository with single-use files
+- Terminal commands are faster and leave no cleanup required  
+- The operation is documented in conversation history anyway
+
+### Examples of One-Time Operations:
+- Adding a missed ticket sale to Airtable
+- Sending a confirmation email for a failed submission
+- Checking a specific record's data
+- Quick data corrections
+
+### How to Do It:
+```powershell
+# Add to Airtable via REST API
+$headers = @{Authorization="Bearer $env:AIRTABLE_API_KEY"; "Content-Type"="application/json"}
+$body = @{fields=@{Name="Customer Name";Email="email@example.com"}} | ConvertTo-Json -Depth 3
+Invoke-RestMethod -Uri "https://api.airtable.com/v0/BASE_ID/TABLE_ID" -Method POST -Headers $headers -Body $body
+
+# Send email via running dev server's API
+$body = @{firstName='Name';lastName='Last';email='email@example.com';valentinesNonMember=2} | ConvertTo-Json
+Invoke-RestMethod -Uri "http://localhost:3000/api/tickets/send-receipt" -Method POST -Body $body -ContentType "application/json"
+```
+
+**Only create scripts when:**
+- The operation will be repeated multiple times
+- Complex logic or loops are needed
+- It's a bulk import with many records
 
 ## Core Principle: Comment, Don't Delete
 

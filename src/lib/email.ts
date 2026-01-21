@@ -236,7 +236,7 @@ export function generateValentinesEmail(data: ValentinesReceiptData): string {
 
         <div class="content">
           <div class="greeting">
-            Hello ${customerName},
+            Hello ${customerName.includes('&') || customerName.includes(' and ') ? customerName.split(' ')[0] + ' & ' + customerName.split(/&| and /)[1].trim().split(' ')[0] : customerName.split(' ')[0]},
           </div>
 
           <p style="font-size: 18px; line-height: 1.8; margin: 20px 0; font-weight: bold; color: #db2777;">
@@ -481,7 +481,7 @@ export function generateSpeakeasyEmail(data: SpeakeasyReceiptData): string {
 
         <div class="content">
           <div class="greeting">
-            Hello ${customerName},
+            Hello ${customerName.includes('&') || customerName.includes(' and ') ? customerName.split(' ')[0] + ' & ' + customerName.split(/&| and /)[1].trim().split(' ')[0] : customerName.split(' ')[0]},
           </div>
 
           <p style="font-size: 18px; line-height: 1.8; margin: 20px 0; font-weight: bold; color: #1a1a2e;">
@@ -514,7 +514,7 @@ export function generateSpeakeasyEmail(data: SpeakeasyReceiptData): string {
               <span class="info-label">Email:</span> ${customerEmail}
             </div>
             <div class="info-row">
-              <span class="info-label">Phone:</span> ${customerPhone}
+              <span class="info-label">Phone:</span> ${customerPhone || 'Not provided'}
             </div>
             <div class="info-row">
               <span class="info-label">Payment Method:</span> ${paymentMethod}
@@ -725,7 +725,7 @@ export function generateSpeakeasyEmail(data: SpeakeasyReceiptData): string {
 
         <div class="content">
           <div class="greeting">
-            Hello ${customerName},
+            Hello ${customerName.includes('&') || customerName.includes(' and ') ? customerName.split(' ')[0] + ' & ' + customerName.split(/&| and /)[1].trim().split(' ')[0] : customerName.split(' ')[0]},
           </div>
 
           <p style="font-size: 18px; line-height: 1.8; margin: 20px 0; font-weight: bold; color: #000000;">
@@ -752,7 +752,7 @@ export function generateSpeakeasyEmail(data: SpeakeasyReceiptData): string {
               <span class="info-label">Email:</span> ${customerEmail}
             </div>
             <div class="info-row">
-              <span class="info-label">Phone:</span> ${customerPhone}
+              <span class="info-label">Phone:</span> ${customerPhone || 'Not provided'}
             </div>
             <div class="info-row">
               <span class="info-label">Payment Method:</span> ${paymentMethod}

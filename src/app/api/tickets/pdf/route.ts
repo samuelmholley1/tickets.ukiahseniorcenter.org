@@ -110,54 +110,50 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Text area
-      const logoWidth = logoBase64 ? width * 0.28 : 0;
+      // Text area - right 70% with better spacing (matching bookstore)
+      const logoWidth = logoBase64 ? width * 0.3 : 0;
       const textStartX = x + logoWidth + 0.2;
-      const textWidth = width * (logoBase64 ? 0.72 : 1.0) - 0.3;
+      const textWidth = width * 0.7 - 0.3;
       const textCenterX = textStartX + textWidth / 2;
-      
-      let textY = y + 0.26;
 
-      // Event Title with heart
-      doc.setFontSize(15);
+      // Event title - LARGE, centered in text area (matching bookstore)
+      doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...USC_COLORS.PINK);
-      doc.text("💕 Valentine's Day Dance", textCenterX, textY, { align: 'center' });
+      doc.text("Valentine's Day Dance", textCenterX, y + 0.35, { align: 'center' });
 
-      textY += 0.22;
-
-      // Date
+      // Date and time - LARGE ON SAME LINE (matching bookstore)
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...USC_COLORS.BLACK);
-      doc.text('Saturday, February 14, 2026', textCenterX, textY, { align: 'center' });
+      doc.text('Saturday, Feb 14 • 6:00 PM', textCenterX, y + 0.6, { align: 'center' });
 
-      textY += 0.18;
-
-      // Time & Details
+      // Important info - LARGE (matching bookstore)
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      doc.text('Doors Open 6pm • Dance 7-10pm', textCenterX, textY, { align: 'center' });
-
-      textY += 0.16;
+      doc.setTextColor(...USC_COLORS.BLACK);
+      
+      // Live Music
+      doc.text('Live Music & Dancing', textCenterX, y + 0.85, { align: 'center' });
+      doc.text('Doors Open 6pm • Dance 7-10pm', textCenterX, y + 1.03, { align: 'center' });
       doc.setFontSize(9);
-      doc.text('Music • Dancing • Refreshments', textCenterX, textY, { align: 'center' });
+      doc.text('Appetizers & Desserts', textCenterX, y + 1.21, { align: 'center' });
 
-      // Guest Name
-      const guestY = y + height - 0.42;
-      doc.setFontSize(10);
+      // Guest name - anchored from bottom like bookstore PDF
+      const guestY = y + height - 0.5;
+      doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...USC_COLORS.PINK);
-      const guestText = `${customerName} • ${ticket.ticketNumber} of ${ticket.totalTickets}`;
-      doc.text(guestText, textCenterX, guestY, { align: 'center' });
+      doc.text(`${customerName} #${ticket.ticketNumber}`, textCenterX, guestY, { align: 'center' });
 
-      // Footer
-      const footerY = y + height - 0.22;
+      // Location - bottom (matching bookstore)
+      const footerY1 = y + height - 0.3;
+      const footerY2 = y + height - 0.15;
       doc.setFontSize(8);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...USC_COLORS.BLACK);
-      const footer = '495 Leslie St, Ukiah • (707) 462-4343 ext 209';
-      doc.text(footer, x + width / 2, footerY, { align: 'center' });
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(80, 80, 80);
+      doc.text('Bartlett Event Center', textCenterX, footerY1, { align: 'center' });
+      doc.text('495 Leslie St • (707) 462-4343 ext 209', textCenterX, footerY2, { align: 'center' });
     };
 
     // Helper function to draw Speakeasy ticket (Gold/Dark theme)

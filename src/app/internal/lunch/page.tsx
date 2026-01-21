@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { SiteNavigation } from '@/components/SiteNavigation';
 import { SiteFooterContent } from '@/components/SiteFooterContent';
 
@@ -62,7 +61,7 @@ type MealCount = 5 | 10 | 15 | 20;
 type MealType = 'dineIn' | 'pickup' | 'delivery';
 type MembershipType = 'member' | 'nonMember';
 type TransactionType = 'individual' | 'lunchCard';
-type PaymentMethodType = 'cash' | 'check' | 'card' | 'lunchCard';
+type PaymentMethodType = 'cash' | 'check' | 'cashCheckSplit' | 'card' | 'lunchCard';
 
 /* ========== RESERVATION DEADLINE LOGIC ==========
  * All meals must be reserved by 2pm the BUSINESS DAY before
@@ -137,7 +136,7 @@ export default function LunchPage() {
   const [customer, setCustomer] = useState<CustomerInfo>({
     firstName: '',
     lastName: '',
-    email: '',
+    email: 'cashier@seniorctr.org',
     phone: '',
   });
 
@@ -157,6 +156,8 @@ export default function LunchPage() {
   // Payment
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('cash');
   const [checkNumber, setCheckNumber] = useState('');
+  const [cashAmount, setCashAmount] = useState('');
+  const [checkAmount, setCheckAmount] = useState('');
   const [staffInitials, setStaffInitials] = useState('');
   const [notes, setNotes] = useState('');
   
@@ -276,11 +277,13 @@ export default function LunchPage() {
 
   // Reset form after successful submission
   const resetForm = () => {
-    setCustomer({ firstName: '', lastName: '', email: '', phone: '' });
+    setCustomer({ firstName: '', lastName: '', email: 'cashier@seniorctr.org', phone: '' });
     setQuantity(1);
     setSelectedDates([getNextAvailableLunch()]);
     setNotes('');
     setCheckNumber('');
+    setCashAmount('');
+    setCheckAmount('');
     setSelectedLunchCard(null);
     setLunchCardSearch('');
     setAvailableLunchCards([]);
@@ -393,17 +396,6 @@ export default function LunchPage() {
       <div className="bg-[#fafbff]" style={{ paddingBlock: 'var(--space-4)' }}>
         <div className="container" style={{ maxWidth: '1000px' }}>
           
-          {/* Back to Internal */}
-          <div style={{ display: 'flex', gap: 'var(--space-2)', justifyContent: 'center', marginBottom: 'var(--space-3)', flexWrap: 'wrap' }}>
-            <Link
-              href="/internal"
-              className="inline-block bg-[#5eb3a1] hover:bg-[#427d78] text-white font-['Jost',sans-serif] font-bold px-6 py-3 rounded-lg transition-colors duration-300 shadow-md hover:shadow-lg"
-              style={{ fontSize: 'clamp(0.875rem, 2.5vw, 1rem)' }}
-            >
-              ← Back to Ticket Sales
-            </Link>
-          </div>
-
           {/* Page Header */}
           <div style={{ textAlign: 'center', marginBottom: 'var(--space-4)' }}>
             <h1 className="font-['Jost',sans-serif] font-bold text-[#427d78]" style={{ marginBottom: 'var(--space-2)', lineHeight: '1.2', fontSize: 'clamp(1.5rem, 5vw, 2.5rem)' }}>
@@ -501,18 +493,20 @@ export default function LunchPage() {
                   />
                 </div>
                 <div>
-                  <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">Email</label>
+                  <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">Email *</label>
                   <input
                     type="email"
+                    required
                     value={customer.email}
                     onChange={(e) => setCustomer({ ...customer, email: e.target.value })}
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
                   />
                 </div>
                 <div>
-                  <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">Phone</label>
+                  <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">Phone *</label>
                   <input
                     type="tel"
+                    required
                     value={customer.phone}
                     onChange={(e) => setCustomer({ ...customer, phone: e.target.value })}
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
@@ -777,6 +771,15 @@ export default function LunchPage() {
                   </button>
                   <button
                     type="button"
+                    onClick={() => setPaymentMethod('cashCheckSplit')}
+                    className={`px-6 py-3 rounded-lg font-['Jost',sans-serif] font-bold transition-all ${
+                      paymentMethod === 'cashCheckSplit' ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    💵📝 Cash & Check
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setPaymentMethod('card')}
                     className={`px-6 py-3 rounded-lg font-['Jost',sans-serif] font-bold transition-all ${
                       paymentMethod === 'card' ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -809,6 +812,102 @@ export default function LunchPage() {
                     style={{ maxWidth: '200px' }}
                   />
                 </div>
+              )}
+
+              {paymentMethod === 'cashCheckSplit' && (
+                <>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
+                    <div>
+                      <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">
+                        Cash Amount *
+                      </label>
+                      <input
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        required
+                        value={cashAmount}
+                        onChange={(e) => setCashAmount(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">
+                        Check Amount *
+                      </label>
+                      <input
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        required
+                        value={checkAmount}
+                        onChange={(e) => setCheckAmount(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Split Payment Reconciliation Display */}
+                  {(() => {
+                    const cashAmt = parseFloat(cashAmount || '0');
+                    const checkAmt = parseFloat(checkAmount || '0');
+                    const splitTotal = cashAmt + checkAmt;
+                    const totalDue = getTotal();
+                    const isReconciled = Math.abs(splitTotal - totalDue) < 0.01;
+                    const difference = splitTotal - totalDue;
+                    
+                    return (
+                      <div style={{ marginBottom: 'var(--space-3)', padding: 'var(--space-3)', background: isReconciled ? '#d4edda' : '#fff3cd', borderRadius: '8px', border: `2px solid ${isReconciled ? '#28a745' : '#ffc107'}` }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-2)' }}>
+                          <span className="font-['Bitter',serif] font-bold">
+                            Cash + Check Total:
+                          </span>
+                          <span className="font-['Jost',sans-serif] font-bold text-xl">
+                            ${splitTotal.toFixed(2)}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-2)' }}>
+                          <span className="font-['Bitter',serif] font-bold">
+                            Amount Due:
+                          </span>
+                          <span className="font-['Jost',sans-serif] font-bold text-xl">
+                            ${totalDue.toFixed(2)}
+                          </span>
+                        </div>
+                        <div style={{ paddingTop: 'var(--space-2)', borderTop: '2px solid rgba(0,0,0,0.1)' }}>
+                          {isReconciled ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#28a745' }}>
+                              <span style={{ fontSize: '1.5rem' }}>✅</span>
+                              <span className="font-['Jost',sans-serif] font-bold">Payment Reconciled</span>
+                            </div>
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#856404' }}>
+                              <span style={{ fontSize: '1.5rem' }}>⚠️</span>
+                              <span className="font-['Bitter',serif] font-bold">
+                                {difference > 0 ? `Over by $${difference.toFixed(2)}` : `Short by $${Math.abs(difference).toFixed(2)}`}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  <div style={{ marginBottom: 'var(--space-3)' }}>
+                    <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">
+                      Check Number *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={checkNumber}
+                      onChange={(e) => setCheckNumber(e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
+                    />
+                  </div>
+                </>
               )}
 
               {paymentMethod === 'lunchCard' && (

@@ -9,6 +9,19 @@
 
 ---
 
+## ⚠️ IMPORTANT: Airtable Must Be Configured First!
+
+**Before enabling any new event in code, you MUST:**
+1. Create the Airtable table with ALL required fields
+2. Configure Single Select field options to match what the code sends
+3. Test a submission before going live
+
+**See `SEASONAL_EVENT_PROTOCOL.md` → "Airtable Configuration for New Events" section for full checklist.**
+
+Common failure: 500 error on ticket submission = Airtable table/field missing or misconfigured.
+
+---
+
 ## Event Pricing Summary
 
 ### Valentine's Day Dance (Feb 14, 2026)

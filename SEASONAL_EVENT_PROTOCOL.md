@@ -175,6 +175,74 @@ If using Option B (commented field), uncomment the line:
 
 ---
 
+## ⚠️ CRITICAL: Airtable Configuration for New Events
+
+**When adding or re-enabling any event, you MUST configure Airtable first!**
+
+The ticket submission will fail with a 500 error if Airtable is not properly configured.
+
+### Required Airtable Setup for Each Event
+
+1. **Create/Verify the Event Table Exists**
+   - Table name must match what the code expects (e.g., "Valentine's Day 2026", "Speakeasy 2026")
+   - Check `src/app/api/tickets/submit/route.ts` for exact table names
+
+2. **Configure Required Fields**
+   Based on previous events, each event table needs these fields:
+   
+   | Field Name | Field Type | Notes |
+   |------------|------------|-------|
+   | Name | Single line text | Customer name |
+   | Email | Email | Customer email |
+   | Phone | Phone number | Customer phone |
+   | Ticket Type | Single select | "Member", "Non-Member", etc. |
+   | Quantity | Number | Number of tickets |
+   | Amount | Currency | Total paid |
+   | Payment Method | Single select | "Cash", "Check", "Cash & Check", "Credit Card", "Comp", "Other" |
+   | Check Number | Single line text | If check payment |
+   | Cash Amount | Currency | For split payments |
+   | Check Amount | Currency | For split payments |
+   | Staff Initials | Single line text | Who processed the sale |
+   | Purchase Date | Date | When purchased |
+   | Notes | Long text | Any additional notes |
+   | Source | Single select | "Internal", "Zeffy", etc. |
+
+3. **Copy Field Configuration from Previous Event**
+   - Open the most recent similar event table in Airtable
+   - Use "Duplicate table" or manually recreate the field structure
+   - Ensure Single Select options match what the code sends
+
+4. **Update API Route if Needed**
+   - Check `src/app/api/tickets/submit/route.ts`
+   - Verify event name matches Airtable table name exactly
+   - Add any new event-specific field mappings
+
+5. **Test Before Going Live**
+   - Submit a test ticket through the internal page
+   - Verify it appears in Airtable correctly
+   - Check that email receipt sends properly
+
+### Common Failure Causes
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| 500 on submit | Table doesn't exist | Create table in Airtable |
+| 500 on submit | Field doesn't exist | Add missing field to table |
+| 500 on submit | Field type mismatch | Change field type or update code |
+| 422 validation error | Single select value not in options | Add option to single select field |
+
+### Checklist for New Event Airtable Setup
+
+- [ ] Table created with correct name (must match code exactly)
+- [ ] All required fields created with correct types
+- [ ] Single select fields have all necessary options
+- [ ] API route updated to reference new table
+- [ ] Test submission works from internal page
+- [ ] Email receipt sends successfully
+- [ ] Ticket list page shows new records
+
+---
+
 ## When to Use This Protocol
 
 **DO use this protocol for:**

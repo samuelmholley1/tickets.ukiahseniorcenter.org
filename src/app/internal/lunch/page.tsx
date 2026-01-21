@@ -70,11 +70,14 @@ type PaymentMethodType = 'cash' | 'check' | 'cashCheckSplit' | 'card' | 'lunchCa
  * ================================================ */
 
 // Get the next available lunch date based on 2pm deadline rule
+// Uses local timezone for proper deadline calculation
 const getNextAvailableLunch = (): string => {
   const now = new Date();
   const currentDay = now.getDay(); // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
-  const currentHour = now.getHours();
+  const currentHour = now.getHours(); // Local hour
   const isBefore2pm = currentHour < 14;
+  
+  console.log(`[getNextAvailableLunch] Today: ${currentDay} (${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][currentDay]}), Hour: ${currentHour}, Before 2pm: ${isBefore2pm}`);
   
   // Logic:
   // - Mon before 2pm → Tuesday
@@ -82,7 +85,7 @@ const getNextAvailableLunch = (): string => {
   // - Tue before 2pm → Wednesday
   // - Tue after 2pm → Thursday
   // - Wed before 2pm → Thursday
-  // - Wed after 2pm → Monday (skip Fri)
+  // - Wed after 2pm → Monday (skip Fri/Sat/Sun)
   // - Thu before 2pm → Monday (Thu 2pm is Monday deadline)
   // - Thu after 2pm → Tuesday
   // - Fri/Sat/Sun → Tuesday (Monday deadline was Thu 2pm)
@@ -115,7 +118,15 @@ const getNextAvailableLunch = (): string => {
   
   const nextLunch = new Date(now);
   nextLunch.setDate(now.getDate() + daysToAdd);
-  return nextLunch.toISOString().split('T')[0];
+  
+  // Format as YYYY-MM-DD using local date parts
+  const year = nextLunch.getFullYear();
+  const month = String(nextLunch.getMonth() + 1).padStart(2, '0');
+  const day = String(nextLunch.getDate()).padStart(2, '0');
+  const result = `${year}-${month}-${day}`;
+  
+  console.log(`[getNextAvailableLunch] Adding ${daysToAdd} days, result: ${result}`);
+  return result;
 };
 
 interface CustomerInfo {
@@ -173,8 +184,12 @@ export default function LunchPage() {
       const dayOfWeek = date.getDay();
       // Closed Friday (5), Saturday (6), Sunday (0)
       const isClosed = dayOfWeek === 0 || dayOfWeek === 5 || dayOfWeek === 6;
+      // Format as YYYY-MM-DD using local date parts
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
       days.push({
-        value: date.toISOString().split('T')[0],
+        value: `${year}-${month}-${day}`,
         label: date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
         isClosed,
       });
@@ -182,20 +197,17 @@ export default function LunchPage() {
     return days;
   };
   
-  // Multi-date mode toggle
-  const [multiDateMode, setMultiDateMode] = useState(false);
-  
+  // Toggle date selection (click to add/remove)
   const handleDateClick = (date: string) => {
-    if (multiDateMode) {
-      // Multi-select: toggle dates
-      if (selectedDates.includes(date)) {
+    if (selectedDates.includes(date)) {
+      // Remove if already selected (but keep at least one if it's the last)
+      if (selectedDates.length > 1) {
         setSelectedDates(selectedDates.filter(d => d !== date));
-      } else {
-        setSelectedDates([...selectedDates, date].sort());
       }
+      // If it's the only one, clicking it does nothing (must have at least one date)
     } else {
-      // Single-select: replace selection
-      setSelectedDates([date]);
+      // Add to selection
+      setSelectedDates([...selectedDates, date].sort());
     }
   };
 
@@ -578,22 +590,11 @@ export default function LunchPage() {
                 <div style={{ marginBottom: 'var(--space-3)' }}>
                   <div className="flex items-center justify-between mb-2">
                     <label className="block font-['Bitter',serif] text-gray-700 font-medium">
-                      Meal Date{multiDateMode ? '(s)' : ''} * 
+                      Meal Date(s) * 
                       {selectedDates.length > 0 && (
                         <span className="text-sm text-gray-500 ml-1">({selectedDates.length} selected)</span>
                       )}
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => setMultiDateMode(!multiDateMode)}
-                      className={`text-sm px-3 py-1 rounded-full font-['Jost',sans-serif] transition-all ${
-                        multiDateMode 
-                          ? 'bg-[#427d78] text-white' 
-                          : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                      }`}
-                    >
-                      {multiDateMode ? '✓ Multi-day mode' : 'Add multiple days'}
-                    </button>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '8px' }}>
                     {getNext14Days().map((day) => (
@@ -615,10 +616,7 @@ export default function LunchPage() {
                     ))}
                   </div>
                   <p className="text-sm text-gray-500 mt-2 font-['Bitter',serif]">
-                    {multiDateMode 
-                      ? '💡 Click dates to add/remove. Closed Fri-Sun.'
-                      : '💡 Click a date to select. Use "Add multiple days" for recurring reservations.'
-                    }
+                    💡 Click dates to add/remove. Closed Fri-Sun. Must reserve by 2pm day before.
                   </p>
                 </div>
                 

@@ -266,7 +266,7 @@ export function generateValentinesEmail(data: ValentinesReceiptData): string {
               <span class="info-label">Email:</span> ${customerEmail}
             </div>
             <div class="info-row">
-              <span class="info-label">Phone:</span> ${customerPhone}
+              <span class="info-label">Phone:</span> ${customerPhone || 'Not provided'}
             </div>
             <div class="info-row">
               <span class="info-label">Payment Method:</span> ${paymentMethod}

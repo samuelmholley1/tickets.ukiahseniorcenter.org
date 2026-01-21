@@ -16,21 +16,23 @@ export default function BookstoreValentinesInfoPage() {
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
-          pageBreakAfter: 'avoid'
+          pageBreakAfter: 'avoid',
+          boxSizing: 'border-box',
+          overflow: 'hidden'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '15px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <img 
                 src="/logo.png" 
                 alt="Ukiah Senior Center" 
                 style={{ 
-                  width: '90px',
+                  width: '80px',
                   height: 'auto',
                   flexShrink: 0
                 }} 
               />
               <h1 style={{
-                fontSize: '38px',
+                fontSize: '32px',
                 fontWeight: 'bold',
                 margin: '0',
                 textTransform: 'uppercase',
@@ -46,23 +48,23 @@ export default function BookstoreValentinesInfoPage() {
             </div>
           </div>
           
-          <div style={{ lineHeight: '1.4' }}>
-            <p style={{ margin: '8px 0', fontWeight: 'bold', fontSize: '24px' }}>
+          <div style={{ lineHeight: '1.3' }}>
+            <p style={{ margin: '6px 0', fontWeight: 'bold', fontSize: '22px' }}>
               💕 Sat, February 14 • 6pm-10pm
             </p>
-            <p style={{ margin: '8px 0', fontSize: '20px' }}>
+            <p style={{ margin: '6px 0', fontSize: '18px' }}>
               Live Music • Dancing • Appetizers & Desserts
             </p>
-            <p style={{ margin: '4px 0', fontSize: '14px', fontStyle: 'italic', color: '#666' }}>
+            <p style={{ margin: '4px 0', fontSize: '12px', fontStyle: 'italic', color: '#666' }}>
               For member discount, purchase at Ukiah Senior Center or tickets.ukiahseniorcenter.org
             </p>
           </div>
           
           <div>
-            <p style={{ fontSize: '12px', margin: '0 0 4px 0', textAlign: 'center', fontWeight: 'bold' }}>
+            <p style={{ fontSize: '11px', margin: '0 0 2px 0', textAlign: 'center', fontWeight: 'bold' }}>
               Checks Payable to Ukiah Senior Center
             </p>
-            <p style={{ fontSize: '16px', margin: '0', textAlign: 'center', fontWeight: 'bold' }}>
+            <p style={{ fontSize: '14px', margin: '0', textAlign: 'center', fontWeight: 'bold' }}>
               (707) 462-4343 ext 209
             </p>
           </div>

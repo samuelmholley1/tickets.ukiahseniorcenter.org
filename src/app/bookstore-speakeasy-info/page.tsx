@@ -68,9 +68,14 @@ export default function BookstoreSpeakeasyInfoPage() {
             </p>
           </div>
           
-          <p style={{ fontSize: '16px', margin: '0', textAlign: 'center', fontWeight: 'bold' }}>
-            (707) 462-4343 ext 209
-          </p>
+          <div>
+            <p style={{ fontSize: '12px', margin: '0 0 4px 0', textAlign: 'center', fontWeight: 'bold' }}>
+              Checks Payable to Ukiah Senior Center
+            </p>
+            <p style={{ fontSize: '16px', margin: '0', textAlign: 'center', fontWeight: 'bold' }}>
+              (707) 462-4343 ext 209
+            </p>
+          </div>
         </div>
       </div>
 

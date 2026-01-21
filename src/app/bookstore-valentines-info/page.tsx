@@ -41,16 +41,8 @@ export default function BookstoreValentinesInfoPage() {
                 VALENTINE&apos;S<br/>DAY DANCE
               </h1>
             </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#db2777' }}>
-                Members
-              </div>
-              <div style={{ fontSize: '40px', fontWeight: 'bold', color: '#000' }}>
-                $30
-              </div>
-              <div style={{ fontSize: '16px', color: '#666' }}>
-                Non-Members $45
-              </div>
+            <div style={{ fontSize: '48px', fontWeight: 'bold', color: '#000' }}>
+              $45
             </div>
           </div>
           
@@ -61,11 +53,19 @@ export default function BookstoreValentinesInfoPage() {
             <p style={{ margin: '8px 0', fontSize: '20px' }}>
               Live Music • Dancing • Appetizers & Desserts
             </p>
+            <p style={{ margin: '4px 0', fontSize: '14px', fontStyle: 'italic', color: '#666' }}>
+              For member discount, purchase at Ukiah Senior Center or tickets.ukiahseniorcenter.org
+            </p>
           </div>
           
-          <p style={{ fontSize: '16px', margin: '0', textAlign: 'center', fontWeight: 'bold' }}>
-            (707) 462-4343 ext 209
-          </p>
+          <div>
+            <p style={{ fontSize: '12px', margin: '0 0 4px 0', textAlign: 'center', fontWeight: 'bold' }}>
+              Checks Payable to Ukiah Senior Center
+            </p>
+            <p style={{ fontSize: '16px', margin: '0', textAlign: 'center', fontWeight: 'bold' }}>
+              (707) 462-4343 ext 209
+            </p>
+          </div>
         </div>
       </div>
 

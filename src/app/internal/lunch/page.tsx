@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { SiteNavigation } from '@/components/SiteNavigation';
 import { SiteFooterContent } from '@/components/SiteFooterContent';
 
@@ -12,6 +12,12 @@ interface LunchCard {
   totalMeals: number;
   remainingMeals: number;
   memberStatus: string;
+}
+
+// Guest meal info for multi-meal orders
+interface GuestMeal {
+  specialOrder: string;
+  guestName: string;
 }
 
 /* ========== LUNCH PRICING ==========
@@ -61,7 +67,7 @@ type MealCount = 5 | 10 | 15 | 20;
 type MealType = 'dineIn' | 'pickup' | 'delivery';
 type MembershipType = 'member' | 'nonMember';
 type TransactionType = 'individual' | 'lunchCard';
-type PaymentMethodType = 'cash' | 'check' | 'cashCheckSplit' | 'card' | 'lunchCard';
+type PaymentMethodType = 'cash' | 'check' | 'cashCheckSplit' | 'card' | 'lunchCard' | 'compCard';
 
 /* ========== RESERVATION DEADLINE LOGIC ==========
  * All meals must be reserved by 2pm the BUSINESS DAY before
@@ -142,7 +148,21 @@ interface SubmitResult {
   amount?: number;
 }
 
+// New card form interface
+interface NewCardForm {
+  name: string;
+  phone: string;
+  cardType: MealCount;
+  mealType: MealType;
+  memberStatus: MembershipType;
+}
+
 export default function LunchPage() {
+  // Sticky header state
+  const [isSticky, setIsSticky] = useState(false);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const transactionSectionRef = useRef<HTMLDivElement>(null);
+
   // Customer info
   const [customer, setCustomer] = useState<CustomerInfo>({
     firstName: '',
@@ -158,6 +178,9 @@ export default function LunchPage() {
   const [isMember, setIsMember] = useState<MembershipType>('member');
   const [mealType, setMealType] = useState<MealType>('dineIn');
   const [quantity, setQuantity] = useState(1);
+  
+  // Guest meals for multi-meal orders (quantity > 1)
+  const [guestMeals, setGuestMeals] = useState<GuestMeal[]>([]);
 
   // Lunch card options
   const [cardMealCount, setCardMealCount] = useState<MealCount>(5);
@@ -167,6 +190,7 @@ export default function LunchPage() {
   // Payment
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('cash');
   const [checkNumber, setCheckNumber] = useState('');
+  const [compCardNumber, setCompCardNumber] = useState('');
   const [cashAmount, setCashAmount] = useState('');
   const [checkAmount, setCheckAmount] = useState('');
   const [staffInitials, setStaffInitials] = useState('');
@@ -175,10 +199,10 @@ export default function LunchPage() {
   // Multiple dates support - defaults to next available lunch based on 2pm deadline
   const [selectedDates, setSelectedDates] = useState<string[]>([getNextAvailableLunch()]);
   
-  // Generate next 14 days for selection (Mon-Thu only, closed Fri-Sun)
-  const getNext14Days = () => {
+  // Generate next 30 days for selection (Mon-Thu only, closed Fri-Sun)
+  const getNext30Days = () => {
     const days = [];
-    for (let i = 0; i < 14; i++) {
+    for (let i = 0; i < 30; i++) {
       const date = new Date();
       date.setDate(date.getDate() + i);
       const dayOfWeek = date.getDay();
@@ -216,10 +240,98 @@ export default function LunchPage() {
   const [availableLunchCards, setAvailableLunchCards] = useState<LunchCard[]>([]);
   const [selectedLunchCard, setSelectedLunchCard] = useState<LunchCard | null>(null);
   const [isSearchingCards, setIsSearchingCards] = useState(false);
+  
+  // Auto-detected lunch card from customer name
+  const [autoDetectedCard, setAutoDetectedCard] = useState<LunchCard | null>(null);
+  
+  // Add un-entered card modal
+  const [showAddCardModal, setShowAddCardModal] = useState(false);
+  const [newCardForm, setNewCardForm] = useState<NewCardForm>({
+    name: '',
+    phone: '',
+    cardType: 5,
+    mealType: 'dineIn',
+    memberStatus: 'member',
+  });
+  const [isAddingCard, setIsAddingCard] = useState(false);
+  
+  // Transaction confirmation
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [transactionLog, setTransactionLog] = useState<string[]>([]);
 
   // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<SubmitResult | null>(null);
+  
+  // Sticky header scroll listener
+  useEffect(() => {
+    const handleScroll = () => {
+      if (transactionSectionRef.current) {
+        const rect = transactionSectionRef.current.getBoundingClientRect();
+        setIsSticky(rect.top < 0);
+      }
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+  
+  // Reset confirmation when important values change (prevents stale data submission)
+  useEffect(() => {
+    setShowConfirmation(false);
+  }, [transactionType, paymentMethod, quantity, selectedDates, selectedLunchCard, cardMealCount]);
+  
+  // Update guest meals array when quantity changes
+  useEffect(() => {
+    if (quantity > 1) {
+      // Create array for meals 2 through quantity (meal 1 is the main customer)
+      const newGuestMeals: GuestMeal[] = [];
+      for (let i = 1; i < quantity; i++) {
+        newGuestMeals.push({
+          specialOrder: guestMeals[i - 1]?.specialOrder || '',
+          guestName: guestMeals[i - 1]?.guestName || '',
+        });
+      }
+      setGuestMeals(newGuestMeals);
+    } else {
+      setGuestMeals([]);
+    }
+  }, [quantity]); // eslint-disable-line react-hooks/exhaustive-deps
+  
+  // Auto-lookup lunch card when customer name changes
+  const searchCustomerCard = useCallback(async (firstName: string, lastName: string) => {
+    const fullName = `${firstName} ${lastName}`.trim();
+    if (fullName.length < 3) {
+      setAutoDetectedCard(null);
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/lunch/card?search=${encodeURIComponent(fullName)}`);
+      const data = await response.json();
+      if (data.success && data.cards && data.cards.length > 0) {
+        // Find exact or close match
+        const exactMatch = data.cards.find((card: LunchCard) => 
+          card.name.toLowerCase() === fullName.toLowerCase()
+        );
+        setAutoDetectedCard(exactMatch || data.cards[0]);
+      } else {
+        setAutoDetectedCard(null);
+      }
+    } catch {
+      setAutoDetectedCard(null);
+    }
+  }, []);
+  
+  // Debounced auto-lookup on name change
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (customer.firstName || customer.lastName) {
+        searchCustomerCard(customer.firstName, customer.lastName);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [customer.firstName, customer.lastName, searchCustomerCard]);
 
   // Calculate individual meal price
   const calculateIndividualPrice = () => {
@@ -242,7 +354,8 @@ export default function LunchPage() {
 
   // Get total
   const getTotal = () => {
-    if (paymentMethod === 'lunchCard') return 0;
+    // Lunch card and comp card are free (already prepaid or complimentary)
+    if (paymentMethod === 'lunchCard' || paymentMethod === 'compCard') return 0;
     if (transactionType === 'individual') {
       // Price per meal × quantity × number of dates
       const pricePerMeal = calculateIndividualPrice() / quantity; // get single meal price
@@ -291,21 +404,89 @@ export default function LunchPage() {
   const resetForm = () => {
     setCustomer({ firstName: '', lastName: '', email: 'cashier@seniorctr.org', phone: '' });
     setQuantity(1);
+    setGuestMeals([]);
     setSelectedDates([getNextAvailableLunch()]);
     setNotes('');
     setCheckNumber('');
+    setCompCardNumber('');
     setCashAmount('');
     setCheckAmount('');
     setSelectedLunchCard(null);
     setLunchCardSearch('');
     setAvailableLunchCards([]);
+    setAutoDetectedCard(null);
     setSubmitResult(null);
+    setShowConfirmation(false);
+    setTransactionLog([]);
+  };
+  
+  // Add un-entered card to database
+  const handleAddNewCard = async () => {
+    if (!newCardForm.name || !newCardForm.phone) {
+      alert('Please enter name and phone for the new card');
+      return;
+    }
+    
+    setIsAddingCard(true);
+    try {
+      const response = await fetch('/api/lunch/card', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newCardForm.name,
+          phone: newCardForm.phone,
+          cardType: newCardForm.cardType,
+          mealType: newCardForm.mealType,
+          memberStatus: newCardForm.memberStatus,
+          paymentMethod: 'cash', // Paper cards already paid
+          staff: staffInitials || 'SYS',
+        }),
+      });
+      
+      const result = await response.json();
+      if (response.ok && result.success) {
+        // Card created, now fetch it to use
+        const searchResponse = await fetch(`/api/lunch/card?search=${encodeURIComponent(newCardForm.name)}`);
+        const searchData = await searchResponse.json();
+        if (searchData.success && searchData.cards && searchData.cards.length > 0) {
+          const newCard = searchData.cards[0];
+          setSelectedLunchCard(newCard);
+          setAutoDetectedCard(newCard);
+          setPaymentMethod('lunchCard');
+          // Fill customer info
+          setCustomer({
+            ...customer,
+            firstName: newCardForm.name.split(' ')[0] || '',
+            lastName: newCardForm.name.split(' ').slice(1).join(' ') || '',
+            phone: newCardForm.phone,
+          });
+        }
+        setShowAddCardModal(false);
+        setNewCardForm({ name: '', phone: '', cardType: 5, mealType: 'dineIn', memberStatus: 'member' });
+        alert(`Card added successfully! ${newCardForm.cardType} meals available.`);
+      } else {
+        alert(result.error || 'Failed to add card');
+      }
+    } catch (error) {
+      console.error('Error adding card:', error);
+      alert('Network error adding card');
+    } finally {
+      setIsAddingCard(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Show confirmation before submitting
+    if (!showConfirmation) {
+      setShowConfirmation(true);
+      return;
+    }
+    
     setIsSubmitting(true);
     setSubmitResult(null);
+    const log: string[] = [];
 
     try {
       if (transactionType === 'individual') {
@@ -313,20 +494,43 @@ export default function LunchPage() {
         const totalMeals = getTotalMeals();
         let successCount = 0;
         let errorMessage = '';
+        const mainCustomerName = `${customer.firstName} ${customer.lastName}`.trim();
 
         for (const date of selectedDates) {
           for (let i = 0; i < quantity; i++) {
+            // Determine the name for this meal
+            // Meal 0 (first meal) = main customer
+            // Meal 1+ = guest name if provided, otherwise main customer
+            let mealName = mainCustomerName;
+            let specialOrderNote = '';
+            
+            if (i > 0 && guestMeals[i - 1]) {
+              if (guestMeals[i - 1].guestName.trim()) {
+                mealName = guestMeals[i - 1].guestName.trim();
+              }
+              if (guestMeals[i - 1].specialOrder.trim()) {
+                specialOrderNote = guestMeals[i - 1].specialOrder.trim();
+              }
+            }
+            
+            const mealNotes = [
+              notes,
+              specialOrderNote,
+              checkNumber ? `Check #${checkNumber}` : '',
+              compCardNumber ? `Comp #${compCardNumber}` : '',
+            ].filter(Boolean).join(' | ');
+            
             const response = await fetch('/api/lunch/reservation', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                name: `${customer.firstName} ${customer.lastName}`.trim(),
+                name: mealName,
                 date: date,
                 mealType: mealType === 'pickup' ? 'toGo' : mealType,
                 memberStatus: isMember,
                 paymentMethod: paymentMethod,
                 lunchCardId: selectedLunchCard?.id,
-                notes: notes + (checkNumber ? ` Check #${checkNumber}` : ''),
+                notes: mealNotes,
                 staff: staffInitials,
                 quantity: 1, // Always 1 per record now
               }),
@@ -336,13 +540,17 @@ export default function LunchPage() {
             
             if (response.ok && result.success) {
               successCount++;
+              log.push(`✓ ${date}: ${mealName}`);
             } else {
               errorMessage = result.error || 'Failed to create reservation';
+              log.push(`✗ ${date}: ${mealName} - ${errorMessage}`);
               break;
             }
           }
           if (errorMessage) break;
         }
+
+        setTransactionLog(log);
 
         if (successCount === totalMeals) {
           setSubmitResult({
@@ -350,7 +558,6 @@ export default function LunchPage() {
             message: `Created ${totalMeals} reservation(s) for ${selectedDates.length} date(s). Total: $${getTotal().toFixed(2)}`,
             amount: getTotal(),
           });
-          resetForm();
         } else {
           setSubmitResult({
             success: false,
@@ -370,20 +577,25 @@ export default function LunchPage() {
             memberStatus: cardMemberType,
             paymentMethod: paymentMethod === 'lunchCard' ? 'cash' : paymentMethod,
             checkNumber: checkNumber || undefined,
+            compCardNumber: compCardNumber || undefined,
             staff: staffInitials,
           }),
         });
 
         const result = await response.json();
         
+        log.push(`Creating ${cardMealCount}-meal lunch card for ${customer.firstName} ${customer.lastName}`);
+        setTransactionLog(log);
+        
         if (response.ok && result.success) {
+          log.push(`✓ Card created successfully`);
           setSubmitResult({
             success: true,
             message: result.message,
             amount: result.amount,
           });
-          resetForm();
         } else {
+          log.push(`✗ Failed: ${result.error}`);
           setSubmitResult({
             success: false,
             message: result.error || 'Failed to create lunch card',
@@ -392,6 +604,7 @@ export default function LunchPage() {
       }
     } catch (error) {
       console.error('Submission error:', error);
+      setTransactionLog([...log, `✗ Network error`]);
       setSubmitResult({
         success: false,
         message: 'Network error. Please try again.',
@@ -405,11 +618,63 @@ export default function LunchPage() {
     <>
       <SiteNavigation />
       
+      {/* Sticky Transaction Type Widget - appears when scrolled past main toggle */}
+      {isSticky && (
+        <div 
+          className="fixed top-0 left-0 right-0 z-50 bg-white shadow-lg border-b-4 border-[#427d78]"
+          style={{ padding: 'var(--space-2) var(--space-3)' }}
+        >
+          <div className="container" style={{ maxWidth: '1000px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+              <span className="font-['Jost',sans-serif] font-bold text-[#427d78]">Mode:</span>
+              <button
+                type="button"
+                onClick={() => setTransactionType('individual')}
+                className={`px-3 py-1 rounded-full font-['Jost',sans-serif] text-sm font-bold transition-all ${
+                  transactionType === 'individual'
+                    ? 'bg-[#427d78] text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                🍴 Meal
+              </button>
+              <button
+                type="button"
+                onClick={() => setTransactionType('lunchCard')}
+                className={`px-3 py-1 rounded-full font-['Jost',sans-serif] text-sm font-bold transition-all ${
+                  transactionType === 'lunchCard'
+                    ? 'bg-[#427d78] text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                💳 Card
+              </button>
+            </div>
+            
+            {/* Show auto-detected card balance in sticky header */}
+            {autoDetectedCard && transactionType === 'individual' && (
+              <div className="bg-green-100 px-3 py-1 rounded-full">
+                <span className="font-['Jost',sans-serif] text-sm font-bold text-green-700">
+                  🎫 {autoDetectedCard.name}: {autoDetectedCard.remainingMeals} meals left
+                </span>
+              </div>
+            )}
+            
+            {/* Quick total display */}
+            {transactionType === 'individual' && selectedDates.length > 0 && (
+              <div className="font-['Jost',sans-serif] font-bold text-lg">
+                {getTotalMeals()} meal{getTotalMeals() !== 1 ? 's' : ''} = ${getTotal().toFixed(2)}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      
       <div className="bg-[#fafbff]" style={{ paddingBlock: 'var(--space-4)' }}>
         <div className="container" style={{ maxWidth: '1000px' }}>
           
           {/* Page Header */}
-          <div style={{ textAlign: 'center', marginBottom: 'var(--space-4)' }}>
+          <div ref={headerRef} style={{ textAlign: 'center', marginBottom: 'var(--space-4)' }}>
             <h1 className="font-['Jost',sans-serif] font-bold text-[#427d78]" style={{ marginBottom: 'var(--space-2)', lineHeight: '1.2', fontSize: 'clamp(1.5rem, 5vw, 2.5rem)' }}>
               🍽️ Lunch Sales
             </h1>
@@ -432,10 +697,23 @@ export default function LunchPage() {
                   </div>
                 </div>
               </div>
+              
+              {/* Transaction Log */}
+              {transactionLog.length > 0 && (
+                <div className="mt-3 p-3 bg-white rounded-lg border">
+                  <div className="font-['Jost',sans-serif] font-bold text-gray-700 mb-2">Transaction Log:</div>
+                  <div className="font-['Bitter',serif] text-sm text-gray-600 space-y-1">
+                    {transactionLog.map((entry, i) => (
+                      <div key={i}>{entry}</div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
               {submitResult.success && (
                 <button
                   type="button"
-                  onClick={() => setSubmitResult(null)}
+                  onClick={resetForm}
                   className="mt-3 bg-green-600 hover:bg-green-700 text-white font-['Jost',sans-serif] font-bold px-4 py-2 rounded-lg"
                 >
                   Start New Transaction
@@ -446,7 +724,7 @@ export default function LunchPage() {
 
           <form onSubmit={handleSubmit}>
             {/* Transaction Type Selection */}
-            <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
+            <div ref={transactionSectionRef} className="card" style={{ marginBottom: 'var(--space-4)' }}>
               <h2 className="font-['Jost',sans-serif] font-bold text-[#427d78] text-xl" style={{ marginBottom: 'var(--space-3)' }}>
                 Transaction Type
               </h2>
@@ -480,9 +758,18 @@ export default function LunchPage() {
 
             {/* Quick Lunch Card Lookup */}
             <div className="card" style={{ marginBottom: 'var(--space-4)', background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)', border: '2px solid #f59e0b' }}>
-              <h2 className="font-['Jost',sans-serif] font-bold text-amber-700 text-xl" style={{ marginBottom: 'var(--space-3)' }}>
-                🔍 Quick Lunch Card Lookup
-              </h2>
+              <div className="flex items-center justify-between flex-wrap gap-2" style={{ marginBottom: 'var(--space-3)' }}>
+                <h2 className="font-['Jost',sans-serif] font-bold text-amber-700 text-xl">
+                  🔍 Quick Lunch Card Lookup
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setShowAddCardModal(true)}
+                  className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-['Jost',sans-serif] font-bold rounded-lg transition-all text-sm"
+                >
+                  ➕ Add Un-entered Card
+                </button>
+              </div>
               <p className="font-['Bitter',serif] text-amber-800 text-sm mb-3">
                 Search for a customer&apos;s lunch card to check their balance
               </p>
@@ -529,21 +816,142 @@ export default function LunchPage() {
                 <p className="mt-2 text-gray-500 font-['Bitter',serif]">No lunch cards found.</p>
               )}
             </div>
+            
+            {/* Add Un-entered Card Modal */}
+            {showAddCardModal && (
+              <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+                  <h3 className="font-['Jost',sans-serif] font-bold text-xl text-[#427d78] mb-4">
+                    ➕ Add Un-entered Paper Card
+                  </h3>
+                  <p className="font-['Bitter',serif] text-sm text-gray-600 mb-4">
+                    Enter details from a paper lunch card that isn&apos;t in the system yet
+                  </p>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-1">Customer Name *</label>
+                      <input
+                        type="text"
+                        value={newCardForm.name}
+                        onChange={(e) => setNewCardForm({ ...newCardForm, name: e.target.value })}
+                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none"
+                        placeholder="John Smith"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-1">Phone *</label>
+                      <input
+                        type="tel"
+                        value={newCardForm.phone}
+                        onChange={(e) => setNewCardForm({ ...newCardForm, phone: e.target.value })}
+                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none"
+                        placeholder="707-555-1234"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-1">Card Size</label>
+                      <select
+                        value={newCardForm.cardType}
+                        onChange={(e) => setNewCardForm({ ...newCardForm, cardType: parseInt(e.target.value) as MealCount })}
+                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none"
+                      >
+                        <option value={5}>5 Meals</option>
+                        <option value={10}>10 Meals</option>
+                        <option value={15}>15 Meals</option>
+                        <option value={20}>20 Meals</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-1">Meal Type</label>
+                      <select
+                        value={newCardForm.mealType}
+                        onChange={(e) => setNewCardForm({ ...newCardForm, mealType: e.target.value as MealType })}
+                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none"
+                      >
+                        <option value="dineIn">Dine In</option>
+                        <option value="pickup">Pickup/To Go</option>
+                        <option value="delivery">Delivery</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-1">Member Status</label>
+                      <select
+                        value={newCardForm.memberStatus}
+                        onChange={(e) => setNewCardForm({ ...newCardForm, memberStatus: e.target.value as MembershipType })}
+                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none"
+                      >
+                        <option value="member">Member</option>
+                        <option value="nonMember">Non-Member</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-3 mt-6">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddCardModal(false)}
+                      className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-['Jost',sans-serif] font-bold rounded-lg"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleAddNewCard}
+                      disabled={isAddingCard || !newCardForm.name || !newCardForm.phone}
+                      className="flex-1 px-4 py-2 bg-[#427d78] hover:bg-[#5eb3a1] disabled:bg-gray-400 text-white font-['Jost',sans-serif] font-bold rounded-lg"
+                    >
+                      {isAddingCard ? 'Adding...' : 'Add Card'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Customer Information */}
             <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
-              <div className="flex items-center justify-between" style={{ marginBottom: 'var(--space-3)' }}>
+              <div className="flex items-center justify-between flex-wrap gap-2" style={{ marginBottom: 'var(--space-3)' }}>
                 <h2 className="font-['Jost',sans-serif] font-bold text-[#427d78] text-xl">
                   Customer Information
                 </h2>
                 <button
                   type="button"
-                  onClick={() => setCustomer({ firstName: '', lastName: '', email: 'cashier@seniorctr.org', phone: '' })}
+                  onClick={() => {
+                    setCustomer({ firstName: '', lastName: '', email: 'cashier@seniorctr.org', phone: '' });
+                    setAutoDetectedCard(null);
+                  }}
                   className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-['Jost',sans-serif] font-bold rounded-lg transition-all text-sm"
                 >
                   🗑️ Clear All
                 </button>
               </div>
+              
+              {/* Auto-detected lunch card notification */}
+              {autoDetectedCard && transactionType === 'individual' && (
+                <div className="mb-4 p-3 bg-green-100 border-2 border-green-400 rounded-lg">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div>
+                      <div className="font-['Jost',sans-serif] font-bold text-green-800">
+                        🎫 Lunch Card Found: {autoDetectedCard.name}
+                      </div>
+                      <div className="font-['Bitter',serif] text-green-700">
+                        <span className="font-bold text-lg">{autoDetectedCard.remainingMeals}</span> meals remaining
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedLunchCard(autoDetectedCard);
+                        setPaymentMethod('lunchCard');
+                      }}
+                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-['Jost',sans-serif] font-bold rounded-lg"
+                    >
+                      Use This Card
+                    </button>
+                  </div>
+                </div>
+              )}
+              
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-3)' }}>
                 <div>
                   <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">First Name *</label>
@@ -637,7 +1045,7 @@ export default function LunchPage() {
                     </label>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '8px' }}>
-                    {getNext14Days().map((day) => (
+                    {getNext30Days().map((day) => (
                       <button
                         key={day.value}
                         type="button"
@@ -729,7 +1137,7 @@ export default function LunchPage() {
                     min="1"
                     max="20"
                     value={quantity}
-                    onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                    onChange={(e) => setQuantity(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif] text-lg"
                     style={{ maxWidth: '150px' }}
                   />
@@ -737,6 +1145,73 @@ export default function LunchPage() {
                     💡 Set to 2+ if ordering for multiple people on each selected date.
                   </p>
                 </div>
+                
+                {/* Guest Names for Additional Meals */}
+                {quantity > 1 && (
+                  <div className="mt-4 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg">
+                    <h3 className="font-['Jost',sans-serif] font-bold text-blue-800 mb-3">
+                      👥 Guest Details (Optional)
+                    </h3>
+                    <p className="font-['Bitter',serif] text-sm text-blue-700 mb-4">
+                      Enter guest names for the attendance list. Leave blank to use &quot;{customer.firstName} {customer.lastName}&quot; for all meals.
+                      <br />
+                      <strong>Note:</strong> All meals are charged to the main customer&apos;s payment method.
+                    </p>
+                    
+                    {/* Meal 1 is always the main customer */}
+                    <div className="mb-3 p-3 bg-white rounded-lg border-2 border-blue-200">
+                      <div className="font-['Jost',sans-serif] font-bold text-gray-700 mb-2">
+                        Meal #1 - {customer.firstName || 'Main'} {customer.lastName || 'Customer'}
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Special order notes (e.g., no onions, extra bread)"
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      />
+                    </div>
+                    
+                    {/* Additional meals */}
+                    {guestMeals.map((guest, index) => (
+                      <div key={index} className="mb-3 p-3 bg-white rounded-lg border-2 border-blue-200">
+                        <div className="font-['Jost',sans-serif] font-bold text-gray-700 mb-2">
+                          Meal #{index + 2}
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">Guest Name (optional)</label>
+                            <input
+                              type="text"
+                              placeholder={`${customer.firstName} ${customer.lastName}`.trim() || 'Same as main customer'}
+                              value={guest.guestName}
+                              onChange={(e) => {
+                                const newGuests = [...guestMeals];
+                                newGuests[index].guestName = e.target.value;
+                                setGuestMeals(newGuests);
+                              }}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">Special Order (optional)</label>
+                            <input
+                              type="text"
+                              placeholder="No onions, extra bread, etc."
+                              value={guest.specialOrder}
+                              onChange={(e) => {
+                                const newGuests = [...guestMeals];
+                                newGuests[index].specialOrder = e.target.value;
+                                setGuestMeals(newGuests);
+                              }}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -877,6 +1352,15 @@ export default function LunchPage() {
                   >
                     💳 Card
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('compCard')}
+                    className={`px-6 py-3 rounded-lg font-['Jost',sans-serif] font-bold transition-all ${
+                      paymentMethod === 'compCard' ? 'bg-pink-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    🎁 Comp Card
+                  </button>
                   {transactionType === 'individual' && (
                     <button
                       type="button"
@@ -903,6 +1387,24 @@ export default function LunchPage() {
                   />
                 </div>
               )}
+              
+              {paymentMethod === 'compCard' && (
+                <div style={{ marginBottom: 'var(--space-3)' }}>
+                  <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">Comp Card Number *</label>
+                  <input
+                    type="text"
+                    required
+                    value={compCardNumber}
+                    onChange={(e) => setCompCardNumber(e.target.value)}
+                    placeholder="Enter comp card number"
+                    className="w-full px-4 py-3 border-2 border-pink-300 rounded-lg focus:border-pink-500 focus:outline-none font-['Bitter',serif]"
+                    style={{ maxWidth: '300px' }}
+                  />
+                  <p className="text-sm text-pink-600 mt-1 font-['Bitter',serif]">
+                    💡 Enter the complimentary meal card number for tracking.
+                  </p>
+                </div>
+              )}
 
               {paymentMethod === 'cashCheckSplit' && (
                 <>
@@ -913,7 +1415,7 @@ export default function LunchPage() {
                       </label>
                       <input
                         type="number"
-                        min="0.01"
+                        min="0"
                         step="0.01"
                         required
                         value={cashAmount}
@@ -928,7 +1430,7 @@ export default function LunchPage() {
                       </label>
                       <input
                         type="number"
-                        min="0.01"
+                        min="0"
                         step="0.01"
                         required
                         value={checkAmount}
@@ -1044,11 +1546,25 @@ export default function LunchPage() {
                   )}
 
                   {selectedLunchCard && (
-                    <div className="mt-3 bg-green-100 border-2 border-green-400 rounded-lg p-3">
-                      <div className="font-['Jost',sans-serif] font-bold text-green-800">Selected Card:</div>
-                      <div className="font-['Bitter',serif] text-green-700">
+                    <div className={`mt-3 border-2 rounded-lg p-3 ${
+                      selectedLunchCard.remainingMeals >= getTotalMeals()
+                        ? 'bg-green-100 border-green-400'
+                        : 'bg-red-100 border-red-400'
+                    }`}>
+                      <div className={`font-['Jost',sans-serif] font-bold ${
+                        selectedLunchCard.remainingMeals >= getTotalMeals() ? 'text-green-800' : 'text-red-800'
+                      }`}>Selected Card:</div>
+                      <div className={`font-['Bitter',serif] ${
+                        selectedLunchCard.remainingMeals >= getTotalMeals() ? 'text-green-700' : 'text-red-700'
+                      }`}>
                         {selectedLunchCard.name} - {selectedLunchCard.remainingMeals} meals remaining
                       </div>
+                      {selectedLunchCard.remainingMeals < getTotalMeals() && (
+                        <div className="mt-2 p-2 bg-red-200 rounded text-red-800 font-['Jost',sans-serif] font-bold text-sm">
+                          ⚠️ Not enough meals! Need {getTotalMeals()}, has {selectedLunchCard.remainingMeals}.
+                          Reduce dates or quantity.
+                        </div>
+                      )}
                       <button
                         type="button"
                         onClick={() => setSelectedLunchCard(null)}
@@ -1144,26 +1660,81 @@ export default function LunchPage() {
               </div>
             </div>
 
+            {/* Transaction Confirmation Preview */}
+            {showConfirmation && !submitResult && (
+              <div className="card bg-amber-50 border-4 border-amber-400" style={{ marginBottom: 'var(--space-4)' }}>
+                <h2 className="font-['Jost',sans-serif] font-bold text-amber-800 text-xl" style={{ marginBottom: 'var(--space-3)' }}>
+                  ⚠️ Confirm Transaction
+                </h2>
+                <div className="font-['Bitter',serif] text-amber-900 space-y-2">
+                  <p><strong>Customer:</strong> {customer.firstName} {customer.lastName}</p>
+                  <p><strong>Type:</strong> {transactionType === 'individual' ? `${getTotalMeals()} Individual Meal(s)` : `${cardMealCount}-Meal Lunch Card`}</p>
+                  {transactionType === 'individual' && (
+                    <>
+                      <p><strong>Dates:</strong> {selectedDates.join(', ')}</p>
+                      <p><strong>Meals per day:</strong> {quantity}</p>
+                    </>
+                  )}
+                  <p><strong>Payment:</strong> {paymentMethod === 'lunchCard' ? `Lunch Card (${selectedLunchCard?.name})` : paymentMethod === 'compCard' ? `Comp Card #${compCardNumber}` : paymentMethod}</p>
+                  <p><strong>Total:</strong> ${getTotal().toFixed(2)}</p>
+                  {paymentMethod === 'lunchCard' && selectedLunchCard && (
+                    selectedLunchCard.remainingMeals >= getTotalMeals() ? (
+                      <p className="text-green-700 font-bold">
+                        Will deduct {getTotalMeals()} meal(s) from card ({selectedLunchCard.remainingMeals} remaining → {selectedLunchCard.remainingMeals - getTotalMeals()} after)
+                      </p>
+                    ) : (
+                      <p className="text-red-700 font-bold">
+                        ❌ Insufficient meals! Card has {selectedLunchCard.remainingMeals} meals but needs {getTotalMeals()}.
+                      </p>
+                    )
+                  )}
+                </div>
+                <div className="flex gap-3 mt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmation(false)}
+                    className="flex-1 px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-['Jost',sans-serif] font-bold rounded-lg"
+                  >
+                    ← Back to Edit
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || (paymentMethod === 'lunchCard' && !!selectedLunchCard && selectedLunchCard.remainingMeals < getTotalMeals())}
+                    className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-['Jost',sans-serif] font-bold rounded-lg"
+                  >
+                    {isSubmitting ? '⏳ Processing...' : '✓ Confirm & Submit'}
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={
-                isSubmitting || 
-                !customer.firstName || 
-                !customer.lastName || 
-                !staffInitials ||
-                (transactionType === 'individual' && selectedDates.length === 0) ||
-                (paymentMethod === 'lunchCard' && !selectedLunchCard)
-              }
-              className="w-full bg-[#427d78] hover:bg-[#5eb3a1] disabled:bg-gray-400 text-white font-['Jost',sans-serif] font-bold text-xl py-4 rounded-lg transition-colors shadow-lg"
-            >
-              {isSubmitting 
-                ? '⏳ Processing...' 
-                : paymentMethod === 'lunchCard' 
-                  ? `Deduct ${getTotalMeals()} Meal(s) from Lunch Card` 
-                  : `Complete Transaction - ${getTotalMeals()} meal(s) - $${getTotal().toFixed(2)}`
-              }
-            </button>
+            {!showConfirmation && !submitResult && (
+              <button
+                type="submit"
+                disabled={
+                  isSubmitting || 
+                  !customer.firstName || 
+                  !customer.lastName || 
+                  !staffInitials ||
+                  (transactionType === 'individual' && selectedDates.length === 0) ||
+                  (transactionType === 'lunchCard' && !customer.phone) ||
+                  (paymentMethod === 'lunchCard' && !selectedLunchCard) ||
+                  (paymentMethod === 'lunchCard' && !!selectedLunchCard && selectedLunchCard.remainingMeals < getTotalMeals()) ||
+                  (paymentMethod === 'compCard' && !compCardNumber) ||
+                  (paymentMethod === 'cashCheckSplit' && Math.abs((parseFloat(cashAmount || '0') + parseFloat(checkAmount || '0')) - getTotal()) >= 0.01) ||
+                  (paymentMethod === 'cashCheckSplit' && !checkNumber)
+                }
+                className="w-full bg-[#427d78] hover:bg-[#5eb3a1] disabled:bg-gray-400 text-white font-['Jost',sans-serif] font-bold text-xl py-4 rounded-lg transition-colors shadow-lg"
+              >
+                {isSubmitting 
+                  ? '⏳ Processing...' 
+                  : paymentMethod === 'lunchCard' 
+                    ? `Review: Deduct ${getTotalMeals()} Meal(s) from Lunch Card` 
+                    : `Review Transaction - ${getTotalMeals()} meal(s) - $${getTotal().toFixed(2)}`
+                }
+              </button>
+            )}
           </form>
 
           {/* Pricing Reference */}

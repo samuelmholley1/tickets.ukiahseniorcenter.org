@@ -16,7 +16,7 @@ const PRICING = {
 
 type MealType = 'dineIn' | 'toGo' | 'delivery';
 type MemberStatus = 'member' | 'nonMember';
-type PaymentMethod = 'cash' | 'check' | 'card' | 'lunchCard';
+type PaymentMethod = 'cash' | 'check' | 'cashCheckSplit' | 'card' | 'lunchCard' | 'compCard';
 
 interface ReservationRequest {
   name: string;
@@ -45,8 +45,10 @@ const MEMBER_STATUS_MAP: Record<MemberStatus, string> = {
 const PAYMENT_METHOD_MAP: Record<PaymentMethod, string> = {
   cash: 'Cash',
   check: 'Check',
+  cashCheckSplit: 'Cash & Check',
   card: 'Card (Zeffy)',
   lunchCard: 'Lunch Card',
+  compCard: 'Comp Card',
 };
 
 export async function POST(request: NextRequest) {
@@ -78,7 +80,7 @@ export async function POST(request: NextRequest) {
     if (!['member', 'nonMember'].includes(memberStatus)) {
       return NextResponse.json({ error: 'Invalid member status' }, { status: 400 });
     }
-    if (!['cash', 'check', 'card', 'lunchCard'].includes(paymentMethod)) {
+    if (!['cash', 'check', 'cashCheckSplit', 'card', 'lunchCard', 'compCard'].includes(paymentMethod)) {
       return NextResponse.json({ error: 'Invalid payment method' }, { status: 400 });
     }
     if (!staff?.trim()) {
@@ -141,8 +143,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Calculate price (0 if paying with lunch card)
-    const pricePerMeal = paymentMethod === 'lunchCard' ? 0 : PRICING[mealType][memberStatus];
+    // Calculate price (0 if paying with lunch card or comp card)
+    const pricePerMeal = (paymentMethod === 'lunchCard' || paymentMethod === 'compCard') ? 0 : PRICING[mealType][memberStatus];
     const totalAmount = pricePerMeal * quantity;
 
     // Build the Airtable record

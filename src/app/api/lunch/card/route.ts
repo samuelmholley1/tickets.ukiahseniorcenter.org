@@ -31,7 +31,7 @@ const CARD_PRICING = {
 type MealCount = 5 | 10 | 15 | 20;
 type CardMealType = 'dineIn' | 'pickup' | 'delivery';
 type MemberStatus = 'member' | 'nonMember';
-type PaymentMethod = 'cash' | 'check' | 'card';
+type PaymentMethod = 'cash' | 'check' | 'cashCheckSplit' | 'card' | 'compCard';
 
 interface LunchCardRequest {
   name: string;
@@ -41,6 +41,7 @@ interface LunchCardRequest {
   memberStatus: MemberStatus;
   paymentMethod: PaymentMethod;
   checkNumber?: string;
+  compCardNumber?: string;
   staff: string;
 }
 
@@ -60,7 +61,9 @@ const MEMBER_STATUS_MAP: Record<MemberStatus, string> = {
 const PAYMENT_METHOD_MAP: Record<PaymentMethod, string> = {
   cash: 'Cash',
   check: 'Check',
+  cashCheckSplit: 'Cash & Check',
   card: 'Card (Zeffy)',
+  compCard: 'Comp Card',
 };
 
 export async function POST(request: NextRequest) {
@@ -95,7 +98,7 @@ export async function POST(request: NextRequest) {
     if (!['member', 'nonMember'].includes(memberStatus)) {
       return NextResponse.json({ error: 'Invalid member status' }, { status: 400 });
     }
-    if (!['cash', 'check', 'card'].includes(paymentMethod)) {
+    if (!['cash', 'check', 'cashCheckSplit', 'card', 'compCard'].includes(paymentMethod)) {
       return NextResponse.json({ error: 'Invalid payment method' }, { status: 400 });
     }
     if (paymentMethod === 'check' && !checkNumber?.trim()) {

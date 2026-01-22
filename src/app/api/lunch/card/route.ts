@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
     if (!['cash', 'check', 'cashCheckSplit', 'card', 'compCard'].includes(paymentMethod)) {
       return NextResponse.json({ error: 'Invalid payment method' }, { status: 400 });
     }
-    if (paymentMethod === 'check' && !checkNumber?.trim()) {
+    if ((paymentMethod === 'check' || paymentMethod === 'cashCheckSplit') && !checkNumber?.trim()) {
       return NextResponse.json({ error: 'Check number is required for check payments' }, { status: 400 });
     }
     if (!staff?.trim()) {

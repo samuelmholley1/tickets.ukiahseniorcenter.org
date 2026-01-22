@@ -366,6 +366,9 @@ export default function LunchPage() {
 
   // Get total meals being ordered
   const getTotalMeals = () => {
+    if (transactionType === 'lunchCard') {
+      return cardMealCount; // For lunch card purchases, it's the card size
+    }
     return quantity * selectedDates.length;
   };
 
@@ -520,6 +523,9 @@ export default function LunchPage() {
               compCardNumber ? `Comp #${compCardNumber}` : '',
             ].filter(Boolean).join(' | ');
             
+            // Only deduct from lunch card on the FIRST reservation to avoid double-deduction
+            const isFirstMeal = (selectedDates.indexOf(date) === 0 && i === 0);
+            
             const response = await fetch('/api/lunch/reservation', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -532,7 +538,8 @@ export default function LunchPage() {
                 lunchCardId: selectedLunchCard?.id,
                 notes: mealNotes,
                 staff: staffInitials,
-                quantity: 1, // Always 1 per record now
+                quantity: isFirstMeal ? getTotalMeals() : 1, // Deduct total on first call
+                deductMeal: isFirstMeal, // Only deduct from card on first meal
               }),
             });
 
@@ -559,9 +566,13 @@ export default function LunchPage() {
             amount: getTotal(),
           });
         } else {
+          // Partial failure - this is serious if lunch card was debited
+          const partialFailureMsg = paymentMethod === 'lunchCard' && successCount > 0
+            ? ` IMPORTANT: ${getTotalMeals()} meals were deducted from lunch card but only ${successCount} reservations created. Contact office to reconcile.`
+            : '';
           setSubmitResult({
             success: false,
-            message: errorMessage || `Only created ${successCount} of ${totalMeals} reservations`,
+            message: (errorMessage || `Only created ${successCount} of ${totalMeals} reservations`) + partialFailureMsg,
           });
         }
       } else {
@@ -653,9 +664,10 @@ export default function LunchPage() {
             
             {/* Show auto-detected card balance in sticky header */}
             {autoDetectedCard && transactionType === 'individual' && (
-              <div className="bg-green-100 px-3 py-1 rounded-full">
-                <span className="font-['Jost',sans-serif] text-sm font-bold text-green-700">
+              <div className={`px-3 py-1 rounded-full ${autoDetectedCard.remainingMeals > 0 ? 'bg-green-100' : 'bg-yellow-100'}`}>
+                <span className={`font-['Jost',sans-serif] text-sm font-bold ${autoDetectedCard.remainingMeals > 0 ? 'text-green-700' : 'text-yellow-700'}`}>
                   🎫 {autoDetectedCard.name}: {autoDetectedCard.remainingMeals} meals left
+                  {autoDetectedCard.remainingMeals === 0 && ' (EMPTY)'}
                 </span>
               </div>
             )}
@@ -928,26 +940,29 @@ export default function LunchPage() {
               
               {/* Auto-detected lunch card notification */}
               {autoDetectedCard && transactionType === 'individual' && (
-                <div className="mb-4 p-3 bg-green-100 border-2 border-green-400 rounded-lg">
+                <div className={`mb-4 p-3 border-2 rounded-lg ${autoDetectedCard.remainingMeals > 0 ? 'bg-green-100 border-green-400' : 'bg-yellow-100 border-yellow-400'}`}>
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div>
-                      <div className="font-['Jost',sans-serif] font-bold text-green-800">
+                      <div className={`font-['Jost',sans-serif] font-bold ${autoDetectedCard.remainingMeals > 0 ? 'text-green-800' : 'text-yellow-800'}`}>
                         🎫 Lunch Card Found: {autoDetectedCard.name}
                       </div>
-                      <div className="font-['Bitter',serif] text-green-700">
+                      <div className={`font-['Bitter',serif] ${autoDetectedCard.remainingMeals > 0 ? 'text-green-700' : 'text-yellow-700'}`}>
                         <span className="font-bold text-lg">{autoDetectedCard.remainingMeals}</span> meals remaining
+                        {autoDetectedCard.remainingMeals === 0 && <span className="ml-2 text-red-600 font-bold">(EMPTY)</span>}
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedLunchCard(autoDetectedCard);
-                        setPaymentMethod('lunchCard');
-                      }}
-                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-['Jost',sans-serif] font-bold rounded-lg"
-                    >
-                      Use This Card
-                    </button>
+                    {autoDetectedCard.remainingMeals > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedLunchCard(autoDetectedCard);
+                          setPaymentMethod('lunchCard');
+                        }}
+                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-['Jost',sans-serif] font-bold rounded-lg"
+                      >
+                        Use This Card
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
@@ -1675,7 +1690,14 @@ export default function LunchPage() {
                       <p><strong>Meals per day:</strong> {quantity}</p>
                     </>
                   )}
-                  <p><strong>Payment:</strong> {paymentMethod === 'lunchCard' ? `Lunch Card (${selectedLunchCard?.name})` : paymentMethod === 'compCard' ? `Comp Card #${compCardNumber}` : paymentMethod}</p>
+                  <p><strong>Payment:</strong> {
+                    paymentMethod === 'lunchCard' ? `Lunch Card (${selectedLunchCard?.name})` 
+                    : paymentMethod === 'compCard' ? `Comp Card #${compCardNumber}` 
+                    : paymentMethod === 'cashCheckSplit' ? `Cash $${cashAmount} + Check #${checkNumber} $${checkAmount}`
+                    : paymentMethod === 'check' ? `Check #${checkNumber}`
+                    : paymentMethod === 'card' ? 'Card (Zeffy)'
+                    : 'Cash'
+                  }</p>
                   <p><strong>Total:</strong> ${getTotal().toFixed(2)}</p>
                   {paymentMethod === 'lunchCard' && selectedLunchCard && (
                     selectedLunchCard.remainingMeals >= getTotalMeals() ? (
@@ -1722,6 +1744,7 @@ export default function LunchPage() {
                   (paymentMethod === 'lunchCard' && !selectedLunchCard) ||
                   (paymentMethod === 'lunchCard' && !!selectedLunchCard && selectedLunchCard.remainingMeals < getTotalMeals()) ||
                   (paymentMethod === 'compCard' && !compCardNumber) ||
+                  (paymentMethod === 'check' && !checkNumber) ||
                   (paymentMethod === 'cashCheckSplit' && Math.abs((parseFloat(cashAmount || '0') + parseFloat(checkAmount || '0')) - getTotal()) >= 0.01) ||
                   (paymentMethod === 'cashCheckSplit' && !checkNumber)
                 }

@@ -28,6 +28,7 @@ interface ReservationRequest {
   notes?: string;
   staff: string;
   quantity?: number; // defaults to 1
+  deductMeal?: boolean; // Only deduct from lunch card if true (for first meal in batch)
 }
 
 // Map our field names to Airtable field names
@@ -74,6 +75,27 @@ export async function POST(request: NextRequest) {
     if (!date) {
       return NextResponse.json({ error: 'Date is required' }, { status: 400 });
     }
+    
+    // Validate date format and business rules
+    const reservationDate = new Date(date + 'T12:00:00'); // Noon to avoid timezone issues
+    if (isNaN(reservationDate.getTime())) {
+      return NextResponse.json({ error: 'Invalid date format' }, { status: 400 });
+    }
+    
+    const dayOfWeek = reservationDate.getDay();
+    if (dayOfWeek === 0 || dayOfWeek === 5 || dayOfWeek === 6) {
+      return NextResponse.json({ error: 'Cannot reserve on weekends (Fri-Sun closed)' }, { status: 400 });
+    }
+    
+    // Allow reservations for today or future only (no past dates)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const reservationDateOnly = new Date(reservationDate);
+    reservationDateOnly.setHours(0, 0, 0, 0);
+    if (reservationDateOnly < today) {
+      return NextResponse.json({ error: 'Cannot create reservations for past dates' }, { status: 400 });
+    }
+    
     if (!['dineIn', 'toGo', 'delivery'].includes(mealType)) {
       return NextResponse.json({ error: 'Invalid meal type' }, { status: 400 });
     }
@@ -91,6 +113,10 @@ export async function POST(request: NextRequest) {
     }
 
     // If paying with lunch card, we need to decrement the card balance
+    // IMPORTANT: The 'deductMeal' flag controls whether to actually deduct.
+    // Frontend should ONLY set deductMeal=true on ONE request to avoid double-deduction.
+    const shouldDeduct = body.deductMeal !== false; // Default true for backwards compat
+    
     if (paymentMethod === 'lunchCard') {
       if (!lunchCardId) {
         return NextResponse.json({ error: 'Lunch card selection is required' }, { status: 400 });
@@ -113,39 +139,44 @@ export async function POST(request: NextRequest) {
       const cardData = await cardResponse.json();
       const remainingMeals = cardData.fields['Remaining Meals'] || 0;
 
-      if (remainingMeals < quantity) {
+      // Only check balance if we're going to deduct
+      if (shouldDeduct && remainingMeals < quantity) {
         return NextResponse.json({ 
           error: `Insufficient meals on card. Has ${remainingMeals}, needs ${quantity}` 
         }, { status: 400 });
       }
 
-      // Decrement the lunch card balance
-      const updateCardResponse = await fetch(
-        `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID}/${lunchCardId}`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            fields: {
-              'Remaining Meals': remainingMeals - quantity,
+      // Only decrement if shouldDeduct is true
+      if (shouldDeduct) {
+        const updateCardResponse = await fetch(
+          `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID}/${lunchCardId}`,
+          {
+            method: 'PATCH',
+            headers: {
+              'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
+              'Content-Type': 'application/json',
             },
-          }),
-        }
-      );
+            body: JSON.stringify({
+              fields: {
+                'Remaining Meals': remainingMeals - quantity,
+              },
+            }),
+          }
+        );
 
-      if (!updateCardResponse.ok) {
-        const errorText = await updateCardResponse.text();
-        console.error('Failed to update lunch card:', errorText);
-        throw new Error('Failed to update lunch card balance');
+        if (!updateCardResponse.ok) {
+          const errorText = await updateCardResponse.text();
+          console.error('Failed to update lunch card:', errorText);
+          throw new Error('Failed to update lunch card balance');
+        }
       }
     }
 
     // Calculate price (0 if paying with lunch card or comp card)
     const pricePerMeal = (paymentMethod === 'lunchCard' || paymentMethod === 'compCard') ? 0 : PRICING[mealType][memberStatus];
-    const totalAmount = pricePerMeal * quantity;
+    // For multi-meal transactions, only the first record should show the total amount
+    // Subsequent records show $0 to avoid double-counting in reports
+    const totalAmount = shouldDeduct ? (pricePerMeal * quantity) : 0;
 
     // Build the Airtable record
     const payload: { fields: Record<string, unknown> } = {

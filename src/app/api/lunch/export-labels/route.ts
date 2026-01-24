@@ -60,23 +60,33 @@ export async function GET(request: NextRequest) {
       throw new Error('Airtable environment variables not configured');
     }
 
-    // Fetch reservations for the date
-    const filterFormula = `?filterByFormula=${encodeURIComponent(`{Date}='${date}'`)}`;
-    const response = await fetch(
-      `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_RESERVATIONS_TABLE_ID}${filterFormula}`,
-      {
+    // Fetch ALL reservations for the date (handle Airtable pagination - 100 record limit per request)
+    const allRecords: Array<{ id: string; fields: Record<string, unknown> }> = [];
+    let offset: string | undefined = undefined;
+    const baseFilter = `filterByFormula=${encodeURIComponent(`{Date}='${date}'`)}`;
+    
+    do {
+      let url = `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_RESERVATIONS_TABLE_ID}?${baseFilter}`;
+      if (offset) {
+        url += `&offset=${offset}`;
+      }
+      
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
         },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch reservations from Airtable');
       }
-    );
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch reservations from Airtable');
-    }
+      const data = await response.json();
+      allRecords.push(...data.records);
+      offset = data.offset; // Will be undefined if no more pages
+    } while (offset);
 
-    const data = await response.json();
-    const reservations: Reservation[] = data.records.map((record: { id: string; fields: Record<string, unknown> }) => ({
+    const reservations: Reservation[] = allRecords.map((record) => ({
       id: record.id,
       Name: record.fields['Name'] as string || '',
       Date: record.fields['Date'] as string || '',
@@ -177,12 +187,17 @@ export async function GET(request: NextRequest) {
 
       // Number badge in corner (for counting/verification)
       doc.setFillColor(66, 125, 120);
-      doc.circle(x + labelWidth - 0.18, y + 0.18, 0.12, 'F');
+      const badgeRadius = 0.12;
+      const badgeCenterX = x + labelWidth - 0.18;
+      const badgeCenterY = y + 0.18;
+      doc.circle(badgeCenterX, badgeCenterY, badgeRadius, 'F');
       doc.setFontSize(7);
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
       const numText = String(index + 1);
-      doc.text(numText, x + labelWidth - 0.18 - (numText.length * 0.03), y + 0.21);
+      // Center text in badge
+      const textWidth = doc.getTextWidth(numText);
+      doc.text(numText, badgeCenterX - textWidth / 2, badgeCenterY + 0.03);
     });
 
     // If no reservations, add a message

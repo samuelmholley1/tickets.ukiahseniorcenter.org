@@ -42,23 +42,33 @@ export async function GET(request: NextRequest) {
       throw new Error('Airtable environment variables not configured');
     }
 
-    // Fetch reservations for the date
-    const filterFormula = `?filterByFormula=${encodeURIComponent(`{Date}='${date}'`)}`;
-    const response = await fetch(
-      `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_RESERVATIONS_TABLE_ID}${filterFormula}`,
-      {
+    // Fetch ALL reservations for the date (handle Airtable pagination - 100 record limit per request)
+    const allRecords: Array<{ id: string; fields: Record<string, unknown> }> = [];
+    let offset: string | undefined = undefined;
+    const baseFilter = `filterByFormula=${encodeURIComponent(`{Date}='${date}'`)}`;
+    
+    do {
+      let url = `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_RESERVATIONS_TABLE_ID}?${baseFilter}`;
+      if (offset) {
+        url += `&offset=${offset}`;
+      }
+      
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
         },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch reservations from Airtable');
       }
-    );
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch reservations from Airtable');
-    }
+      const data = await response.json();
+      allRecords.push(...data.records);
+      offset = data.offset; // Will be undefined if no more pages
+    } while (offset);
 
-    const data = await response.json();
-    const reservations: Reservation[] = data.records.map((record: { id: string; fields: Record<string, unknown> }) => ({
+    const reservations: Reservation[] = allRecords.map((record) => ({
       id: record.id,
       Name: record.fields['Name'] as string || '',
       Date: record.fields['Date'] as string || '',
@@ -103,15 +113,50 @@ export async function GET(request: NextRequest) {
     const contentWidth = pageWidth - (2 * margin);
     let y = margin;
 
+    // Helper function to draw table header
+    const drawTableHeader = () => {
+      doc.setFillColor(66, 125, 120);
+      doc.rect(margin, y, contentWidth, 0.3, 'F');
+      
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(255, 255, 255);
+      
+      let hx = margin + 0.05;
+      doc.text('#', hx, y + 0.2);
+      hx += colWidths[0];
+      doc.text('Name', hx, y + 0.2);
+      hx += colWidths[1];
+      doc.text('Type', hx, y + 0.2);
+      hx += colWidths[2];
+      doc.text('Status', hx, y + 0.2);
+      hx += colWidths[3];
+      doc.text('Payment', hx, y + 0.2);
+      hx += colWidths[4];
+      doc.text('Notes', hx, y + 0.2);
+      
+      y += 0.35;
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(0, 0, 0);
+    };
+
     // Helper to add new page if needed
     const checkNewPage = (neededHeight: number) => {
       if (y + neededHeight > pageHeight - margin) {
         doc.addPage();
         y = margin;
+        // Reprint header on new page
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.text(`${formattedDate} (continued)`, margin, y + 0.15);
+        y += 0.3;
+        drawTableHeader();
         return true;
       }
       return false;
     };
+
+    const colWidths = [0.4, 2.2, 0.8, 0.8, 1.0, 2.3]; // #, Name, Type, Status, Payment, Notes
 
     // Header
     if (logoBase64) {
@@ -138,34 +183,11 @@ export async function GET(request: NextRequest) {
     
     y += 0.9;
 
-    // Table header
-    doc.setFillColor(66, 125, 120);
-    doc.rect(margin, y, contentWidth, 0.3, 'F');
-    
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(255, 255, 255);
-    
-    const colWidths = [0.4, 2.2, 0.8, 0.8, 1.0, 2.3]; // #, Name, Type, Status, Payment, Notes
-    let x = margin + 0.05;
-    
-    doc.text('#', x, y + 0.2);
-    x += colWidths[0];
-    doc.text('Name', x, y + 0.2);
-    x += colWidths[1];
-    doc.text('Type', x, y + 0.2);
-    x += colWidths[2];
-    doc.text('Status', x, y + 0.2);
-    x += colWidths[3];
-    doc.text('Payment', x, y + 0.2);
-    x += colWidths[4];
-    doc.text('Notes', x, y + 0.2);
-    
-    y += 0.35;
+    // Table header (first page)
+    drawTableHeader();
 
     // Table rows
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(0, 0, 0);
+    let x = margin; // row x position
     
     reservations.forEach((res, index) => {
       checkNewPage(0.25);

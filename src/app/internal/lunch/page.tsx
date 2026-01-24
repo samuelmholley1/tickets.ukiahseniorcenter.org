@@ -112,7 +112,7 @@ const getNextAvailableLunch = (): string => {
       daysToAdd = isBefore2pm ? 1 : 5; // Thu or Monday (skip Fri/Sat/Sun)
       break;
     case 4: // Thursday
-      daysToAdd = isBefore2pm ? 4 : 5; // Monday or Tuesday
+      daysToAdd = isBefore2pm ? 0 : 4; // Same day (Thu) or Monday
       break;
     case 5: // Friday
       daysToAdd = 4; // Tuesday
@@ -710,32 +710,40 @@ export default function LunchPage() {
                   className="px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
                 />
               </div>
-              <a
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
+              <button
+                type="button"
+                onClick={() => {
                   const dateInput = document.getElementById('export-date') as HTMLInputElement;
                   if (dateInput?.value) {
+                    const d = new Date(dateInput.value + 'T12:00:00');
+                    const day = d.getDay();
+                    if (day === 0 || day === 5 || day === 6) {
+                      alert('Warning: Lunch is closed on Fridays, Saturdays, and Sundays. There may be no reservations for this date.');
+                    }
                     window.open(`/api/lunch/export-list?date=${dateInput.value}`, '_blank');
                   }
                 }}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-[#427d78] hover:bg-[#5eb3a1] text-white font-['Jost',sans-serif] font-bold rounded-lg transition-colors"
               >
                 📋 Download List PDF
-              </a>
-              <a
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
+              </button>
+              <button
+                type="button"
+                onClick={() => {
                   const dateInput = document.getElementById('export-date') as HTMLInputElement;
                   if (dateInput?.value) {
+                    const d = new Date(dateInput.value + 'T12:00:00');
+                    const day = d.getDay();
+                    if (day === 0 || day === 5 || day === 6) {
+                      alert('Warning: Lunch is closed on Fridays, Saturdays, and Sundays. There may be no reservations for this date.');
+                    }
                     window.open(`/api/lunch/export-labels?date=${dateInput.value}`, '_blank');
                   }
                 }}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-['Jost',sans-serif] font-bold rounded-lg transition-colors"
               >
                 🏷️ Download Avery 5160 Labels
-              </a>
+              </button>
             </div>
             <p className="text-xs text-gray-500 mt-2 font-['Bitter',serif]">
               List PDF: Alphabetical reservation list for the day. Labels: Print on Avery 5160 sheets (30 labels/page).

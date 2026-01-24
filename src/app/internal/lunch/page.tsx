@@ -694,6 +694,53 @@ export default function LunchPage() {
               Staff use only - Record lunch purchases and lunch card sales
             </p>
           </div>
+          
+          {/* Export Section */}
+          <div className="card" style={{ marginBottom: 'var(--space-4)', background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)' }}>
+            <h2 className="font-['Jost',sans-serif] font-bold text-[#427d78] text-lg" style={{ marginBottom: 'var(--space-3)' }}>
+              📤 Export Daily Reports
+            </h2>
+            <div className="flex flex-wrap items-end gap-4">
+              <div>
+                <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-1 text-sm">Select Date</label>
+                <input
+                  type="date"
+                  defaultValue={getNextAvailableLunch()}
+                  id="export-date"
+                  className="px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
+                />
+              </div>
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  const dateInput = document.getElementById('export-date') as HTMLInputElement;
+                  if (dateInput?.value) {
+                    window.open(`/api/lunch/export-list?date=${dateInput.value}`, '_blank');
+                  }
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#427d78] hover:bg-[#5eb3a1] text-white font-['Jost',sans-serif] font-bold rounded-lg transition-colors"
+              >
+                📋 Download List PDF
+              </a>
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  const dateInput = document.getElementById('export-date') as HTMLInputElement;
+                  if (dateInput?.value) {
+                    window.open(`/api/lunch/export-labels?date=${dateInput.value}`, '_blank');
+                  }
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-['Jost',sans-serif] font-bold rounded-lg transition-colors"
+              >
+                🏷️ Download Avery 5160 Labels
+              </a>
+            </div>
+            <p className="text-xs text-gray-500 mt-2 font-['Bitter',serif]">
+              List PDF: Alphabetical reservation list for the day. Labels: Print on Avery 5160 sheets (30 labels/page).
+            </p>
+          </div>
 
           {/* Success/Error Message */}
           {submitResult && (

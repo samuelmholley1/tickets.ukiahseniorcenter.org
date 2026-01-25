@@ -96,8 +96,13 @@ export async function GET(request: NextRequest) {
       Notes: record.fields['Notes'] as string || '',
     }));
 
+    // Filter out Dine In - labels only needed for To Go and Delivery
+    const labelReservations = reservations.filter(r => 
+      r['Meal Type'] === 'To Go' || r['Meal Type'] === 'Delivery'
+    );
+
     // Sort by last name alphabetically
-    reservations.sort((a, b) => {
+    labelReservations.sort((a, b) => {
       const getLastName = (name: string) => {
         const parts = name.trim().split(/\s+/);
         return parts[parts.length - 1].toLowerCase();
@@ -120,7 +125,7 @@ export async function GET(request: NextRequest) {
     const shortDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
     // Draw each label
-    reservations.forEach((res, index) => {
+    labelReservations.forEach((res, index) => {
       // Add new page if needed
       if (index > 0 && index % labelsPerPage === 0) {
         doc.addPage();
@@ -200,11 +205,15 @@ export async function GET(request: NextRequest) {
       doc.text(numText, badgeCenterX - textWidth / 2, badgeCenterY + 0.03);
     });
 
-    // If no reservations, add a message
-    if (reservations.length === 0) {
+    // If no To Go/Delivery reservations, add a message
+    if (labelReservations.length === 0) {
       doc.setFontSize(14);
       doc.setTextColor(100, 100, 100);
-      doc.text('No reservations for this date', AVERY_5160.pageWidth / 2, AVERY_5160.pageHeight / 2, { align: 'center' });
+      const dineInCount = reservations.filter(r => r['Meal Type'] === 'Dine In').length;
+      const message = dineInCount > 0 
+        ? `No To Go or Delivery meals for this date (${dineInCount} Dine In only)`
+        : 'No reservations for this date';
+      doc.text(message, AVERY_5160.pageWidth / 2, AVERY_5160.pageHeight / 2, { align: 'center' });
     }
 
     // Generate PDF buffer

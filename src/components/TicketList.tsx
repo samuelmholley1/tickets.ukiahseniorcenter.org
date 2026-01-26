@@ -20,8 +20,8 @@ interface TicketRecord {
     'Donation Amount'?: number;
     'Amount Paid': number;
     'Ticket Quantity'?: number;
-    'Valentine Member Tickets'?: number;
-    'Valentine Non-Member Tickets'?: number;
+    'Member Tickets'?: number;
+    'Non-Member Tickets'?: number;
     'Speakeasy Tickets'?: number;
     'Staff Initials': string;
   };
@@ -74,11 +74,11 @@ export function TicketList() {
     const fields = record.fields;
     const parts: string[] = [];
     
-    if (fields['Valentine Member Tickets']) {
-      parts.push(`${fields['Valentine Member Tickets']} Valentine Member`);
+    if (fields['Member Tickets']) {
+      parts.push(`${fields['Member Tickets']} Valentine Member`);
     }
-    if (fields['Valentine Non-Member Tickets']) {
-      parts.push(`${fields['Valentine Non-Member Tickets']} Valentine Non-Member`);
+    if (fields['Non-Member Tickets']) {
+      parts.push(`${fields['Non-Member Tickets']} Valentine Non-Member`);
     }
     if (fields['Speakeasy Tickets']) {
       parts.push(`${fields['Speakeasy Tickets']} Speakeasy`);
@@ -229,8 +229,8 @@ export function TicketList() {
                               body: JSON.stringify({
                                 firstName: record.fields['First Name'],
                                 lastName: record.fields['Last Name'],
-                                valentinesMember: record.fields['Valentine Member Tickets'] || 0,
-                                valentinesNonMember: record.fields['Valentine Non-Member Tickets'] || 0,
+                                valentinesMember: record.fields['Member Tickets'] || 0,
+                                valentinesNonMember: record.fields['Non-Member Tickets'] || 0,
                                 speakeasy: record.fields['Speakeasy Tickets'] || 0
                               })
                             });

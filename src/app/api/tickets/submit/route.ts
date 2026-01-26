@@ -320,7 +320,36 @@ export async function POST(request: NextRequest) {
       results.push({ event: 'Speakeasy Gala', total: speakeasyTotal, recordId: speakeasyData.id });
     }
 
-    // TODO: Add email receipt sending for 2026 events when templates are ready
+    // Send email receipt
+    try {
+      console.log('[submit] Sending email receipt...');
+      const emailResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/tickets/send-receipt`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: customer.firstName,
+          lastName: customer.lastName,
+          email: customer.email,
+          phone: customer.phone,
+          valentinesMember: quantities.valentinesMember,
+          valentinesNonMember: quantities.valentinesNonMember,
+          speakeasy: quantities.speakeasy,
+          donationAmount: donation,
+          paymentMethod: getPaymentInfo().paymentMethodText + (getPaymentInfo().paymentNotes ? ` (${getPaymentInfo().paymentNotes})` : ''),
+        }),
+      });
+      
+      if (emailResponse.ok) {
+        console.log('[submit] Email receipt sent successfully');
+      } else {
+        const errorText = await emailResponse.text();
+        console.error('[submit] Email receipt failed:', errorText);
+        // Don't fail the whole transaction if email fails - Airtable record was created
+      }
+    } catch (emailError) {
+      console.error('[submit] Email sending error:', emailError);
+      // Don't fail the whole transaction if email fails
+    }
 
     return NextResponse.json({ 
       success: true, 

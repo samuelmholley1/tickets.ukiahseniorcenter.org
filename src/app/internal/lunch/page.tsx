@@ -1449,6 +1449,22 @@ export default function LunchPage() {
                 </div>
               </div>
 
+              {paymentMethod === 'card' && (
+                <div style={{ marginBottom: 'var(--space-3)' }}>
+                  <a
+                    href="https://www.zeffy.com/en-US/ticketing/lunch-8"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-['Jost',sans-serif] font-bold rounded-lg transition-colors text-lg"
+                  >
+                    💳 Open Zeffy to Process Card Payment →
+                  </a>
+                  <p className="text-sm text-purple-600 mt-2 font-['Bitter',serif]">
+                    💡 Process the card payment in Zeffy, then return here to complete the reservation.
+                  </p>
+                </div>
+              )}
+
               {paymentMethod === 'check' && (
                 <div style={{ marginBottom: 'var(--space-3)' }}>
                   <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">Check Number</label>

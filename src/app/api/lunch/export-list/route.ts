@@ -45,7 +45,8 @@ export async function GET(request: NextRequest) {
     // Fetch ALL reservations for the date (handle Airtable pagination - 100 record limit per request)
     const allRecords: Array<{ id: string; fields: Record<string, unknown> }> = [];
     let offset: string | undefined = undefined;
-    const baseFilter = `filterByFormula=${encodeURIComponent(`{Date}='${date}'`)}`;
+    // Use IS_SAME for date comparison - Airtable date fields need proper date comparison, not string equality
+    const baseFilter = `filterByFormula=${encodeURIComponent(`IS_SAME({Date}, '${date}', 'day')`)}`;
     
     do {
       let url = `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_RESERVATIONS_TABLE_ID}?${baseFilter}`;

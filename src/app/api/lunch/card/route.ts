@@ -58,6 +58,12 @@ const MEMBER_STATUS_MAP: Record<MemberStatus, string> = {
   nonMember: 'Non-Member',
 };
 
+const MEAL_TYPE_MAP: Record<CardMealType, string> = {
+  dineIn: 'Dine In',
+  pickup: 'To Go',
+  delivery: 'Delivery',
+};
+
 const PAYMENT_METHOD_MAP: Record<PaymentMethod, string> = {
   cash: 'Cash',
   check: 'Check',
@@ -117,6 +123,7 @@ export async function POST(request: NextRequest) {
         'Name': name.trim().substring(0, 100),
         'Phone': phone.trim().substring(0, 50),
         'Card Type': CARD_TYPE_MAP[cardType],
+        'Meal Type': MEAL_TYPE_MAP[mealType],
         'Member Status': MEMBER_STATUS_MAP[memberStatus],
         'Total Meals': cardType,
         'Remaining Meals': cardType, // Start with full balance
@@ -254,6 +261,7 @@ export async function GET(request: NextRequest) {
         name: record.fields['Name'],
         phone: record.fields['Phone'],
         cardType: record.fields['Card Type'],
+        mealType: record.fields['Meal Type'],
         totalMeals: record.fields['Total Meals'],
         remainingMeals: record.fields['Remaining Meals'],
         memberStatus: record.fields['Member Status'],

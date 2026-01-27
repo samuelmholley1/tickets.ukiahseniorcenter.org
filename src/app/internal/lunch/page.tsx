@@ -9,6 +9,7 @@ interface LunchCard {
   name: string;
   phone: string;
   cardType: string;
+  mealType?: string;
   totalMeals: number;
   remainingMeals: number;
   memberStatus: string;
@@ -869,6 +870,7 @@ export default function LunchPage() {
                       <div className="font-['Jost',sans-serif] font-bold text-gray-800">{card.name}</div>
                       <div className="font-['Bitter',serif] text-sm text-gray-600">
                         📞 {card.phone} • {card.cardType} • {card.memberStatus}
+                        {card.mealType && <span className="ml-1 font-semibold text-blue-600">• {card.mealType}</span>}
                       </div>
                       <div className="font-['Jost',sans-serif] font-bold text-lg mt-1">
                         <span className="text-green-600">{card.remainingMeals} meals remaining</span>
@@ -1608,7 +1610,9 @@ export default function LunchPage() {
                         >
                           <div className="font-['Jost',sans-serif] font-bold">{card.name}</div>
                           <div className="font-['Bitter',serif] text-sm text-gray-600">
-                            {card.phone} • {card.cardType} • <span className="text-green-600 font-bold">{card.remainingMeals} meals left</span>
+                            {card.phone} • {card.cardType}
+                            {card.mealType && <span className="text-blue-600"> • {card.mealType}</span>}
+                            {' '} • <span className="text-green-600 font-bold">{card.remainingMeals} meals left</span>
                           </div>
                         </button>
                       ))}
@@ -1628,6 +1632,7 @@ export default function LunchPage() {
                         selectedLunchCard.remainingMeals >= getTotalMeals() ? 'text-green-700' : 'text-red-700'
                       }`}>
                         {selectedLunchCard.name} - {selectedLunchCard.remainingMeals} meals remaining
+                        {selectedLunchCard.mealType && <span className="text-blue-600 ml-1">({selectedLunchCard.mealType})</span>}
                       </div>
                       {selectedLunchCard.remainingMeals < getTotalMeals() && (
                         <div className="mt-2 p-2 bg-red-200 rounded text-red-800 font-['Jost',sans-serif] font-bold text-sm">

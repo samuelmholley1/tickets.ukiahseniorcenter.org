@@ -1424,15 +1424,17 @@ export default function LunchPage() {
                   >
                     💳 Card
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('compCard')}
-                    className={`px-6 py-3 rounded-lg font-['Jost',sans-serif] font-bold transition-all ${
-                      paymentMethod === 'compCard' ? 'bg-pink-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                  >
-                    🎁 Comp Card
-                  </button>
+                  {transactionType === 'individual' && (
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('compCard')}
+                      className={`px-6 py-3 rounded-lg font-['Jost',sans-serif] font-bold transition-all ${
+                        paymentMethod === 'compCard' ? 'bg-pink-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      🎁 Comp Card
+                    </button>
+                  )}
                   {transactionType === 'individual' && (
                     <button
                       type="button"
@@ -1670,17 +1672,19 @@ export default function LunchPage() {
                 />
               </div>
 
-              {/* Notes */}
-              <div style={{ marginTop: 'var(--space-3)' }}>
-                <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">Notes (optional)</label>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Special requests, delivery address, etc."
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
-                  rows={2}
-                />
-              </div>
+              {/* Notes - only for individual reservations */}
+              {transactionType === 'individual' && (
+                <div style={{ marginTop: 'var(--space-3)' }}>
+                  <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">Notes (optional)</label>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Special requests, delivery address, etc."
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
+                    rows={2}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Order Summary */}

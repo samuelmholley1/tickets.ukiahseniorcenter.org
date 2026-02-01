@@ -1307,6 +1307,9 @@ export default function LunchPage() {
                                   <>
                                     <div style={{ fontSize: '12px', fontWeight: 'bold' }}>THU PICKUP</div>
                                     <div style={{ fontSize: '9px', fontWeight: 'normal', opacity: 0.7 }}>Chef&apos;s Choice</div>
+                                    <div style={{ fontSize: '10px', fontWeight: 'bold', marginTop: '2px' }}>
+                                      {new Date(day.displayDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                    </div>
                                   </>
                                 ) : (
                                   <div>{day.label}</div>

@@ -1439,25 +1439,20 @@ export default function LunchPage() {
                               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                                 <div>
                                   <label className="block text-xs text-gray-600 mb-1">Name for Attendance List</label>
-                                  <div className="flex gap-1">
-                                    <input
-                                      type="text"
-                                      placeholder={`${customer.firstName} ${customer.lastName}`.trim() || 'Customer name'}
-                                      value={meal.name}
-                                      onChange={(e) => updateMealDetail(date, idx, 'name', e.target.value)}
-                                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                                    />
-                                    {meal.name && (
-                                      <button
-                                        type="button"
-                                        onClick={() => updateMealDetail(date, idx, 'name', '')}
-                                        className="px-2 py-1 bg-gray-200 hover:bg-gray-300 text-gray-600 rounded text-xs"
-                                        title="Clear name"
-                                      >
-                                        ✕
-                                      </button>
-                                    )}
-                                  </div>
+                                  <input
+                                    type="text"
+                                    placeholder="Enter name"
+                                    value={meal.name}
+                                    onChange={(e) => updateMealDetail(date, idx, 'name', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => updateMealDetail(date, idx, 'name', '')}
+                                    className="mt-1 px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded text-xs border border-gray-300 w-full"
+                                  >
+                                    ✕ Clear Name (to change)
+                                  </button>
                                 </div>
                                 <div>
                                   <label className="block text-xs text-gray-600 mb-1">Special Request (optional)</label>

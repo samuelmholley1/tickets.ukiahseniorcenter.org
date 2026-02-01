@@ -15,11 +15,15 @@ interface LunchCard {
   memberStatus: string;
 }
 
-// Guest meal info for multi-meal orders
-interface GuestMeal {
-  specialOrder: string;
-  guestName: string;
+// Individual meal info - each meal gets its own entry
+interface MealEntry {
+  name: string;         // Customer name for this meal
+  specialRequest: string; // Special request for this meal (was "notes")
 }
+
+// Per-date meal tracking - maps date to array of meals for that date
+// e.g., { "2026-02-02": [{ name: "John", specialRequest: "no onions" }, ...] }
+type DateMeals = Record<string, MealEntry[]>;
 
 /* ========== LUNCH PRICING ==========
  * Individual Meals:
@@ -178,10 +182,12 @@ export default function LunchPage() {
   // Individual meal options
   const [isMember, setIsMember] = useState<MembershipType>('member');
   const [mealType, setMealType] = useState<MealType>('dineIn');
-  const [quantity, setQuantity] = useState(1);
   
-  // Guest meals for multi-meal orders (quantity > 1)
-  const [guestMeals, setGuestMeals] = useState<GuestMeal[]>([]);
+  // Per-date meal tracking: { "2026-02-02": [{ name: "John", specialRequest: "" }, ...] }
+  const [dateMeals, setDateMeals] = useState<DateMeals>(() => {
+    const initialDate = getNextAvailableLunch();
+    return { [initialDate]: [{ name: '', specialRequest: '' }] };
+  });
 
   // Lunch card options
   const [cardMealCount, setCardMealCount] = useState<MealCount>(5);
@@ -195,10 +201,14 @@ export default function LunchPage() {
   const [cashAmount, setCashAmount] = useState('');
   const [checkAmount, setCheckAmount] = useState('');
   const [staffInitials, setStaffInitials] = useState('');
-  const [notes, setNotes] = useState('');
   
-  // Multiple dates support - defaults to next available lunch based on 2pm deadline
-  const [selectedDates, setSelectedDates] = useState<string[]>([getNextAvailableLunch()]);
+  // Helper to get selected dates from dateMeals
+  const selectedDates = Object.keys(dateMeals).sort();
+  
+  // Helper to get total meals count
+  const getTotalMealsFromDateMeals = () => {
+    return Object.values(dateMeals).reduce((sum, meals) => sum + meals.length, 0);
+  };
   
   // Generate next 30 days for selection (Mon-Thu only, closed Fri-Sun)
   const getNext30Days = () => {
@@ -222,17 +232,63 @@ export default function LunchPage() {
     return days;
   };
   
-  // Toggle date selection (click to add/remove)
-  const handleDateClick = (date: string) => {
-    if (selectedDates.includes(date)) {
-      // Remove if already selected (but keep at least one if it's the last)
-      if (selectedDates.length > 1) {
-        setSelectedDates(selectedDates.filter(d => d !== date));
+  // Add a meal to a date (or add date with 1 meal if not exists)
+  const addMealToDate = (date: string) => {
+    const customerName = `${customer.firstName} ${customer.lastName}`.trim();
+    setDateMeals(prev => ({
+      ...prev,
+      [date]: [...(prev[date] || []), { name: customerName, specialRequest: '' }]
+    }));
+  };
+  
+  // Remove a meal from a date (remove date entirely if last meal)
+  const removeMealFromDate = (date: string) => {
+    setDateMeals(prev => {
+      const meals = prev[date] || [];
+      if (meals.length <= 1) {
+        // Remove the date entirely if this was the last meal
+        // But keep at least one date
+        if (Object.keys(prev).length <= 1) {
+          return prev; // Don't remove last date
+        }
+        const { [date]: _removed, ...rest } = prev;
+        void _removed; // Suppress unused variable warning
+        return rest;
       }
-      // If it's the only one, clicking it does nothing (must have at least one date)
+      // Remove last meal from this date
+      return { ...prev, [date]: meals.slice(0, -1) };
+    });
+  };
+  
+  // Update a specific meal's details
+  const updateMealDetail = (date: string, mealIndex: number, field: keyof MealEntry, value: string) => {
+    setDateMeals(prev => {
+      const meals = [...(prev[date] || [])];
+      if (meals[mealIndex]) {
+        meals[mealIndex] = { ...meals[mealIndex], [field]: value };
+      }
+      return { ...prev, [date]: meals };
+    });
+  };
+  
+  // Handle date cell click - toggle date on/off
+  const handleDateClick = (date: string) => {
+    const customerName = `${customer.firstName} ${customer.lastName}`.trim();
+    if (dateMeals[date]) {
+      // Date is selected - remove it (unless it's the only one)
+      if (Object.keys(dateMeals).length > 1) {
+        setDateMeals(prev => {
+          const { [date]: _removed, ...rest } = prev;
+          void _removed; // Suppress unused variable warning
+          return rest;
+        });
+      }
     } else {
-      // Add to selection
-      setSelectedDates([...selectedDates, date].sort());
+      // Add date with 1 meal
+      setDateMeals(prev => ({
+        ...prev,
+        [date]: [{ name: customerName, specialRequest: '' }]
+      }));
     }
   };
 
@@ -280,24 +336,25 @@ export default function LunchPage() {
   // Reset confirmation when important values change (prevents stale data submission)
   useEffect(() => {
     setShowConfirmation(false);
-  }, [transactionType, paymentMethod, quantity, selectedDates, selectedLunchCard, cardMealCount]);
+  }, [transactionType, paymentMethod, dateMeals, selectedLunchCard, cardMealCount]);
   
-  // Update guest meals array when quantity changes
+  // Auto-fill customer name in meals when customer name changes
   useEffect(() => {
-    if (quantity > 1) {
-      // Create array for meals 2 through quantity (meal 1 is the main customer)
-      const newGuestMeals: GuestMeal[] = [];
-      for (let i = 1; i < quantity; i++) {
-        newGuestMeals.push({
-          specialOrder: guestMeals[i - 1]?.specialOrder || '',
-          guestName: guestMeals[i - 1]?.guestName || '',
-        });
-      }
-      setGuestMeals(newGuestMeals);
-    } else {
-      setGuestMeals([]);
+    const customerName = `${customer.firstName} ${customer.lastName}`.trim();
+    if (customerName) {
+      // Update any empty meal names with customer name
+      setDateMeals(prev => {
+        const updated: DateMeals = {};
+        for (const [date, meals] of Object.entries(prev)) {
+          updated[date] = meals.map(meal => ({
+            ...meal,
+            name: meal.name || customerName
+          }));
+        }
+        return updated;
+      });
     }
-  }, [quantity]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [customer.firstName, customer.lastName]);
   
   // Auto-lookup lunch card when customer name changes
   const searchCustomerCard = useCallback(async (firstName: string, lastName: string) => {
@@ -334,8 +391,8 @@ export default function LunchPage() {
     return () => clearTimeout(timer);
   }, [customer.firstName, customer.lastName, searchCustomerCard]);
 
-  // Calculate individual meal price
-  const calculateIndividualPrice = () => {
+  // Calculate individual meal price (single meal)
+  const calculateSingleMealPrice = () => {
     let basePrice = 0;
     if (isMember === 'member') {
       basePrice = mealType === 'dineIn' ? PRICING.individual.memberDineIn : PRICING.individual.memberToGo;
@@ -345,7 +402,7 @@ export default function LunchPage() {
     if (mealType === 'delivery') {
       basePrice = (isMember === 'member' ? PRICING.individual.memberToGo : PRICING.individual.nonMemberToGo) + PRICING.individual.deliveryCharge;
     }
-    return basePrice * quantity;
+    return basePrice;
   };
 
   // Calculate lunch card price
@@ -353,24 +410,23 @@ export default function LunchPage() {
     return PRICING.cards[cardMealCount][cardMemberType][cardMealType];
   };
 
-  // Get total
-  const getTotal = () => {
-    // Lunch card and comp card are free (already prepaid or complimentary)
-    if (paymentMethod === 'lunchCard' || paymentMethod === 'compCard') return 0;
-    if (transactionType === 'individual') {
-      // Price per meal × quantity × number of dates
-      const pricePerMeal = calculateIndividualPrice() / quantity; // get single meal price
-      return pricePerMeal * quantity * selectedDates.length;
-    }
-    return calculateCardPrice();
-  };
-
   // Get total meals being ordered
   const getTotalMeals = () => {
     if (transactionType === 'lunchCard') {
       return cardMealCount; // For lunch card purchases, it's the card size
     }
-    return quantity * selectedDates.length;
+    return getTotalMealsFromDateMeals();
+  };
+
+  // Get total price
+  const getTotal = () => {
+    // Lunch card and comp card are free (already prepaid or complimentary)
+    if (paymentMethod === 'lunchCard' || paymentMethod === 'compCard') return 0;
+    if (transactionType === 'individual') {
+      // Price per meal × total meals
+      return calculateSingleMealPrice() * getTotalMealsFromDateMeals();
+    }
+    return calculateCardPrice();
   };
 
   // Search for lunch cards
@@ -407,10 +463,8 @@ export default function LunchPage() {
   // Reset form after successful submission
   const resetForm = () => {
     setCustomer({ firstName: '', lastName: '', email: 'cashier@seniorctr.org', phone: '' });
-    setQuantity(1);
-    setGuestMeals([]);
-    setSelectedDates([getNextAvailableLunch()]);
-    setNotes('');
+    const initialDate = getNextAvailableLunch();
+    setDateMeals({ [initialDate]: [{ name: '', specialRequest: '' }] });
     setCheckNumber('');
     setCompCardNumber('');
     setCashAmount('');
@@ -494,38 +548,24 @@ export default function LunchPage() {
 
     try {
       if (transactionType === 'individual') {
-        // Create lunch reservations - one record per date per quantity
+        // Create lunch reservations - one record per meal in dateMeals
         const totalMeals = getTotalMeals();
         let successCount = 0;
         let errorMessage = '';
-        const mainCustomerName = `${customer.firstName} ${customer.lastName}`.trim();
+        let isFirstMeal = true;
 
+        // Iterate through all dates and meals
         for (const date of selectedDates) {
-          for (let i = 0; i < quantity; i++) {
-            // Determine the name for this meal
-            // Meal 0 (first meal) = main customer
-            // Meal 1+ = guest name if provided, otherwise main customer
-            let mealName = mainCustomerName;
-            let specialOrderNote = '';
-            
-            if (i > 0 && guestMeals[i - 1]) {
-              if (guestMeals[i - 1].guestName.trim()) {
-                mealName = guestMeals[i - 1].guestName.trim();
-              }
-              if (guestMeals[i - 1].specialOrder.trim()) {
-                specialOrderNote = guestMeals[i - 1].specialOrder.trim();
-              }
-            }
+          const meals = dateMeals[date] || [];
+          for (let i = 0; i < meals.length; i++) {
+            const meal = meals[i];
+            const mealName = meal.name.trim() || `${customer.firstName} ${customer.lastName}`.trim();
             
             const mealNotes = [
-              notes,
-              specialOrderNote,
+              meal.specialRequest.trim(),
               checkNumber ? `Check #${checkNumber}` : '',
               compCardNumber ? `Comp #${compCardNumber}` : '',
             ].filter(Boolean).join(' | ');
-            
-            // Only deduct from lunch card on the FIRST reservation to avoid double-deduction
-            const isFirstMeal = (selectedDates.indexOf(date) === 0 && i === 0);
             
             const response = await fetch('/api/lunch/reservation', {
               method: 'POST',
@@ -539,7 +579,7 @@ export default function LunchPage() {
                 lunchCardId: selectedLunchCard?.id,
                 notes: mealNotes,
                 staff: staffInitials,
-                quantity: isFirstMeal ? getTotalMeals() : 1, // Deduct total on first call
+                quantity: isFirstMeal ? totalMeals : 1, // Deduct total on first call
                 deductMeal: isFirstMeal, // Only deduct from card on first meal
               }),
             });
@@ -554,6 +594,8 @@ export default function LunchPage() {
               log.push(`✗ ${date}: ${mealName} - ${errorMessage}`);
               break;
             }
+            
+            isFirstMeal = false;
           }
           if (errorMessage) break;
         }
@@ -1106,37 +1148,68 @@ export default function LunchPage() {
                   Meal Details
                 </h2>
 
-                {/* Date Selection */}
+                {/* Date Selection with +/- controls */}
                 <div style={{ marginBottom: 'var(--space-3)' }}>
                   <div className="flex items-center justify-between mb-2">
                     <label className="block font-['Bitter',serif] text-gray-700 font-medium">
-                      Meal Date(s) * 
-                      {selectedDates.length > 0 && (
-                        <span className="text-sm text-gray-500 ml-1">({selectedDates.length} selected)</span>
-                      )}
+                      Select Dates &amp; Meals * 
+                      <span className="text-sm text-gray-500 ml-1">
+                        ({selectedDates.length} date{selectedDates.length !== 1 ? 's' : ''}, {getTotalMealsFromDateMeals()} meal{getTotalMealsFromDateMeals() !== 1 ? 's' : ''})
+                      </span>
                     </label>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '8px' }}>
-                    {getNext30Days().map((day) => (
-                      <button
-                        key={day.value}
-                        type="button"
-                        onClick={() => handleDateClick(day.value)}
-                        disabled={day.isClosed}
-                        className={`p-2 rounded-lg font-['Jost',sans-serif] text-sm transition-all border-2 ${
-                          day.isClosed 
-                            ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                            : selectedDates.includes(day.value)
-                              ? 'bg-[#427d78] text-white border-[#427d78]'
-                              : 'bg-white text-gray-700 border-gray-300 hover:border-[#427d78]'
-                        }`}
-                      >
-                        {day.label}
-                      </button>
-                    ))}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '8px' }}>
+                    {getNext30Days().map((day) => {
+                      const isSelected = dateMeals[day.value] !== undefined;
+                      const mealCount = dateMeals[day.value]?.length || 0;
+                      
+                      return (
+                        <div
+                          key={day.value}
+                          className={`p-2 rounded-lg font-['Jost',sans-serif] text-sm transition-all border-2 ${
+                            day.isClosed 
+                              ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                              : isSelected
+                                ? 'bg-[#427d78] text-white border-[#427d78]'
+                                : 'bg-white text-gray-700 border-gray-300 hover:border-[#427d78]'
+                          }`}
+                        >
+                          {/* Date label - click to toggle */}
+                          <button
+                            type="button"
+                            onClick={() => !day.isClosed && handleDateClick(day.value)}
+                            disabled={day.isClosed}
+                            className="w-full text-center font-bold"
+                          >
+                            {day.label}
+                          </button>
+                          
+                          {/* +/- controls when selected */}
+                          {isSelected && (
+                            <div className="flex items-center justify-center gap-2 mt-2 pt-2 border-t border-white/30">
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); removeMealFromDate(day.value); }}
+                                className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center font-bold text-lg"
+                              >
+                                −
+                              </button>
+                              <span className="font-bold text-lg min-w-[24px] text-center">{mealCount}</span>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); addMealToDate(day.value); }}
+                                className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center font-bold text-lg"
+                              >
+                                +
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                   <p className="text-sm text-gray-500 mt-2 font-['Bitter',serif]">
-                    💡 Click dates to add/remove. Closed Fri-Sun. Must reserve by 2pm day before.
+                    💡 Click date to select. Use +/− to add more meals per day. Closed Fri-Sun.
                   </p>
                 </div>
                 
@@ -1199,89 +1272,72 @@ export default function LunchPage() {
                   </div>
                 </div>
 
-                {/* Quantity per day (for multiple people) */}
-                <div>
-                  <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">
-                    Meals per Day <span className="text-sm text-gray-500">(for multiple people)</span>
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="20"
-                    value={quantity}
-                    onChange={(e) => setQuantity(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif] text-lg"
-                    style={{ maxWidth: '150px' }}
-                  />
-                  <p className="text-sm text-gray-500 mt-1 font-['Bitter',serif]">
-                    💡 Set to 2+ if ordering for multiple people on each selected date.
-                  </p>
-                </div>
-                
-                {/* Guest Names for Additional Meals */}
-                {quantity > 1 && (
+                {/* Per-Meal Details - Name and Special Request for each meal */}
+                {getTotalMealsFromDateMeals() > 0 && (
                   <div className="mt-4 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg">
                     <h3 className="font-['Jost',sans-serif] font-bold text-blue-800 mb-3">
-                      👥 Guest Details (Optional)
+                      📝 Meal Details ({getTotalMealsFromDateMeals()} meal{getTotalMealsFromDateMeals() !== 1 ? 's' : ''})
                     </h3>
                     <p className="font-['Bitter',serif] text-sm text-blue-700 mb-4">
-                      Enter guest names for the attendance list. Leave blank to use &quot;{customer.firstName} {customer.lastName}&quot; for all meals.
+                      Each meal gets its own line in the system. Edit names and special requests below.
                       <br />
-                      <strong>Note:</strong> All meals are charged to the main customer&apos;s payment method.
+                      <strong>Tip:</strong> Names auto-fill with customer name. Clear to enter a different name.
                     </p>
                     
-                    {/* Meal 1 is always the main customer */}
-                    <div className="mb-3 p-3 bg-white rounded-lg border-2 border-blue-200">
-                      <div className="font-['Jost',sans-serif] font-bold text-gray-700 mb-2">
-                        Meal #1 - {customer.firstName || 'Main'} {customer.lastName || 'Customer'}
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="Special order notes (e.g., no onions, extra bread)"
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                      />
-                    </div>
-                    
-                    {/* Additional meals */}
-                    {guestMeals.map((guest, index) => (
-                      <div key={index} className="mb-3 p-3 bg-white rounded-lg border-2 border-blue-200">
-                        <div className="font-['Jost',sans-serif] font-bold text-gray-700 mb-2">
-                          Meal #{index + 2}
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                          <div>
-                            <label className="block text-xs text-gray-600 mb-1">Guest Name (optional)</label>
-                            <input
-                              type="text"
-                              placeholder={`${customer.firstName} ${customer.lastName}`.trim() || 'Same as main customer'}
-                              value={guest.guestName}
-                              onChange={(e) => {
-                                const newGuests = [...guestMeals];
-                                newGuests[index].guestName = e.target.value;
-                                setGuestMeals(newGuests);
-                              }}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                            />
+                    {selectedDates.map((date) => {
+                      const dateObj = new Date(date + 'T12:00:00');
+                      const dateLabel = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                      const meals = dateMeals[date] || [];
+                      
+                      return (
+                        <div key={date} className="mb-4">
+                          <div className="font-['Jost',sans-serif] font-bold text-gray-800 mb-2 bg-white px-3 py-2 rounded-t-lg border-2 border-b-0 border-blue-200">
+                            📅 {dateLabel}
                           </div>
-                          <div>
-                            <label className="block text-xs text-gray-600 mb-1">Special Order (optional)</label>
-                            <input
-                              type="text"
-                              placeholder="No onions, extra bread, etc."
-                              value={guest.specialOrder}
-                              onChange={(e) => {
-                                const newGuests = [...guestMeals];
-                                newGuests[index].specialOrder = e.target.value;
-                                setGuestMeals(newGuests);
-                              }}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                            />
-                          </div>
+                          {meals.map((meal, idx) => (
+                            <div key={idx} className="p-3 bg-white border-2 border-blue-200 border-t-0 last:rounded-b-lg">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="font-['Jost',sans-serif] font-bold text-gray-600">Meal #{idx + 1}</span>
+                              </div>
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                <div>
+                                  <label className="block text-xs text-gray-600 mb-1">Name for Attendance List</label>
+                                  <div className="flex gap-1">
+                                    <input
+                                      type="text"
+                                      placeholder={`${customer.firstName} ${customer.lastName}`.trim() || 'Customer name'}
+                                      value={meal.name}
+                                      onChange={(e) => updateMealDetail(date, idx, 'name', e.target.value)}
+                                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                    />
+                                    {meal.name && (
+                                      <button
+                                        type="button"
+                                        onClick={() => updateMealDetail(date, idx, 'name', '')}
+                                        className="px-2 py-1 bg-gray-200 hover:bg-gray-300 text-gray-600 rounded text-xs"
+                                        title="Clear name"
+                                      >
+                                        ✕
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className="block text-xs text-gray-600 mb-1">Special Request (optional)</label>
+                                  <input
+                                    type="text"
+                                    placeholder="No onions, extra bread, etc."
+                                    value={meal.specialRequest}
+                                    onChange={(e) => updateMealDetail(date, idx, 'specialRequest', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -1687,20 +1743,6 @@ export default function LunchPage() {
                   placeholder="ABC"
                 />
               </div>
-
-              {/* Notes - only for individual reservations */}
-              {transactionType === 'individual' && (
-                <div style={{ marginTop: 'var(--space-3)' }}>
-                  <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">Notes (optional)</label>
-                  <textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Special requests, delivery address, etc."
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
-                    rows={2}
-                  />
-                </div>
-              )}
             </div>
 
             {/* Order Summary */}
@@ -1733,12 +1775,6 @@ export default function LunchPage() {
                       </div>
                     </div>
                     <div>
-                      <div className="text-white/80 font-['Bitter',serif] text-sm" style={{ marginBottom: '4px' }}>Meals/Day</div>
-                      <div className="text-white font-['Jost',sans-serif] font-bold text-lg">
-                        {quantity}
-                      </div>
-                    </div>
-                    <div>
                       <div className="text-white/80 font-['Bitter',serif] text-sm" style={{ marginBottom: '4px' }}>Total Meals</div>
                       <div className="text-white font-['Jost',sans-serif] font-bold text-2xl">
                         {getTotalMeals()}
@@ -1767,7 +1803,7 @@ export default function LunchPage() {
                   {transactionType === 'individual' && (
                     <>
                       <p><strong>Dates:</strong> {selectedDates.join(', ')}</p>
-                      <p><strong>Meals per day:</strong> {quantity}</p>
+                      <p><strong>Total meals:</strong> {getTotalMeals()}</p>
                     </>
                   )}
                   <p><strong>Payment:</strong> {

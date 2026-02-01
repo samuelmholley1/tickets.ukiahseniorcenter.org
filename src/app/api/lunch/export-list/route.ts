@@ -15,8 +15,10 @@ interface Reservation {
   'Meal Type': string;
   'Member Status': string;
   'Payment Method': string;
-  Notes?: string;
+  Notes?: string; // aka "Special Request" in the UI
   Amount?: number;
+  LunchCardId?: string; // Linked lunch card record ID
+  LunchCardRemaining?: number; // Remaining meals on lunch card
 }
 
 /**
@@ -69,16 +71,52 @@ export async function GET(request: NextRequest) {
       offset = data.offset; // Will be undefined if no more pages
     } while (offset);
 
-    const reservations: Reservation[] = allRecords.map((record) => ({
-      id: record.id,
-      Name: record.fields['Name'] as string || '',
-      Date: record.fields['Date'] as string || '',
-      'Meal Type': record.fields['Meal Type'] as string || '',
-      'Member Status': record.fields['Member Status'] as string || '',
-      'Payment Method': record.fields['Payment Method'] as string || '',
-      Notes: record.fields['Notes'] as string || '',
-      Amount: record.fields['Amount'] as number || 0,
-    }));
+    const reservations: Reservation[] = allRecords.map((record) => {
+      // Get linked lunch card ID (Airtable stores linked records as arrays)
+      const lunchCardLinks = record.fields['Lunch Card'] as string[] | undefined;
+      const lunchCardId = lunchCardLinks?.[0];
+      
+      return {
+        id: record.id,
+        Name: record.fields['Name'] as string || '',
+        Date: record.fields['Date'] as string || '',
+        'Meal Type': record.fields['Meal Type'] as string || '',
+        'Member Status': record.fields['Member Status'] as string || '',
+        'Payment Method': record.fields['Payment Method'] as string || '',
+        Notes: record.fields['Notes'] as string || '',
+        Amount: record.fields['Amount'] as number || 0,
+        LunchCardId: lunchCardId,
+      };
+    });
+
+    // Fetch lunch card remaining meals for reservations that use lunch cards
+    const lunchCardIds = [...new Set(reservations.filter(r => r.LunchCardId).map(r => r.LunchCardId!))];
+    
+    if (lunchCardIds.length > 0 && process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID) {
+      // Fetch lunch cards in batch using OR formula
+      const cardFilter = `OR(${lunchCardIds.map(id => `RECORD_ID()='${id}'`).join(',')})`;
+      const cardUrl = `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID}?filterByFormula=${encodeURIComponent(cardFilter)}`;
+      
+      const cardResponse = await fetch(cardUrl, {
+        headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}` },
+      });
+      
+      if (cardResponse.ok) {
+        const cardData = await cardResponse.json();
+        const cardMap = new Map<string, number>();
+        
+        for (const card of cardData.records) {
+          cardMap.set(card.id, card.fields['Remaining Meals'] as number || 0);
+        }
+        
+        // Update reservations with remaining meals
+        for (const res of reservations) {
+          if (res.LunchCardId && cardMap.has(res.LunchCardId)) {
+            res.LunchCardRemaining = cardMap.get(res.LunchCardId);
+          }
+        }
+      }
+    }
 
     // Sort by last name alphabetically
     reservations.sort((a, b) => {
@@ -134,7 +172,7 @@ export async function GET(request: NextRequest) {
       hx += colWidths[3];
       doc.text('Payment', hx, y + 0.2);
       hx += colWidths[4];
-      doc.text('Notes', hx, y + 0.2);
+      doc.text('Sp. Req.', hx, y + 0.2);
       
       y += 0.35;
       doc.setFont('helvetica', 'normal');
@@ -223,15 +261,27 @@ export async function GET(request: NextRequest) {
       doc.text(statusAbbrev, x, y + 0.12);
       x += colWidths[3];
       
-      // Payment (abbreviated)
+      // Payment (abbreviated) - show remaining meals for lunch cards
       const payment = res['Payment Method'] || '';
-      const payAbbrev = payment === 'Lunch Card' ? 'LC' : 
+      let payAbbrev = payment === 'Lunch Card' ? 'LC' : 
                         payment === 'Cash' ? 'Cash' : 
                         payment === 'Check' ? 'Chk' : 
                         payment === 'Cash & Check' ? 'C&C' :
                         payment === 'Card (Zeffy)' ? 'Card' :
                         payment === 'Comp Card' ? 'Comp' : payment.substring(0, 4);
+      
+      // Add remaining meals info for lunch card payments
+      if (payment === 'Lunch Card' && res.LunchCardRemaining !== undefined) {
+        const remaining = res.LunchCardRemaining;
+        const warning = remaining <= 3 ? '!' : '';
+        payAbbrev = `LC:${remaining}${warning}`;
+        // Highlight low-remaining cards with red text
+        if (remaining <= 3) {
+          doc.setTextColor(180, 0, 0);
+        }
+      }
       doc.text(payAbbrev, x, y + 0.12);
+      doc.setTextColor(0, 0, 0); // Reset text color
       x += colWidths[4];
       
       // Notes (truncate)

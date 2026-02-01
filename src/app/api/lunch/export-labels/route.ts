@@ -34,7 +34,7 @@ interface Reservation {
   'Meal Type': string;
   'Member Status': string;
   'Payment Method': string;
-  Notes?: string;
+  Notes?: string; // aka "Special Request" in the UI
 }
 
 /**

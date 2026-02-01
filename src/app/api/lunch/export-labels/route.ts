@@ -103,6 +103,9 @@ export async function GET(request: NextRequest) {
     const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 4; // Mon-Thu
     const isThursday = dayOfWeek === 4;
     
+    // Track names already in reservations to avoid duplicates
+    const existingNames = new Set(reservations.map(r => r.Name.toLowerCase().trim()));
+    
     if (isWeekday && process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID) {
       // Fetch all active weekly delivery customers
       const weeklyFilter = `AND({Weekly Delivery}, {Remaining Meals} > 0)`;
@@ -120,6 +123,11 @@ export async function GET(request: NextRequest) {
           const memberStatus = card.fields['Member Status'] as string || 'Member';
           const deliveryAddress = card.fields['Delivery Address'] as string || '';
           const includeFrozenFriday = card.fields['Include Frozen Friday'] as boolean || false;
+          
+          // Skip if this customer already has a manual reservation for today
+          if (existingNames.has(cardName.toLowerCase().trim())) {
+            continue;
+          }
           
           // Add regular daily delivery
           reservations.push({

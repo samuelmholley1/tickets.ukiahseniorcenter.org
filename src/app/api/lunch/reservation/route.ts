@@ -29,6 +29,7 @@ interface ReservationRequest {
   staff: string;
   quantity?: number; // defaults to 1
   deductMeal?: boolean; // Only deduct from lunch card if true (for first meal in batch)
+  isFrozenFriday?: boolean; // Is this a frozen Friday meal (picked up Thursday)?
 }
 
 // Map our field names to Airtable field names
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body: ReservationRequest = await request.json();
-    const { name, date, mealType, memberStatus, paymentMethod, lunchCardId, notes, staff, quantity = 1 } = body;
+    const { name, date, mealType, memberStatus, paymentMethod, lunchCardId, notes, staff, quantity = 1, isFrozenFriday = false } = body;
 
     // Input validation
     if (!name?.trim()) {
@@ -190,6 +191,7 @@ export async function POST(request: NextRequest) {
         'Notes': notes?.trim().substring(0, 1000) || '',
         'Staff': staff.trim().substring(0, 50),
         'Status': 'Reserved',
+        'Frozen Friday': isFrozenFriday,
       },
     };
 

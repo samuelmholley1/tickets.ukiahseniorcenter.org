@@ -260,6 +260,7 @@ Once fields are created, you can create views:
 | **Notes** | Long text | | Special requests, delivery address, check number |
 | **Staff** | Single line text | | Staff initials who took the order |
 | **Status** | Single select | `Reserved`, `Picked Up`, `No Show` | Reservation status |
+| **Frozen Friday** | Checkbox | | Is this a frozen Friday meal (picked up Thursday)? |
 
 ---
 

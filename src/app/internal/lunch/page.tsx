@@ -19,10 +19,12 @@ interface LunchCard {
 interface MealEntry {
   name: string;         // Customer name for this meal
   specialRequest: string; // Special request for this meal (was "notes")
+  isFrozenFriday?: boolean; // Is this a frozen Friday meal (picked up Thursday)?
 }
 
 // Per-date meal tracking - maps date to array of meals for that date
 // e.g., { "2026-02-02": [{ name: "John", specialRequest: "no onions" }, ...] }
+// For frozen Friday: date is THE FRIDAY, isFrozenFriday=true indicates pickup is Thursday
 type DateMeals = Record<string, MealEntry[]>;
 
 /* ========== LUNCH PRICING ==========
@@ -213,12 +215,13 @@ export default function LunchPage() {
   // Generate weeks for calendar display (Mon-Fri columns, 4 weeks ahead)
   // Friday is special: "Chef's Choice (FROZEN)" picked up Thursday
   interface CalendarDay {
-    value: string; // YYYY-MM-DD (for Friday, this is the THURSDAY pickup date)
+    value: string; // YYYY-MM-DD - the actual date of the meal (Friday for frozen)
     label: string;
     dayName: string;
     isClosed: boolean;
-    isFrozenFriday: boolean; // Special Friday frozen meal
-    displayDate: string; // The actual Friday date for display
+    isPastDeadline: boolean; // Can't order - deadline passed
+    isFrozenFriday: boolean; // Special Friday frozen meal (picked up Thursday)
+    displayDate: string; // The actual date for display
   }
   
   interface CalendarWeek {
@@ -226,17 +229,36 @@ export default function LunchPage() {
     days: CalendarDay[];
   }
   
+  // Check if a date is past its ordering deadline
+  // Deadline: 2pm the day before (Thursday 2pm for Monday)
+  const isDatePastDeadline = (dateStr: string): boolean => {
+    const now = new Date();
+    const targetDate = new Date(dateStr + 'T12:00:00');
+    const targetDay = targetDate.getDay(); // 0=Sun, 1=Mon, etc.
+    
+    // Calculate deadline date
+    const deadlineDate = new Date(targetDate);
+    if (targetDay === 1) {
+      // Monday's deadline is Thursday 2pm (4 days before)
+      deadlineDate.setDate(targetDate.getDate() - 4);
+    } else if (targetDay === 5) {
+      // Friday frozen meal: deadline is Wednesday 2pm (2 days before)
+      deadlineDate.setDate(targetDate.getDate() - 2);
+    } else {
+      // Tue-Thu: deadline is previous day 2pm
+      deadlineDate.setDate(targetDate.getDate() - 1);
+    }
+    deadlineDate.setHours(14, 0, 0, 0); // 2pm
+    
+    return now > deadlineDate;
+  };
+  
   const getCalendarWeeks = (): CalendarWeek[] => {
     const weeks: CalendarWeek[] = [];
     const today = new Date();
     
     // Find the Monday of current week
     const currentDay = today.getDay(); // 0=Sun, 6=Sat
-    const daysToMonday = currentDay === 0 ? 1 : (currentDay === 6 ? 2 : 1 - currentDay);
-    const startMonday = new Date(today);
-    startMonday.setDate(today.getDate() + (daysToMonday <= 0 ? daysToMonday + 7 : daysToMonday));
-    // Actually, let's start from the NEXT Monday if today is after Thursday 2pm
-    // For simplicity, let's just show 4 weeks starting from "this" Monday or next Monday
     
     // Find first Monday to display (current week's Monday, but if today is Fri-Sun, start next week)
     const firstMonday = new Date(today);
@@ -267,23 +289,18 @@ export default function LunchPage() {
         const dateStr = `${year}-${month}-${day}`;
         
         const isFriday = d === 4;
+        const isPastDeadline = isDatePastDeadline(dateStr);
         
         if (isFriday) {
-          // Friday column: frozen meal picked up Thursday
-          const thursdayDate = new Date(date);
-          thursdayDate.setDate(date.getDate() - 1);
-          const thuYear = thursdayDate.getFullYear();
-          const thuMonth = String(thursdayDate.getMonth() + 1).padStart(2, '0');
-          const thuDay = String(thursdayDate.getDate()).padStart(2, '0');
-          const thuDateStr = `${thuYear}-${thuMonth}-${thuDay}`;
-          
+          // Friday column: frozen meal - use Friday's date, picked up Thursday
           weekDays.push({
-            value: thuDateStr, // Pickup is Thursday
+            value: dateStr, // Friday's actual date
             label: "Chef's Choice",
             dayName: 'Fri',
-            isClosed: false, // Can order frozen Friday meals
+            isClosed: false,
+            isPastDeadline,
             isFrozenFriday: true,
-            displayDate: dateStr, // The actual Friday
+            displayDate: dateStr,
           });
         } else {
           // Mon-Thu: regular lunch day
@@ -293,6 +310,7 @@ export default function LunchPage() {
             label: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
             dayName: dayNames[d],
             isClosed: false,
+            isPastDeadline,
             isFrozenFriday: false,
             displayDate: dateStr,
           });
@@ -311,11 +329,11 @@ export default function LunchPage() {
   };
   
   // Add a meal to a date (or add date with 1 meal if not exists)
-  const addMealToDate = (date: string) => {
+  const addMealToDate = (date: string, isFrozenFriday: boolean = false) => {
     const customerName = `${customer.firstName} ${customer.lastName}`.trim();
     setDateMeals(prev => ({
       ...prev,
-      [date]: [...(prev[date] || []), { name: customerName, specialRequest: '' }]
+      [date]: [...(prev[date] || []), { name: customerName, specialRequest: '', isFrozenFriday }]
     }));
   };
   
@@ -339,7 +357,7 @@ export default function LunchPage() {
   };
   
   // Update a specific meal's details
-  const updateMealDetail = (date: string, mealIndex: number, field: keyof MealEntry, value: string) => {
+  const updateMealDetail = (date: string, mealIndex: number, field: keyof MealEntry, value: string | boolean) => {
     setDateMeals(prev => {
       const meals = [...(prev[date] || [])];
       if (meals[mealIndex]) {
@@ -350,7 +368,7 @@ export default function LunchPage() {
   };
   
   // Handle date cell click - toggle date on/off
-  const handleDateClick = (date: string) => {
+  const handleDateClick = (date: string, isFrozenFriday: boolean = false) => {
     const customerName = `${customer.firstName} ${customer.lastName}`.trim();
     if (dateMeals[date]) {
       // Date is selected - remove it (unless it's the only one)
@@ -365,7 +383,7 @@ export default function LunchPage() {
       // Add date with 1 meal
       setDateMeals(prev => ({
         ...prev,
-        [date]: [{ name: customerName, specialRequest: '' }]
+        [date]: [{ name: customerName, specialRequest: '', isFrozenFriday }]
       }));
     }
   };
@@ -640,6 +658,7 @@ export default function LunchPage() {
             const mealName = meal.name.trim() || `${customer.firstName} ${customer.lastName}`.trim();
             
             const mealNotes = [
+              meal.isFrozenFriday ? '🧊 FROZEN FRIDAY' : '',
               meal.specialRequest.trim(),
               checkNumber ? `Check #${checkNumber}` : '',
               compCardNumber ? `Comp #${compCardNumber}` : '',
@@ -659,6 +678,7 @@ export default function LunchPage() {
                 staff: staffInitials,
                 quantity: isFirstMeal ? totalMeals : 1, // Deduct total on first call
                 deductMeal: isFirstMeal, // Only deduct from card on first meal
+                isFrozenFriday: meal.isFrozenFriday || false,
               }),
             });
 
@@ -1264,13 +1284,14 @@ export default function LunchPage() {
                         {week.days.map((day) => {
                           const isSelected = dateMeals[day.value] !== undefined;
                           const mealCount = dateMeals[day.value]?.length || 0;
+                          const isDisabled = day.isClosed || day.isPastDeadline;
                           
                           return (
                             <div
                               key={day.value + (day.isFrozenFriday ? '-frozen' : '')}
                               className={`p-2 rounded-lg font-['Jost',sans-serif] text-xs transition-all border-2 ${
-                                day.isClosed 
-                                  ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                                isDisabled 
+                                  ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed opacity-50'
                                   : isSelected
                                     ? day.isFrozenFriday
                                       ? 'bg-blue-600 text-white border-blue-600'
@@ -1283,12 +1304,15 @@ export default function LunchPage() {
                               {/* Date label - click to toggle */}
                               <button
                                 type="button"
-                                onClick={() => !day.isClosed && handleDateClick(day.value)}
-                                disabled={day.isClosed}
+                                onClick={() => !isDisabled && handleDateClick(day.value, day.isFrozenFriday)}
+                                disabled={isDisabled}
                                 className="w-full text-center font-bold"
                               >
                                 <div>{day.label}</div>
-                                {day.isFrozenFriday && (
+                                {day.isPastDeadline && !day.isClosed && (
+                                  <div className="text-[9px] font-normal">Deadline passed</div>
+                                )}
+                                {day.isFrozenFriday && !day.isPastDeadline && (
                                   <div className="text-[9px] font-normal opacity-80">Thu pickup</div>
                                 )}
                               </button>
@@ -1306,7 +1330,7 @@ export default function LunchPage() {
                                   <span className="font-bold text-sm min-w-[16px] text-center">{mealCount}</span>
                                   <button
                                     type="button"
-                                    onClick={(e) => { e.stopPropagation(); addMealToDate(day.value); }}
+                                    onClick={(e) => { e.stopPropagation(); addMealToDate(day.value, day.isFrozenFriday); }}
                                     className="w-5 h-5 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center font-bold text-sm"
                                   >
                                     +
@@ -1321,7 +1345,7 @@ export default function LunchPage() {
                   ))}
                   
                   <p className="text-sm text-gray-500 mt-2 font-['Bitter',serif]">
-                    💡 Click date to select. Use +/− to add more meals per day. <span className="text-blue-600">Blue Friday = frozen meal picked up Thursday.</span>
+                    💡 Click date to select. Use +/− to add more meals per day. <span className="text-blue-600">Blue Friday = frozen meal picked up Thursday.</span> Grayed = deadline passed.
                   </p>
                 </div>
                 

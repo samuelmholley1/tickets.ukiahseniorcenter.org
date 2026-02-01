@@ -1449,9 +1449,9 @@ export default function LunchPage() {
                                   <button
                                     type="button"
                                     onClick={() => updateMealDetail(date, idx, 'name', '')}
-                                    className="mt-1 px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded text-xs border border-gray-300 w-full"
+                                    className="mt-1 px-2 py-0.5 bg-[#427d78] hover:bg-[#356661] text-white rounded-full text-xs font-medium"
                                   >
-                                    ✕ Clear Name (to change)
+                                    Clear
                                   </button>
                                 </div>
                                 <div>

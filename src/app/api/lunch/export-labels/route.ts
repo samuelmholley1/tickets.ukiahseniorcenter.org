@@ -208,47 +208,81 @@ export async function GET(request: NextRequest) {
       const px = 0.08; // horizontal padding
       const py = 0.1;  // vertical padding
 
-      // Row 1: Name (large, bold)
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(0, 0, 0);
-      
-      // Truncate name if too long
-      let name = res.Name;
-      if (name.length > 24) {
-        name = name.substring(0, 22) + '...';
-      }
-      doc.text(name, x + px, y + py + 0.12);
+      // Check if this is a route delivery (e.g., "COYOTE VALLEY #1")
+      // Notes format: "COYOTE VALLEY #X\n123 Address St."
+      const notes = res.Notes || '';
+      const routeMatch = notes.match(/^(COYOTE VALLEY #\d+)/i);
+      const routeId = routeMatch ? routeMatch[1].toUpperCase() : null;
+      const addressPart = routeId ? notes.substring(routeId.length).replace(/^\n/, '').trim() : notes;
 
-      // Row 2: Meal Type & Member Status
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
-      
-      const mealType = res['Meal Type'] || 'Unknown';
-      const memberStatus = res['Member Status'] === 'Member' ? 'M' : 'NM';
-      
-      // Color code meal type
-      if (mealType === 'Delivery') {
-        doc.setTextColor(180, 0, 0); // Red for delivery
-      } else if (mealType === 'To Go') {
-        doc.setTextColor(0, 100, 180); // Blue for to-go
+      if (routeId) {
+        // ROUTE DELIVERY LABEL - Route ID is most important
+        // Row 1: Route ID (largest, bold, prominent)
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(180, 0, 0); // Red for emphasis
+        doc.text(routeId, x + px, y + py + 0.12);
+
+        // Row 2: Name (medium)
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
+        let name = res.Name;
+        if (name.length > 28) name = name.substring(0, 26) + '...';
+        doc.text(name, x + px, y + py + 0.30);
+
+        // Row 3: Address (small)
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(80, 80, 80);
+        const addr = addressPart.length > 30 ? addressPart.substring(0, 28) + '...' : addressPart;
+        doc.text(addr, x + px, y + py + 0.46);
+
+        // Row 4: Date + Frozen indicator
+        doc.setFontSize(6);
+        doc.setTextColor(100, 100, 100);
+        const frozenTag = notes.includes('FROZEN') ? ' 🧊 FROZEN' : '';
+        doc.text(`${shortDate}${frozenTag}`, x + px, y + py + 0.58);
       } else {
-        doc.setTextColor(0, 120, 0); // Green for dine-in
-      }
-      
-      doc.text(`${mealType} (${memberStatus})`, x + px, y + py + 0.32);
+        // REGULAR LABEL - Name first
+        // Row 1: Name (large, bold)
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
+        
+        let name = res.Name;
+        if (name.length > 24) name = name.substring(0, 22) + '...';
+        doc.text(name, x + px, y + py + 0.12);
 
-      // Row 3: Date and Notes (small)
-      doc.setFontSize(7);
-      doc.setTextColor(100, 100, 100);
-      
-      let bottomLine = shortDate;
-      if (res.Notes && res.Notes.trim()) {
-        // Truncate notes to fit
-        const notes = res.Notes.length > 25 ? res.Notes.substring(0, 23) + '...' : res.Notes;
-        bottomLine += ` | ${notes}`;
+        // Row 2: Meal Type & Member Status
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        
+        const mealType = res['Meal Type'] || 'Unknown';
+        const memberStatus = res['Member Status'] === 'Member' ? 'M' : 'NM';
+        
+        // Color code meal type
+        if (mealType === 'Delivery') {
+          doc.setTextColor(180, 0, 0); // Red for delivery
+        } else if (mealType === 'To Go') {
+          doc.setTextColor(0, 100, 180); // Blue for to-go
+        } else {
+          doc.setTextColor(0, 120, 0); // Green for dine-in
+        }
+        
+        doc.text(`${mealType} (${memberStatus})`, x + px, y + py + 0.32);
+
+        // Row 3: Date and Notes (small)
+        doc.setFontSize(7);
+        doc.setTextColor(100, 100, 100);
+        
+        let bottomLine = shortDate;
+        if (notes.trim()) {
+          const truncNotes = notes.length > 25 ? notes.substring(0, 23) + '...' : notes;
+          bottomLine += ` | ${truncNotes}`;
+        }
+        doc.text(bottomLine, x + px, y + py + 0.52);
       }
-      doc.text(bottomLine, x + px, y + py + 0.52);
 
       // Number badge in corner (for counting/verification)
       doc.setFillColor(66, 125, 120);

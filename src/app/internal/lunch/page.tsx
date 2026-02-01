@@ -1310,12 +1310,16 @@ export default function LunchPage() {
                                 disabled={isDisabled}
                                 className="w-full text-center font-bold"
                               >
-                                <div>{day.label}</div>
+                                {day.isFrozenFriday ? (
+                                  <>
+                                    <div style={{ fontSize: '10px', fontWeight: 'bold' }}>THU PICKUP</div>
+                                    <div style={{ fontSize: '7px', fontWeight: 'normal', opacity: 0.7 }}>Chef&apos;s Choice</div>
+                                  </>
+                                ) : (
+                                  <div>{day.label}</div>
+                                )}
                                 {day.isPastDeadline && !day.isClosed && (
                                   <div className="text-[9px] font-normal">Deadline passed</div>
-                                )}
-                                {day.isFrozenFriday && !day.isPastDeadline && (
-                                  <div className="text-[9px] font-normal opacity-80">Thu pickup</div>
                                 )}
                               </button>
                               

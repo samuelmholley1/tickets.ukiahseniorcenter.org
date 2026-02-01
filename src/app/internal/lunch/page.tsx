@@ -1266,12 +1266,13 @@ export default function LunchPage() {
                           idx === 4 ? 'text-blue-600' : 'text-gray-600'
                         }`}
                       >
-                        {dayName}
-                        {idx === 4 && (
-                          <div className="leading-tight">
-                            <span className="font-bold text-blue-600" style={{ fontSize: '11px' }}>THURSDAY PICKUP</span><br/>
-                            <span className="font-normal text-blue-400" style={{ fontSize: '7px' }}>Chef&apos;s Choice</span>
-                          </div>
+                        {idx === 4 ? (
+                          <>
+                            <div style={{ fontSize: '11px', fontWeight: 'bold' }}>THURSDAY PICKUP</div>
+                            <div style={{ fontSize: '7px', fontWeight: 'normal', color: '#60a5fa' }}>Chef&apos;s Choice</div>
+                          </>
+                        ) : (
+                          dayName
                         )}
                       </div>
                     ))}

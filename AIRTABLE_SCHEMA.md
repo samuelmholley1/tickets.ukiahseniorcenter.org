@@ -299,6 +299,9 @@ Once fields are created, you can create views:
 | **Purchase Date** | Date | local format | When card was purchased |
 | **Staff** | Single line text | | Staff initials who sold card |
 | **Lunch Reservations** | Linked record | ← Lunch Reservations | Auto-created inverse link |
+| **Weekly Delivery** | Checkbox | | Auto-include on daily delivery list (Mon-Thu) |
+| **Delivery Address** | Long text | | Delivery address for weekly customers |
+| **Include Frozen Friday** | Checkbox | | Also get frozen Friday meal (picked up Thursday) |
 
 ---
 

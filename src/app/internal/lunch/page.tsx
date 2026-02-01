@@ -210,26 +210,104 @@ export default function LunchPage() {
     return Object.values(dateMeals).reduce((sum, meals) => sum + meals.length, 0);
   };
   
-  // Generate next 30 days for selection (Mon-Thu only, closed Fri-Sun)
-  const getNext30Days = () => {
-    const days = [];
-    for (let i = 0; i < 30; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() + i);
-      const dayOfWeek = date.getDay();
-      // Closed Friday (5), Saturday (6), Sunday (0)
-      const isClosed = dayOfWeek === 0 || dayOfWeek === 5 || dayOfWeek === 6;
-      // Format as YYYY-MM-DD using local date parts
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      days.push({
-        value: `${year}-${month}-${day}`,
-        label: date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
-        isClosed,
-      });
+  // Generate weeks for calendar display (Mon-Fri columns, 4 weeks ahead)
+  // Friday is special: "Chef's Choice (FROZEN)" picked up Thursday
+  interface CalendarDay {
+    value: string; // YYYY-MM-DD (for Friday, this is the THURSDAY pickup date)
+    label: string;
+    dayName: string;
+    isClosed: boolean;
+    isFrozenFriday: boolean; // Special Friday frozen meal
+    displayDate: string; // The actual Friday date for display
+  }
+  
+  interface CalendarWeek {
+    weekLabel: string;
+    days: CalendarDay[];
+  }
+  
+  const getCalendarWeeks = (): CalendarWeek[] => {
+    const weeks: CalendarWeek[] = [];
+    const today = new Date();
+    
+    // Find the Monday of current week
+    const currentDay = today.getDay(); // 0=Sun, 6=Sat
+    const daysToMonday = currentDay === 0 ? 1 : (currentDay === 6 ? 2 : 1 - currentDay);
+    const startMonday = new Date(today);
+    startMonday.setDate(today.getDate() + (daysToMonday <= 0 ? daysToMonday + 7 : daysToMonday));
+    // Actually, let's start from the NEXT Monday if today is after Thursday 2pm
+    // For simplicity, let's just show 4 weeks starting from "this" Monday or next Monday
+    
+    // Find first Monday to display (current week's Monday, but if today is Fri-Sun, start next week)
+    const firstMonday = new Date(today);
+    if (currentDay === 0) { // Sunday
+      firstMonday.setDate(today.getDate() + 1); // Tomorrow is Monday
+    } else if (currentDay === 5 || currentDay === 6) { // Fri or Sat
+      firstMonday.setDate(today.getDate() + (8 - currentDay)); // Next Monday
+    } else {
+      // Mon-Thu: go back to this week's Monday
+      firstMonday.setDate(today.getDate() - (currentDay - 1));
     }
-    return days;
+    
+    // Generate 4 weeks
+    for (let week = 0; week < 4; week++) {
+      const weekStart = new Date(firstMonday);
+      weekStart.setDate(firstMonday.getDate() + (week * 7));
+      
+      const weekDays: CalendarDay[] = [];
+      
+      // Mon (0), Tue (1), Wed (2), Thu (3), Fri (4)
+      for (let d = 0; d < 5; d++) {
+        const date = new Date(weekStart);
+        date.setDate(weekStart.getDate() + d);
+        
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+        
+        const isFriday = d === 4;
+        
+        if (isFriday) {
+          // Friday column: frozen meal picked up Thursday
+          const thursdayDate = new Date(date);
+          thursdayDate.setDate(date.getDate() - 1);
+          const thuYear = thursdayDate.getFullYear();
+          const thuMonth = String(thursdayDate.getMonth() + 1).padStart(2, '0');
+          const thuDay = String(thursdayDate.getDate()).padStart(2, '0');
+          const thuDateStr = `${thuYear}-${thuMonth}-${thuDay}`;
+          
+          weekDays.push({
+            value: thuDateStr, // Pickup is Thursday
+            label: "Chef's Choice",
+            dayName: 'Fri',
+            isClosed: false, // Can order frozen Friday meals
+            isFrozenFriday: true,
+            displayDate: dateStr, // The actual Friday
+          });
+        } else {
+          // Mon-Thu: regular lunch day
+          const dayNames = ['Mon', 'Tue', 'Wed', 'Thu'];
+          weekDays.push({
+            value: dateStr,
+            label: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            dayName: dayNames[d],
+            isClosed: false,
+            isFrozenFriday: false,
+            displayDate: dateStr,
+          });
+        }
+      }
+      
+      // Week label (e.g., "Feb 3-7")
+      const weekEndDate = new Date(weekStart);
+      weekEndDate.setDate(weekStart.getDate() + 4);
+      const weekLabel = `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${weekEndDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+      
+      weeks.push({ weekLabel, days: weekDays });
+    }
+    
+    return weeks;
   };
   
   // Add a meal to a date (or add date with 1 meal if not exists)
@@ -1148,7 +1226,7 @@ export default function LunchPage() {
                   Meal Details
                 </h2>
 
-                {/* Date Selection with +/- controls */}
+                {/* Weekly Calendar Grid - Mon-Fri columns */}
                 <div style={{ marginBottom: 'var(--space-3)' }}>
                   <div className="flex items-center justify-between mb-2">
                     <label className="block font-['Bitter',serif] text-gray-700 font-medium">
@@ -1158,58 +1236,92 @@ export default function LunchPage() {
                       </span>
                     </label>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '8px' }}>
-                    {getNext30Days().map((day) => {
-                      const isSelected = dateMeals[day.value] !== undefined;
-                      const mealCount = dateMeals[day.value]?.length || 0;
-                      
-                      return (
-                        <div
-                          key={day.value}
-                          className={`p-2 rounded-lg font-['Jost',sans-serif] text-sm transition-all border-2 ${
-                            day.isClosed 
-                              ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                              : isSelected
-                                ? 'bg-[#427d78] text-white border-[#427d78]'
-                                : 'bg-white text-gray-700 border-gray-300 hover:border-[#427d78]'
-                          }`}
-                        >
-                          {/* Date label - click to toggle */}
-                          <button
-                            type="button"
-                            onClick={() => !day.isClosed && handleDateClick(day.value)}
-                            disabled={day.isClosed}
-                            className="w-full text-center font-bold"
-                          >
-                            {day.label}
-                          </button>
-                          
-                          {/* +/- controls when selected */}
-                          {isSelected && (
-                            <div className="flex items-center justify-center gap-2 mt-2 pt-2 border-t border-white/30">
-                              <button
-                                type="button"
-                                onClick={(e) => { e.stopPropagation(); removeMealFromDate(day.value); }}
-                                className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center font-bold text-lg"
-                              >
-                                −
-                              </button>
-                              <span className="font-bold text-lg min-w-[24px] text-center">{mealCount}</span>
-                              <button
-                                type="button"
-                                onClick={(e) => { e.stopPropagation(); addMealToDate(day.value); }}
-                                className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center font-bold text-lg"
-                              >
-                                +
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                  
+                  {/* Column Headers: Mon Tue Wed Thu Fri */}
+                  <div className="grid grid-cols-5 gap-1 mb-1">
+                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((dayName, idx) => (
+                      <div 
+                        key={dayName} 
+                        className={`text-center font-['Jost',sans-serif] font-bold text-sm py-1 ${
+                          idx === 4 ? 'text-blue-600' : 'text-gray-600'
+                        }`}
+                      >
+                        {dayName}
+                        {idx === 4 && (
+                          <div className="text-[10px] font-normal text-blue-500 leading-tight">
+                            Chef&apos;s Choice<br/>(FROZEN)
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
+                  
+                  {/* Week rows */}
+                  {getCalendarWeeks().map((week) => (
+                    <div key={week.weekLabel} className="mb-2">
+                      <div className="text-xs text-gray-400 font-['Jost',sans-serif] mb-1">{week.weekLabel}</div>
+                      <div className="grid grid-cols-5 gap-1">
+                        {week.days.map((day) => {
+                          const isSelected = dateMeals[day.value] !== undefined;
+                          const mealCount = dateMeals[day.value]?.length || 0;
+                          
+                          return (
+                            <div
+                              key={day.value + (day.isFrozenFriday ? '-frozen' : '')}
+                              className={`p-2 rounded-lg font-['Jost',sans-serif] text-xs transition-all border-2 ${
+                                day.isClosed 
+                                  ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                                  : isSelected
+                                    ? day.isFrozenFriday
+                                      ? 'bg-blue-600 text-white border-blue-600'
+                                      : 'bg-[#427d78] text-white border-[#427d78]'
+                                    : day.isFrozenFriday
+                                      ? 'bg-blue-50 text-blue-700 border-blue-300 hover:border-blue-500'
+                                      : 'bg-white text-gray-700 border-gray-300 hover:border-[#427d78]'
+                              }`}
+                            >
+                              {/* Date label - click to toggle */}
+                              <button
+                                type="button"
+                                onClick={() => !day.isClosed && handleDateClick(day.value)}
+                                disabled={day.isClosed}
+                                className="w-full text-center font-bold"
+                              >
+                                <div>{day.label}</div>
+                                {day.isFrozenFriday && (
+                                  <div className="text-[9px] font-normal opacity-80">Thu pickup</div>
+                                )}
+                              </button>
+                              
+                              {/* +/- controls when selected */}
+                              {isSelected && (
+                                <div className="flex items-center justify-center gap-1 mt-1 pt-1 border-t border-white/30">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); removeMealFromDate(day.value); }}
+                                    className="w-5 h-5 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center font-bold text-sm"
+                                  >
+                                    −
+                                  </button>
+                                  <span className="font-bold text-sm min-w-[16px] text-center">{mealCount}</span>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); addMealToDate(day.value); }}
+                                    className="w-5 h-5 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center font-bold text-sm"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                  
                   <p className="text-sm text-gray-500 mt-2 font-['Bitter',serif]">
-                    💡 Click date to select. Use +/− to add more meals per day. Closed Fri-Sun.
+                    💡 Click date to select. Use +/− to add more meals per day. <span className="text-blue-600">Blue Friday = frozen meal picked up Thursday.</span>
                   </p>
                 </div>
                 

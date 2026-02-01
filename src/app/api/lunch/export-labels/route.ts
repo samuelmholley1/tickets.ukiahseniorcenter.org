@@ -97,6 +97,57 @@ export async function GET(request: NextRequest) {
       Notes: record.fields['Notes'] as string || '',
     }));
 
+    // Fetch Weekly Delivery customers (auto-include Mon-Thu, + frozen Fri on Thu)
+    const targetDate = new Date(date + 'T12:00:00');
+    const dayOfWeek = targetDate.getDay(); // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri
+    const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 4; // Mon-Thu
+    const isThursday = dayOfWeek === 4;
+    
+    if (isWeekday && process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID) {
+      // Fetch all active weekly delivery customers
+      const weeklyFilter = `AND({Weekly Delivery}, {Remaining Meals} > 0)`;
+      const weeklyUrl = `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID}?filterByFormula=${encodeURIComponent(weeklyFilter)}`;
+      
+      const weeklyResponse = await fetch(weeklyUrl, {
+        headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}` },
+      });
+      
+      if (weeklyResponse.ok) {
+        const weeklyData = await weeklyResponse.json();
+        
+        for (const card of weeklyData.records) {
+          const cardName = card.fields['Name'] as string || 'Unknown';
+          const memberStatus = card.fields['Member Status'] as string || 'Member';
+          const deliveryAddress = card.fields['Delivery Address'] as string || '';
+          const includeFrozenFriday = card.fields['Include Frozen Friday'] as boolean || false;
+          
+          // Add regular daily delivery
+          reservations.push({
+            id: `weekly-${card.id}`,
+            Name: cardName,
+            Date: date,
+            'Meal Type': 'Delivery',
+            'Member Status': memberStatus,
+            'Payment Method': 'Prepaid Weekly',
+            Notes: deliveryAddress || '',
+          });
+          
+          // On Thursday, also add frozen Friday meal
+          if (isThursday && includeFrozenFriday) {
+            reservations.push({
+              id: `weekly-fri-${card.id}`,
+              Name: cardName,
+              Date: date,
+              'Meal Type': 'Delivery',
+              'Member Status': memberStatus,
+              'Payment Method': 'Prepaid Weekly',
+              Notes: `🧊 FROZEN FRI | ${deliveryAddress || ''}`.trim(),
+            });
+          }
+        }
+      }
+    }
+
     // Filter out Dine In - labels only needed for To Go and Delivery
     const labelReservations = reservations.filter(r => 
       r['Meal Type'] === 'To Go' || r['Meal Type'] === 'Delivery'

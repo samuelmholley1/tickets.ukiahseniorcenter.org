@@ -118,6 +118,64 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Fetch Weekly Delivery customers (auto-include Mon-Thu, + frozen Fri on Thu)
+    const targetDate = new Date(date + 'T12:00:00');
+    const dayOfWeek = targetDate.getDay(); // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri
+    const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 4; // Mon-Thu
+    const isThursday = dayOfWeek === 4;
+    
+    if (isWeekday && process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID) {
+      // Fetch all active weekly delivery customers
+      const weeklyFilter = `AND({Weekly Delivery}, {Remaining Meals} > 0)`;
+      const weeklyUrl = `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID}?filterByFormula=${encodeURIComponent(weeklyFilter)}`;
+      
+      const weeklyResponse = await fetch(weeklyUrl, {
+        headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}` },
+      });
+      
+      if (weeklyResponse.ok) {
+        const weeklyData = await weeklyResponse.json();
+        
+        for (const card of weeklyData.records) {
+          const cardName = card.fields['Name'] as string || 'Unknown';
+          const memberStatus = card.fields['Member Status'] as string || 'Member';
+          const deliveryAddress = card.fields['Delivery Address'] as string || '';
+          const includeFrozenFriday = card.fields['Include Frozen Friday'] as boolean || false;
+          const remainingMeals = card.fields['Remaining Meals'] as number || 0;
+          
+          // Add regular daily delivery
+          reservations.push({
+            id: `weekly-${card.id}`,
+            Name: cardName,
+            Date: date,
+            'Meal Type': 'Delivery',
+            'Member Status': memberStatus,
+            'Payment Method': 'Prepaid Weekly',
+            Notes: deliveryAddress ? `📍 ${deliveryAddress}` : '',
+            Amount: 0,
+            LunchCardId: card.id,
+            LunchCardRemaining: remainingMeals,
+          });
+          
+          // On Thursday, also add frozen Friday meal
+          if (isThursday && includeFrozenFriday) {
+            reservations.push({
+              id: `weekly-fri-${card.id}`,
+              Name: cardName,
+              Date: date,
+              'Meal Type': 'Delivery',
+              'Member Status': memberStatus,
+              'Payment Method': 'Prepaid Weekly',
+              Notes: `🧊 FROZEN FRIDAY | ${deliveryAddress ? `📍 ${deliveryAddress}` : ''}`.trim(),
+              Amount: 0,
+              LunchCardId: card.id,
+              LunchCardRemaining: remainingMeals,
+            });
+          }
+        }
+      }
+    }
+
     // Sort by last name alphabetically
     reservations.sort((a, b) => {
       const getLastName = (name: string) => {
@@ -268,13 +326,15 @@ export async function GET(request: NextRequest) {
                         payment === 'Check' ? 'Chk' : 
                         payment === 'Cash & Check' ? 'C&C' :
                         payment === 'Card (Zeffy)' ? 'Card' :
-                        payment === 'Comp Card' ? 'Comp' : payment.substring(0, 4);
+                        payment === 'Comp Card' ? 'Comp' :
+                        payment === 'Prepaid Weekly' ? 'PW' : payment.substring(0, 4);
       
-      // Add remaining meals info for lunch card payments
-      if (payment === 'Lunch Card' && res.LunchCardRemaining !== undefined) {
+      // Add remaining meals info for lunch card or prepaid weekly payments
+      if ((payment === 'Lunch Card' || payment === 'Prepaid Weekly') && res.LunchCardRemaining !== undefined) {
         const remaining = res.LunchCardRemaining;
         const warning = remaining <= 3 ? '!' : '';
-        payAbbrev = `LC:${remaining}${warning}`;
+        const prefix = payment === 'Prepaid Weekly' ? 'PW' : 'LC';
+        payAbbrev = `${prefix}:${remaining}${warning}`;
         // Highlight low-remaining cards with red text
         if (remaining <= 3) {
           doc.setTextColor(180, 0, 0);

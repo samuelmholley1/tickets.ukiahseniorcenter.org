@@ -1268,9 +1268,9 @@ export default function LunchPage() {
                       >
                         {dayName}
                         {idx === 4 && (
-                          <div className="text-blue-600 leading-tight">
-                            <span className="font-bold text-xs">THURSDAY PICKUP</span><br/>
-                            <span className="font-normal text-[8px] text-blue-400">Chef&apos;s Choice</span>
+                          <div className="leading-tight">
+                            <span className="font-bold text-blue-600" style={{ fontSize: '11px' }}>THURSDAY PICKUP</span><br/>
+                            <span className="font-normal text-blue-400" style={{ fontSize: '7px' }}>Chef&apos;s Choice</span>
                           </div>
                         )}
                       </div>

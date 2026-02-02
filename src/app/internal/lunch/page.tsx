@@ -1342,8 +1342,8 @@ export default function LunchPage() {
                               >
                                 {day.isFrozenFriday ? (
                                   <>
-                                    <div style={{ fontSize: isSelected ? '6px' : '8px', fontWeight: 'normal', opacity: 0.7, lineHeight: 1 }}>Chef&apos;s Choice</div>
                                     <div style={{ fontSize: isSelected ? '9px' : '11px', fontWeight: 'bold', lineHeight: 1.1 }}>THURSDAY PICKUP</div>
+                                    <div style={{ fontSize: isSelected ? '7px' : '9px', fontWeight: 'normal', opacity: 0.7, lineHeight: 1 }}>Chef&apos;s Choice</div>
                                   </>
                                 ) : (
                                   <div style={{ fontSize: isSelected ? '12px' : '16px', fontWeight: 'bold', lineHeight: 1 }}>{day.label}</div>

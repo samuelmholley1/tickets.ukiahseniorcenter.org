@@ -169,6 +169,9 @@ export default function LunchPage() {
   const [isSticky, setIsSticky] = useState(false);
   const headerRef = useRef<HTMLDivElement>(null);
   const transactionSectionRef = useRef<HTMLDivElement>(null);
+  
+  // Track last auto-filled customer name for meal names
+  const lastAutoFilledNameRef = useRef('');
 
   // Customer info
   const [customer, setCustomer] = useState<CustomerInfo>({
@@ -438,17 +441,20 @@ export default function LunchPage() {
   useEffect(() => {
     const customerName = `${customer.firstName} ${customer.lastName}`.trim();
     if (customerName) {
-      // Update any empty meal names with customer name
+      const lastAutoFilled = lastAutoFilledNameRef.current;
+      // Update meal names that are empty OR match the previous auto-filled value
+      // (meaning they were auto-filled, not manually edited by user)
       setDateMeals(prev => {
         const updated: DateMeals = {};
         for (const [date, meals] of Object.entries(prev)) {
           updated[date] = meals.map(meal => ({
             ...meal,
-            name: meal.name || customerName
+            name: (meal.name === '' || meal.name === lastAutoFilled) ? customerName : meal.name
           }));
         }
         return updated;
       });
+      lastAutoFilledNameRef.current = customerName;
     }
   }, [customer.firstName, customer.lastName]);
   
@@ -1007,14 +1013,44 @@ export default function LunchPage() {
                       key={card.id}
                       className="w-full text-left p-3 rounded-lg border-2 bg-white border-amber-200"
                     >
-                      <div className="font-['Jost',sans-serif] font-bold text-gray-800">{card.name}</div>
-                      <div className="font-['Bitter',serif] text-sm text-gray-600">
-                        📞 {card.phone} • {card.cardType} • {card.memberStatus}
-                        {card.mealType && <span className="ml-1 font-semibold text-blue-600">• {card.mealType}</span>}
-                      </div>
-                      <div className="font-['Jost',sans-serif] font-bold text-lg mt-1">
-                        <span className="text-green-600">{card.remainingMeals} meals remaining</span>
-                        <span className="text-gray-400 text-sm ml-2">/ {card.totalMeals} total</span>
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className="font-['Jost',sans-serif] font-bold text-gray-800">{card.name}</div>
+                          <div className="font-['Bitter',serif] text-sm text-gray-600">
+                            📞 {card.phone} • {card.cardType} • {card.memberStatus}
+                            {card.mealType && <span className="ml-1 font-semibold text-blue-600">• {card.mealType}</span>}
+                          </div>
+                          <div className="font-['Jost',sans-serif] font-bold text-lg mt-1">
+                            <span className={card.remainingMeals > 0 ? 'text-green-600' : 'text-red-600'}>{card.remainingMeals} meals remaining</span>
+                            <span className="text-gray-400 text-sm ml-2">/ {card.totalMeals} total</span>
+                          </div>
+                        </div>
+                        {card.remainingMeals > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              // Parse name into first/last
+                              const nameParts = card.name.split(' ');
+                              const firstName = nameParts[0] || '';
+                              const lastName = nameParts.slice(1).join(' ') || '';
+                              // Auto-populate everything
+                              setCustomer(prev => ({
+                                ...prev,
+                                firstName,
+                                lastName,
+                                phone: card.phone || prev.phone,
+                              }));
+                              setSelectedLunchCard(card);
+                              setAutoDetectedCard(card);
+                              setPaymentMethod('lunchCard');
+                              setLunchCardSearch('');
+                              setAvailableLunchCards([]);
+                            }}
+                            className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white font-['Jost',sans-serif] font-bold rounded-lg text-sm whitespace-nowrap"
+                          >
+                            Use This Card
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}

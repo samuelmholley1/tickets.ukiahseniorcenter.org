@@ -1298,6 +1298,69 @@ export default function LunchPage() {
               </div>
             )}
 
+            {/* Contact Database Lookup */}
+            <div className="card" style={{ marginBottom: 'var(--space-4)', background: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)', borderLeft: '4px solid #9333ea' }}>
+              <h2 className="font-['Jost',sans-serif] font-bold text-[#7c3aed] text-lg" style={{ marginBottom: 'var(--space-2)' }}>
+                🔍 Contact Database Lookup
+              </h2>
+              <p className="font-['Bitter',serif] text-gray-700 text-sm" style={{ marginBottom: 'var(--space-2)' }}>
+                Search all member and customer records. Select to auto-populate.
+              </p>
+              <input
+                type="text"
+                placeholder="Search by name, email, or phone..."
+                value={contactSearch}
+                onChange={(e) => setContactSearch(e.target.value)}
+                className="w-full px-4 py-3 border-2 border-purple-300 rounded-lg focus:border-purple-500 focus:outline-none font-['Bitter',serif]"
+                style={{ marginBottom: 'var(--space-2)' }}
+              />
+              {isSearchingContacts && <p className="text-purple-700 font-['Bitter',serif]">Searching...</p>}
+              {availableContacts.length > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 'var(--space-2)' }}>
+                  {availableContacts.map((contact) => (
+                    <div key={contact.id} className="border-2 border-purple-300 rounded-lg p-3 bg-white">
+                      <div style={{ marginBottom: 'var(--space-1)' }}>
+                        <p className="font-['Jost',sans-serif] font-bold" style={{ fontSize: '1.05rem' }}>
+                          {contact.firstName} {contact.lastName}
+                        </p>
+                        {contact.memberStatus && (
+                          <p className="text-xs font-bold" style={{ color: contact.memberStatus === 'Member' ? '#16a34a' : '#ea580c', marginTop: '2px' }}>
+                            {contact.memberStatus}
+                          </p>
+                        )}
+                      </div>
+                      {contact.email && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', padding: '4px', background: '#f3f4f6', borderRadius: '4px', fontSize: '0.875rem' }}>
+                          <span className="font-['Bitter',serif] text-gray-700">{contact.email}</span>
+                          <button type="button" onClick={() => copyToClipboard(contact.email)} className="text-purple-600 hover:text-purple-800 text-xs px-2 py-1">📋</button>
+                        </div>
+                      )}
+                      {contact.phone && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-1)', padding: '4px', background: '#f3f4f6', borderRadius: '4px', fontSize: '0.875rem' }}>
+                          <span className="font-['Bitter',serif] text-gray-700">{contact.phone}</span>
+                          <button type="button" onClick={() => copyToClipboard(contact.phone)} className="text-purple-600 hover:text-purple-800 text-xs px-2 py-1">📋</button>
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomer({ firstName: contact.firstName, lastName: contact.lastName, email: contact.email || '', phone: contact.phone || '' });
+                          setContactSearch('');
+                          setAvailableContacts([]);
+                        }}
+                        className="w-full mt-2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-3 rounded-lg font-['Jost',sans-serif] text-sm"
+                      >
+                        ✓ Use This Contact
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {contactSearch.length >= 2 && availableContacts.length === 0 && !isSearchingContacts && (
+                <p className="text-red-600 font-['Bitter',serif]">No contacts found.</p>
+              )}
+            </div>
+
             {/* Customer Information */}
             <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
               <div className="flex items-center justify-between flex-wrap gap-2" style={{ marginBottom: 'var(--space-3)' }}>

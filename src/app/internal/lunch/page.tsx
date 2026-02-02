@@ -1335,7 +1335,7 @@ export default function LunchPage() {
                                 type="button"
                                 onClick={() => !isDisabled && handleDateClick(day.value, day.isFrozenFriday)}
                                 disabled={isDisabled}
-                                className={`w-full text-center font-bold flex-1 flex flex-col ${isSelected ? 'justify-start' : 'justify-center'}`}
+                                className={`w-full text-center font-bold flex-1 flex flex-col ${isSelected ? 'justify-end' : 'justify-center'}`}
                                 style={{ padding: '0' }}
                               >
                                 {day.isFrozenFriday ? (
@@ -1353,7 +1353,7 @@ export default function LunchPage() {
                               
                               {/* +/- controls when selected */}
                               {isSelected && (
-                                <div className="flex items-center justify-center gap-0.5 border-t border-white/30" style={{ paddingTop: '2px', paddingBottom: '4px' }}>
+                                <div className="flex items-center justify-center gap-0.5 border-t border-white/30" style={{ paddingTop: '1px', paddingBottom: '3px' }}>
                                   <button
                                     type="button"
                                     onClick={(e) => { e.stopPropagation(); removeMealFromDate(day.value); }}

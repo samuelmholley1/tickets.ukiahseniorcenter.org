@@ -1335,7 +1335,7 @@ export default function LunchPage() {
                                 type="button"
                                 onClick={() => !isDisabled && handleDateClick(day.value, day.isFrozenFriday)}
                                 disabled={isDisabled}
-                                className={`w-full text-center font-bold flex-1 flex flex-col ${isSelected ? 'justify-end' : 'justify-center'}`}
+                                className={`w-full text-center font-bold flex flex-col justify-center ${isSelected ? '' : 'flex-1'}`}
                                 style={{ padding: '0' }}
                               >
                                 {day.isFrozenFriday ? (

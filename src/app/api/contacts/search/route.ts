@@ -13,6 +13,15 @@ const TABLES = {
   lunchCards: process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID || 'tblOBnt2ZatrSugbj',
 };
 
+interface AirtableRecord {
+  id: string;
+  fields: Record<string, unknown>;
+}
+
+interface AirtableResponse {
+  records?: AirtableRecord[];
+}
+
 interface Contact {
   id: string;
   firstName: string;
@@ -20,7 +29,7 @@ interface Contact {
   email: string;
   phone: string;
   memberStatus?: string;
-  source: string; // Which table it came from
+  source: string;
 }
 
 export async function GET(request: NextRequest) {
@@ -46,14 +55,7 @@ export async function GET(request: NextRequest) {
           FIND("${searchLower}", LOWER({Phone}))
         )`;
 
-        const response = await fetch(`${AIRTABLE_API_BASE}/${BASE_ID}/${tableId}`, {
-          headers: { Authorization: `Bearer ${API_KEY}` },
-          // @ts-ignore - can't use FormData with params
-          method: 'GET',
-          ...(formula && { body: JSON.stringify({ filterByFormula: formula }) })
-        });
-
-        // Instead, build URL with encoded formula
+        // Build URL with encoded formula
         const encodedFormula = encodeURIComponent(formula);
         const urlWithFormula = `${AIRTABLE_API_BASE}/${BASE_ID}/${tableId}?filterByFormula=${encodedFormula}`;
 
@@ -66,14 +68,15 @@ export async function GET(request: NextRequest) {
           return;
         }
 
-        const data = await formResponse.json();
+        const data = (await formResponse.json()) as AirtableResponse;
         
-        if (data.records) {
-          data.records.forEach((record: any) => {
-            const firstName = record.fields['First Name'] || '';
-            const lastName = record.fields['Last Name'] || '';
-            const email = record.fields['Email'] || '';
-            const phone = record.fields['Phone'] || '';
+        if (data.records && Array.isArray(data.records)) {
+          data.records.forEach((record: AirtableRecord) => {
+            const fields = record.fields as Record<string, unknown>;
+            const firstName = (fields['First Name'] as string) || '';
+            const lastName = (fields['Last Name'] as string) || '';
+            const email = (fields['Email'] as string) || '';
+            const phone = (fields['Phone'] as string) || '';
             
             // Use email as unique key to deduplicate
             const key = `${firstName.toLowerCase()}_${lastName.toLowerCase()}_${email.toLowerCase()}`;
@@ -85,7 +88,7 @@ export async function GET(request: NextRequest) {
                 lastName,
                 email,
                 phone,
-                memberStatus: determineMemberStatus(record.fields, source),
+                memberStatus: determineMemberStatus(fields, source),
                 source: source,
               });
             }
@@ -114,16 +117,19 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function determineMemberStatus(fields: any, source: string): string {
+function determineMemberStatus(fields: Record<string, unknown>, source: string): string {
   // Check for explicit membership status field
   if (fields['Member Status']) {
-    return fields['Member Status'];
+    return fields['Member Status'] as string;
   }
   
   // For event tables, try to infer from pricing or member field
-  if (fields['Member Tickets'] !== undefined && fields['Non-Member Tickets'] !== undefined) {
-    if (fields['Member Tickets'] > 0) return 'Member';
-    if (fields['Non-Member Tickets'] > 0) return 'Non-Member';
+  const memberTickets = fields['Member Tickets'] as number | undefined;
+  const nonMemberTickets = fields['Non-Member Tickets'] as number | undefined;
+  
+  if (memberTickets !== undefined && nonMemberTickets !== undefined) {
+    if (memberTickets > 0) return 'Member';
+    if (nonMemberTickets > 0) return 'Non-Member';
   }
   
   // Default based on source

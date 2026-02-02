@@ -247,15 +247,25 @@ export default function UnifiedSalesPage() {
                 {availableContacts.map((contact) => (
                   <div key={contact.id} className="border-2 border-purple-300 rounded-lg p-3 bg-white">
                     <div style={{ marginBottom: 'var(--space-1)' }}>
-                      <p className="font-['Jost',sans-serif] font-bold" style={{ fontSize: '1.05rem' }}>
-                        {contact.firstName} {contact.lastName}
-                      </p>
-                      {contact.memberStatus && (
-                        <p className="text-xs font-bold" style={{ color: contact.memberStatus === 'Member' ? '#16a34a' : '#ea580c', marginTop: '2px' }}>
-                          {contact.memberStatus}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                        <p className="font-['Jost',sans-serif] font-bold" style={{ fontSize: '1.05rem' }}>
+                          {contact.firstName} {contact.lastName}
                         </p>
+                        {contact.memberStatus && contact.memberStatus !== 'Unknown' && (
+                          <span 
+                            className="text-xs font-bold px-2 py-1 rounded-full flex-shrink-0" 
+                            style={{ 
+                              background: contact.memberStatus === 'Member' ? '#dcfce7' : '#ffedd5',
+                              color: contact.memberStatus === 'Member' ? '#166534' : '#c2410c',
+                            }}
+                          >
+                            {contact.memberStatus === 'Member' ? '✓ MEMBER' : 'NON-MEMBER'}
+                          </span>
+                        )}
+                      </div>
+                      {contact.source && (
+                        <p className="text-xs text-gray-500 mt-1">From: {contact.source}</p>
                       )}
-                      <p className="text-xs text-gray-500 mt-1">Source: {contact.source}</p>
                     </div>
                     {contact.email && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', padding: '4px', background: '#f3f4f6', borderRadius: '4px', fontSize: '0.875rem' }}>

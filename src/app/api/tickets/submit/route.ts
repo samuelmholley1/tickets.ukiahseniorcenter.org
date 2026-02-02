@@ -351,6 +351,47 @@ export async function POST(request: NextRequest) {
       // Don't fail the whole transaction if email fails
     }
 
+    // Add to Contacts table (if not already exists)
+    try {
+      console.log('[submit] Adding/checking contact in Contacts table...');
+      
+      // Determine member status from ticket purchase
+      let memberStatus = 'Unknown';
+      if (quantities.valentinesMember > 0) {
+        memberStatus = 'Member';
+      } else if (quantities.valentinesNonMember > 0) {
+        memberStatus = 'Non-Member';
+      }
+      
+      // Determine source from which event tickets were purchased
+      const sources = [];
+      if (valentinesTotal > 0) sources.push("Valentine's 2026");
+      if (speakeasyTotal > 0) sources.push('Speakeasy 2026');
+      
+      const contactResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/contacts/add`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: customer.firstName,
+          lastName: customer.lastName,
+          email: customer.email,
+          phone: customer.phone,
+          memberStatus,
+          source: sources.join(', '),
+        }),
+      });
+      
+      if (contactResponse.ok) {
+        const contactData = await contactResponse.json();
+        console.log('[submit] Contact processed:', contactData.exists ? 'already exists' : 'created new');
+      } else {
+        console.error('[submit] Contact add failed:', await contactResponse.text());
+      }
+    } catch (contactError) {
+      console.error('[submit] Contact add error:', contactError);
+      // Don't fail the whole transaction if contact add fails
+    }
+
     return NextResponse.json({ 
       success: true, 
       transactionId,

@@ -1353,7 +1353,7 @@ export default function LunchPage() {
                               
                               {/* +/- controls when selected */}
                               {isSelected && (
-                                <div className="flex items-center justify-center gap-0.5 border-t border-white/30" style={{ paddingTop: '1px', paddingBottom: '3px' }}>
+                                <div className="flex items-center justify-center gap-0.5" style={{ paddingBottom: '2px' }}>
                                   <button
                                     type="button"
                                     onClick={(e) => { e.stopPropagation(); removeMealFromDate(day.value); }}

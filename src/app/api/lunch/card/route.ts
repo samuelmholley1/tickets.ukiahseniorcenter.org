@@ -229,11 +229,23 @@ export async function GET(request: NextRequest) {
     let filterFormula = '';
     if (search) {
       // Sanitize input to prevent formula injection - escape quotes and backslashes
-      const sanitizedSearch = search.replace(/\\/g, '\\\\').replace(/"/g, '\\"').toLowerCase();
-      // Search in both Name and Phone fields, only cards with remaining meals
-      filterFormula = `?filterByFormula=${encodeURIComponent(
-        `AND({Remaining Meals}>0, OR(SEARCH("${sanitizedSearch}", LOWER({Name})), SEARCH("${sanitizedSearch}", {Phone})))`
-      )}`;
+      const sanitizedSearch = search.replace(/\\/g, '\\\\').replace(/"/g, '\\"').toLowerCase().trim();
+      
+      // Split into words and require ALL words to match (in name OR phone)
+      const words = sanitizedSearch.split(/\s+/).filter(w => w.length > 0);
+      
+      if (words.length === 1) {
+        // Single word: simple search
+        filterFormula = `?filterByFormula=${encodeURIComponent(
+          `AND({Remaining Meals}>0, OR(SEARCH("${words[0]}", LOWER({Name})), SEARCH("${words[0]}", {Phone})))`
+        )}`;
+      } else {
+        // Multiple words: ALL words must appear in Name
+        const wordChecks = words.map(w => `SEARCH("${w}", LOWER({Name}))`).join(', ');
+        filterFormula = `?filterByFormula=${encodeURIComponent(
+          `AND({Remaining Meals}>0, ${wordChecks})`
+        )}`;
+      }
     } else {
       // Just get cards with remaining meals
       filterFormula = `?filterByFormula=${encodeURIComponent(`{Remaining Meals}>0`)}`;

@@ -1926,7 +1926,7 @@ export default function LunchPage() {
                 </div>
                 <div>
                   <div className="text-white/80 font-['Bitter',serif] text-sm" style={{ marginBottom: '4px' }}>Details</div>
-                  <div className="text-white font-['Jost',sans-serif] font-bold text-lg">
+                  <div className="text-white font-['Jost',sans-serif] font-bold text-lg whitespace-nowrap">
                     {transactionType === 'individual' 
                       ? `${isMember === 'member' ? 'Member' : 'Non-Member'} - ${mealType === 'dineIn' ? 'Dine In' : mealType === 'pickup' ? 'To Go' : 'Delivery'}`
                       : `${cardMemberType === 'member' ? 'Member' : 'Non-Member'} - ${cardMealType === 'dineIn' ? 'Dine In' : cardMealType === 'pickup' ? 'Pickup' : 'Delivery'}`

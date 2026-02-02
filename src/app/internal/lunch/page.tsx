@@ -1295,7 +1295,6 @@ export default function LunchPage() {
                                       ? 'bg-blue-50 text-blue-700 border-blue-300 hover:border-blue-500'
                                       : 'bg-white text-gray-700 border-gray-300 hover:border-[#427d78]'
                               }`}
-                              style={{ minHeight: '52px' }}
                             >
                               {/* Date label - click to toggle */}
                               <button
@@ -1306,11 +1305,11 @@ export default function LunchPage() {
                               >
                                 {day.isFrozenFriday ? (
                                   <>
-                                    <div style={{ fontSize: '12px', fontWeight: 'bold' }}>THU PICKUP</div>
-                                    <div style={{ fontSize: '9px', fontWeight: 'normal', opacity: 0.7 }}>Chef&apos;s Choice</div>
+                                    <div style={{ fontSize: isSelected ? '7px' : '9px', fontWeight: 'normal', opacity: 0.7 }}>Chef&apos;s Choice</div>
+                                    <div style={{ fontSize: isSelected ? '10px' : '12px', fontWeight: 'bold' }}>THURSDAY PICKUP</div>
                                   </>
                                 ) : (
-                                  <div>{day.label}</div>
+                                  <div style={{ fontSize: isSelected ? '10px' : '12px' }}>{day.label}</div>
                                 )}
                                 {day.isPastDeadline && !day.isClosed && (
                                   <div className="text-[9px] font-normal">Deadline passed</div>
@@ -1319,7 +1318,7 @@ export default function LunchPage() {
                               
                               {/* +/- controls when selected */}
                               {isSelected && (
-                                <div className="flex items-center justify-center gap-0.5 mt-0.5 pt-0.5 border-t border-white/30">
+                                <div className="flex items-center justify-center gap-0.5 pt-0.5 border-t border-white/30">
                                   <button
                                     type="button"
                                     onClick={(e) => { e.stopPropagation(); removeMealFromDate(day.value); }}

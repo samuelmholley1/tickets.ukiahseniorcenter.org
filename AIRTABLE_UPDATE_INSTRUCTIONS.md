@@ -1,5 +1,11 @@
 # MANUAL AIRTABLE UPDATE REQUIRED
 
+> ⚠️ **AI CRITICAL - PATH VERIFICATION REQUIRED:**
+> When user specifies a route (e.g., "/internal" vs "/internal/lunch"), **STOP and VERIFY the exact file path** before editing:
+> - `/internal` → `src/app/internal/page.tsx` (Ticket Sales: Valentine's, Speakeasy)
+> - `/internal/lunch` → `src/app/internal/lunch/page.tsx` (Lunch Reservations)
+> **DO NOT ASSUME** based on recent context. The user's explicit route is the source of truth.
+
 ## Before running the update script, you must add the new payment options to Airtable:
 
 ### Steps to Update Airtable Payment Method Field:

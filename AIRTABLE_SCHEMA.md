@@ -2,6 +2,12 @@
 
 **Last Updated:** January 13, 2026
 
+> ⚠️ **AI CRITICAL - PATH VERIFICATION REQUIRED:**
+> When user specifies a route (e.g., "/internal" vs "/internal/lunch"), **STOP and VERIFY the exact file path** before editing:
+> - `/internal` → `src/app/internal/page.tsx` (Ticket Sales: Valentine's, Speakeasy)
+> - `/internal/lunch` → `src/app/internal/lunch/page.tsx` (Lunch Reservations)
+> **DO NOT ASSUME** based on recent context. The user's explicit route is the source of truth.
+
 > **AIRTABLE MANAGEMENT:** The AI assistant (GitHub Copilot) has full API access to create, edit, and manage all Airtable tables and fields. Do NOT manually create tables - ask the AI to do it.
 
 > **CRITICAL:** `Amount Paid` = ticket price ONLY. `Donation Amount` is a SEPARATE field for additional donations.  

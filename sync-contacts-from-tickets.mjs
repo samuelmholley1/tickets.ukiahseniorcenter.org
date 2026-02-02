@@ -14,7 +14,7 @@ const TABLES = {
   speakeasy: { id: 'tblMmwD5JEE5iCfLl', name: 'Speakeasy 2026' },
   nye: { id: 'tbl5OyCybJCfrebOb', name: 'NYE 2025' },
   christmas: { id: 'tbljtMTsXvSP3MDt4', name: 'Christmas 2025' },
-  lunchCards: { id: 'tblOBnt2ZatrSugbj', name: 'Lunch Cards' },
+  // Lunch Cards removed - test data only
 };
 
 async function fetchAllRecords(tableId) {

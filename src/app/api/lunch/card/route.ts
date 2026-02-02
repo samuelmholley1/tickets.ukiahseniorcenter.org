@@ -43,6 +43,7 @@ interface LunchCardRequest {
   checkNumber?: string;
   compCardNumber?: string;
   staff: string;
+  contactId?: string;
 }
 
 // Map our field names to Airtable field names
@@ -86,7 +87,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body: LunchCardRequest = await request.json();
-    const { name, phone, cardType, mealType, memberStatus, paymentMethod, checkNumber, staff } = body;
+    const { name, phone, cardType, mealType, memberStatus, paymentMethod, checkNumber, staff, contactId } = body;
 
     // Input validation
     if (!name?.trim()) {
@@ -131,6 +132,7 @@ export async function POST(request: NextRequest) {
         'Payment Method': PAYMENT_METHOD_MAP[paymentMethod],
         'Purchase Date': new Date().toISOString().split('T')[0], // Just the date
         'Staff': staff.trim().substring(0, 50),
+        ...(contactId ? { 'Contact': [contactId] } : {}),
       },
     };
 

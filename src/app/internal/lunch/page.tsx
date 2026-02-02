@@ -162,6 +162,17 @@ interface NewCardForm {
   cardType: MealCount;
   mealType: MealType;
   memberStatus: MembershipType;
+  contactId?: string;
+}
+
+interface Contact {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+  memberStatus?: string;
+  source?: string;
 }
 
 export default function LunchPage() {
@@ -406,11 +417,47 @@ export default function LunchPage() {
     mealType: 'dineIn',
     memberStatus: 'member',
   });
+  
+  // Contact Lookup State
+  const [contactSearch, setContactSearch] = useState('');
+  const [availableContacts, setAvailableContacts] = useState<Contact[]>([]);
+  const [isSearchingContacts, setIsSearchingContacts] = useState(false);
+
   const [isAddingCard, setIsAddingCard] = useState(false);
   
   // Transaction confirmation
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [transactionLog, setTransactionLog] = useState<string[]>([]);
+
+  // Search Contacts Effect
+  useEffect(() => {
+    const searchContacts = async () => {
+      if (contactSearch.length < 2) {
+        setAvailableContacts([]);
+        setIsSearchingContacts(false);
+        return;
+      }
+
+      setIsSearchingContacts(true);
+      try {
+        const response = await fetch(`/api/contacts/search?q=${encodeURIComponent(contactSearch)}`);
+        if (response.ok) {
+          const data = await response.json();
+          setAvailableContacts(data.contacts || []);
+        } else {
+          setAvailableContacts([]);
+        }
+      } catch (error) {
+        console.error('Error searching contacts:', error);
+        setAvailableContacts([]);
+      } finally {
+        setIsSearchingContacts(false);
+      }
+    };
+
+    const timeoutId = setTimeout(searchContacts, 500);
+    return () => clearTimeout(timeoutId);
+  }, [contactSearch]);
 
   // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -597,6 +644,7 @@ export default function LunchPage() {
           memberStatus: newCardForm.memberStatus,
           paymentMethod: 'cash', // Paper cards already paid
           staff: staffInitials || 'SYS',
+          contactId: newCardForm.contactId,
         }),
       });
       
@@ -1071,6 +1119,49 @@ export default function LunchPage() {
                   </p>
                   
                   <div className="space-y-4">
+                    <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+                      <label className="block font-['Bitter',serif] text-purple-900 font-bold mb-1">
+                        🔍 Search Contact
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Type name, email, or phone..."
+                        value={contactSearch}
+                        onChange={(e) => setContactSearch(e.target.value)}
+                        className="w-full px-3 py-2 border-2 border-purple-300 rounded-lg focus:border-purple-500 focus:outline-none mb-2"
+                      />
+                      {isSearchingContacts && <p className="text-xs text-purple-600">Searching...</p>}
+                      
+                      {availableContacts.length > 0 && (
+                        <div className="bg-white border border-purple-200 rounded-lg max-h-40 overflow-y-auto mb-2 shadow-sm">
+                          {availableContacts.map(c => (
+                            <button
+                              key={c.id}
+                              type="button"
+                              className="w-full text-left p-2 hover:bg-purple-50 border-b last:border-0 transition-colors"
+                              onClick={() => {
+                                setNewCardForm(prev => ({
+                                  ...prev,
+                                  name: `${c.firstName} ${c.lastName}`,
+                                  phone: c.phone || prev.phone,
+                                  memberStatus: c.memberStatus === 'Member' ? 'member' : 'nonMember',
+                                  contactId: c.id
+                                }));
+                                setContactSearch('');
+                                setAvailableContacts([]);
+                              }}
+                            >
+                              <div className="font-bold text-sm text-gray-800">{c.firstName} {c.lastName}</div>
+                              <div className="text-xs text-gray-500 flex justify-between">
+                                <span>{c.memberStatus}</span>
+                                <span>{c.phone}</span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
                     <div>
                       <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-1">Customer Name *</label>
                       <input

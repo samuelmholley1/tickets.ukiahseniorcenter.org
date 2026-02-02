@@ -1284,7 +1284,7 @@ export default function LunchPage() {
                           return (
                             <div
                               key={day.value + (day.isFrozenFriday ? '-frozen' : '')}
-                              className={`p-2 rounded-lg font-['Jost',sans-serif] text-xs transition-all border-2 ${
+                              className={`p-1 rounded-lg font-['Jost',sans-serif] text-xs transition-all border-2 ${
                                 isDisabled 
                                   ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed opacity-50'
                                   : isSelected
@@ -1295,6 +1295,7 @@ export default function LunchPage() {
                                       ? 'bg-blue-50 text-blue-700 border-blue-300 hover:border-blue-500'
                                       : 'bg-white text-gray-700 border-gray-300 hover:border-[#427d78]'
                               }`}
+                              style={{ minHeight: '52px' }}
                             >
                               {/* Date label - click to toggle */}
                               <button
@@ -1307,9 +1308,6 @@ export default function LunchPage() {
                                   <>
                                     <div style={{ fontSize: '12px', fontWeight: 'bold' }}>THU PICKUP</div>
                                     <div style={{ fontSize: '9px', fontWeight: 'normal', opacity: 0.7 }}>Chef&apos;s Choice</div>
-                                    <div style={{ fontSize: '10px', fontWeight: 'bold', marginTop: '2px' }}>
-                                      {new Date(day.displayDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                    </div>
                                   </>
                                 ) : (
                                   <div>{day.label}</div>
@@ -1321,19 +1319,19 @@ export default function LunchPage() {
                               
                               {/* +/- controls when selected */}
                               {isSelected && (
-                                <div className="flex items-center justify-center gap-1 mt-1 pt-1 border-t border-white/30">
+                                <div className="flex items-center justify-center gap-0.5 mt-0.5 pt-0.5 border-t border-white/30">
                                   <button
                                     type="button"
                                     onClick={(e) => { e.stopPropagation(); removeMealFromDate(day.value); }}
-                                    className="w-5 h-5 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center font-bold text-sm"
+                                    className="w-4 h-4 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center font-bold text-xs"
                                   >
                                     −
                                   </button>
-                                  <span className="font-bold text-sm min-w-[16px] text-center">{mealCount}</span>
+                                  <span className="font-bold text-xs min-w-[12px] text-center">{mealCount}</span>
                                   <button
                                     type="button"
                                     onClick={(e) => { e.stopPropagation(); addMealToDate(day.value, day.isFrozenFriday); }}
-                                    className="w-5 h-5 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center font-bold text-sm"
+                                    className="w-4 h-4 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center font-bold text-xs"
                                   >
                                     +
                                   </button>

@@ -87,7 +87,49 @@ export async function POST(request: NextRequest) {
     }
 
     const body: LunchCardRequest = await request.json();
-    const { name, phone, cardType, mealType, memberStatus, paymentMethod, checkNumber, staff, contactId } = body;
+    const { name, phone, cardType, mealType, memberStatus, paymentMethod, checkNumber, staff, contactId: providedContactId } = body;
+    let contactId = providedContactId;
+
+    // Contact Sync Logic
+    const CONTACTS_TABLE_ID = process.env.AIRTABLE_CONTACTS_TABLE_ID || 'tbl3PQZzXGpT991dH';
+    if (!contactId && name) {
+      try {
+          const searchFormula = `{Name} = '${name.replace(/'/g, "\\'")}'`;
+          const searchRes = await fetch(`${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${CONTACTS_TABLE_ID}?filterByFormula=${encodeURIComponent(searchFormula)}&maxRecords=1`, {
+              headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}` }
+          });
+          if (searchRes.ok) {
+              const searchData = await searchRes.json();
+              if (searchData.records && searchData.records.length > 0) {
+                  contactId = searchData.records[0].id;
+              } else {
+                  const parts = name.trim().split(' ');
+                  const res = await fetch(`${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${CONTACTS_TABLE_ID}`, {
+                      method: 'POST',
+                      headers: {
+                          'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
+                          'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({ records: [{ fields: {
+                          'Name': name,
+                          'First Name': parts[0],
+                          'Last Name': parts.slice(1).join(' '),
+                          'Phone': phone, // Also save phone to contact
+                          'Contact Type': memberStatus === 'member' ? 'Member' : 'Other',
+                          'Source': 'Internal',
+                          'Notes': 'Auto-created from Lunch Card creation'
+                      }}]})
+                  });
+                  if (res.ok) {
+                      const d = await res.json();
+                      if (d.records && d.records.length > 0) contactId = d.records[0].id;
+                  }
+              }
+          }
+      } catch (e) {
+          console.error('Contact Sync Error', e);
+      }
+    }
 
     // Input validation
     if (!name?.trim()) {

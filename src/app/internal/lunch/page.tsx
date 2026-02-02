@@ -885,6 +885,15 @@ export default function LunchPage() {
             <p className="font-['Bitter',serif] text-[#666]" style={{ lineHeight: '1.6', fontSize: 'clamp(0.875rem, 2.5vw, 1.125rem)' }}>
               Staff use only - Record lunch purchases and lunch card sales
             </p>
+            <div className="flex justify-center gap-4 mt-4">
+              <a 
+                href="/internal/lunch/reservations" 
+                target="_blank"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-800 font-['Jost',sans-serif] font-bold rounded-lg transition-colors text-sm"
+              >
+                📅 View Daily Reservations List
+              </a>
+            </div>
           </div>
           
           {/* Export Section */}

@@ -17,34 +17,56 @@ interface Reservation {
   'Amount'?: number;
 }
 
-export default function ReservationsPage() {
-  const [currentDate, setCurrentDate] = useState<string>(new Date().toISOString().split('T')[0]);
+export default function LunchList() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
+
+
+  // Fix 1: Use local date string instead of UTC
+  const [currentDate, setCurrentDate] = useState<string>(() => {
+    // Return YYYY-MM-DD in local time
+    const local = new Date();
+    const offset = local.getTimezoneOffset() * 60000;
+    const localISOTime = new Date(local.getTime() - offset).toISOString();
+    return localISOTime.split('T')[0];
+  });
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    const fetchReservations = async () => {
+      setIsLoading(true);
+      try {
+        const res = await fetch(`/api/lunch/reservation?date=${currentDate}`);
+        if (res.ok) {
+          const data = await res.json();
+          setReservations(data.reservations || []);
+        }
+      } catch (error) {
+        console.error('Error fetching reservations:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     fetchReservations();
   }, [currentDate]);
 
-  const fetchReservations = async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch(`/api/lunch/reservation?date=${currentDate}`);
-      if (res.ok) {
-        const data = await res.json();
-        setReservations(data.reservations || []);
-      }
-    } catch (error) {
-      console.error('Error fetching reservations:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const changeDate = (days: number) => {
     const newDate = new Date(currentDate);
-    newDate.setDate(newDate.getDate() + days);
-    setCurrentDate(newDate.toISOString().split('T')[0]);
+    // Add timezone offset to prevent UTC conversion weirdness when date crosses boundary
+    // Actually, simply manipulating the day part of the string or using local date is safer
+    // But since input type="date" uses YYYY-MM-DD, let's stick to string maniupulation or careful Date obj
+    newDate.setDate(newDate.getDate() + (days + 1)); // Fix: UTC conversion swallows a day if not careful? 
+    // Wait, "2026-02-02" parsed as UTC is midnight. setDate(+1) -> "2026-02-03T00:00:00.000Z". split('T')[0] works.
+    // BUT new Date("2026-02-02") is treated as UTC usually.
+    // Let's use a simpler approach.
+    const dateObj = new Date(currentDate + 'T12:00:00'); // Force noon to avoid DST/timezone shift issues
+    dateObj.setDate(dateObj.getDate() + days);
+    
+    // Convert back to YYYY-MM-DD
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    setCurrentDate(`${year}-${month}-${day}`);
   };
 
   // Group by meal type for easier display
@@ -188,7 +210,7 @@ function Section({ title, items, color }: { title: string, items: Reservation[],
                         <div>
                             <div className="font-bold text-gray-800 text-lg">{item.Name}</div>
                             {item.Notes && (
-                                <p className="text-sm text-gray-500 mt-1 italic">"{item.Notes}"</p>
+                                <p className="text-sm text-gray-500 mt-1 italic">&quot;{item.Notes}&quot;</p>
                             )}
                             <div className="flex gap-2 mt-2">
                                 <span className={`text-xs px-2 py-1 rounded bg-gray-100 text-gray-600`}>

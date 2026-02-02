@@ -394,20 +394,6 @@ export default function LunchPage() {
   const [selectedLunchCard, setSelectedLunchCard] = useState<LunchCard | null>(null);
   const [isSearchingCards, setIsSearchingCards] = useState(false);
   
-  // Contact lookup
-  interface Contact {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-    memberStatus?: string;
-    source: string;
-  }
-  const [contactSearch, setContactSearch] = useState('');
-  const [availableContacts, setAvailableContacts] = useState<Contact[]>([]);
-  const [isSearchingContacts, setIsSearchingContacts] = useState(false);
-  
   // Auto-detected lunch card from customer name
   const [autoDetectedCard, setAutoDetectedCard] = useState<LunchCard | null>(null);
   
@@ -562,42 +548,6 @@ export default function LunchPage() {
       setIsSearchingCards(false);
     }
   };
-
-  // Search for contacts (from all databases)
-  const searchContacts = async (query: string) => {
-    if (!query || query.length < 2) {
-      setAvailableContacts([]);
-      return;
-    }
-    
-    setIsSearchingContacts(true);
-    try {
-      const response = await fetch(`/api/contacts/search?search=${encodeURIComponent(query)}`);
-      const data = await response.json();
-      if (data.success) {
-        setAvailableContacts(data.contacts);
-      }
-    } catch (error) {
-      console.error('Error searching contacts:', error);
-    } finally {
-      setIsSearchingContacts(false);
-    }
-  };
-
-  // Copy to clipboard
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-  };
-
-  // Debounced search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (contactSearch) {
-        searchContacts(contactSearch);
-      }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [contactSearch]);
 
   // Debounced lunch card search
   useEffect(() => {
@@ -887,104 +837,6 @@ export default function LunchPage() {
             <p className="font-['Bitter',serif] text-[#666]" style={{ lineHeight: '1.6', fontSize: 'clamp(0.875rem, 2.5vw, 1.125rem)' }}>
               Staff use only - Record lunch purchases and lunch card sales
             </p>
-          </div>
-
-          {/* Contact Lookup Section */}
-          <div className="card" style={{ marginBottom: 'var(--space-4)', background: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)', borderLeft: '4px solid #9333ea' }}>
-            <h2 className="font-['Jost',sans-serif] font-bold text-[#7c3aed] text-lg" style={{ marginBottom: 'var(--space-2)' }}>
-              🔍 Contact Database Lookup
-            </h2>
-            <p className="font-['Bitter',serif] text-gray-700 text-sm" style={{ marginBottom: 'var(--space-2)' }}>
-              Search all member and customer records. Select a contact to auto-populate their info.
-            </p>
-            
-            <div style={{ marginBottom: 'var(--space-3)' }}>
-              <input
-                type="text"
-                placeholder="Search by name, email, or phone..."
-                value={contactSearch}
-                onChange={(e) => setContactSearch(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-purple-300 rounded-lg focus:border-purple-500 focus:outline-none font-['Bitter',serif]"
-              />
-            </div>
-
-            {isSearchingContacts && (
-              <p className="text-purple-700 font-['Bitter',serif]">Searching...</p>
-            )}
-
-            {availableContacts.length > 0 && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 'var(--space-2)' }}>
-                {availableContacts.map((contact) => (
-                  <div
-                    key={contact.id}
-                    className="border-2 border-purple-300 rounded-lg p-3"
-                    style={{ background: 'rgba(255,255,255,0.8)' }}
-                  >
-                    <div style={{ marginBottom: 'var(--space-1)' }}>
-                      <p className="font-['Jost',sans-serif] font-bold text-[#1f2937]" style={{ fontSize: '1.1rem' }}>
-                        {contact.firstName} {contact.lastName}
-                      </p>
-                      {contact.memberStatus && (
-                        <p className="text-xs font-bold" style={{ color: contact.memberStatus === 'Member' ? '#16a34a' : '#ea580c' }}>
-                          {contact.memberStatus}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Contact Info with Copy Buttons */}
-                    <div style={{ marginBottom: 'var(--space-2)', fontSize: '0.875rem' }}>
-                      {contact.email && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', padding: '4px', background: '#f3f4f6', borderRadius: '4px' }}>
-                          <span className="font-['Bitter',serif] text-gray-700">{contact.email}</span>
-                          <button
-                            type="button"
-                            onClick={() => copyToClipboard(contact.email)}
-                            className="text-purple-600 hover:text-purple-800 font-bold text-xs px-2 py-1"
-                            title="Copy email"
-                          >
-                            📋
-                          </button>
-                        </div>
-                      )}
-                      {contact.phone && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', padding: '4px', background: '#f3f4f6', borderRadius: '4px' }}>
-                          <span className="font-['Bitter',serif] text-gray-700">{contact.phone}</span>
-                          <button
-                            type="button"
-                            onClick={() => copyToClipboard(contact.phone)}
-                            className="text-purple-600 hover:text-purple-800 font-bold text-xs px-2 py-1"
-                            title="Copy phone"
-                          >
-                            📋
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCustomer({
-                          firstName: contact.firstName,
-                          lastName: contact.lastName,
-                          email: contact.email || '',
-                          phone: contact.phone || '',
-                        });
-                        setContactSearch('');
-                        setAvailableContacts([]);
-                      }}
-                      className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-3 rounded-lg transition-all font-['Jost',sans-serif] text-sm"
-                    >
-                      ✓ Use This Contact
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {contactSearch.length >= 2 && availableContacts.length === 0 && !isSearchingContacts && (
-              <p className="text-red-600 font-['Bitter',serif]">No contacts found.</p>
-            )}
           </div>
           
           {/* Export Section */}
@@ -1297,69 +1149,6 @@ export default function LunchPage() {
                 </div>
               </div>
             )}
-
-            {/* Contact Database Lookup */}
-            <div className="card" style={{ marginBottom: 'var(--space-4)', background: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)', borderLeft: '4px solid #9333ea' }}>
-              <h2 className="font-['Jost',sans-serif] font-bold text-[#7c3aed] text-lg" style={{ marginBottom: 'var(--space-2)' }}>
-                🔍 Contact Database Lookup
-              </h2>
-              <p className="font-['Bitter',serif] text-gray-700 text-sm" style={{ marginBottom: 'var(--space-2)' }}>
-                Search all member and customer records. Select to auto-populate.
-              </p>
-              <input
-                type="text"
-                placeholder="Search by name, email, or phone..."
-                value={contactSearch}
-                onChange={(e) => setContactSearch(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-purple-300 rounded-lg focus:border-purple-500 focus:outline-none font-['Bitter',serif]"
-                style={{ marginBottom: 'var(--space-2)' }}
-              />
-              {isSearchingContacts && <p className="text-purple-700 font-['Bitter',serif]">Searching...</p>}
-              {availableContacts.length > 0 && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 'var(--space-2)' }}>
-                  {availableContacts.map((contact) => (
-                    <div key={contact.id} className="border-2 border-purple-300 rounded-lg p-3 bg-white">
-                      <div style={{ marginBottom: 'var(--space-1)' }}>
-                        <p className="font-['Jost',sans-serif] font-bold" style={{ fontSize: '1.05rem' }}>
-                          {contact.firstName} {contact.lastName}
-                        </p>
-                        {contact.memberStatus && (
-                          <p className="text-xs font-bold" style={{ color: contact.memberStatus === 'Member' ? '#16a34a' : '#ea580c', marginTop: '2px' }}>
-                            {contact.memberStatus}
-                          </p>
-                        )}
-                      </div>
-                      {contact.email && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', padding: '4px', background: '#f3f4f6', borderRadius: '4px', fontSize: '0.875rem' }}>
-                          <span className="font-['Bitter',serif] text-gray-700">{contact.email}</span>
-                          <button type="button" onClick={() => copyToClipboard(contact.email)} className="text-purple-600 hover:text-purple-800 text-xs px-2 py-1">📋</button>
-                        </div>
-                      )}
-                      {contact.phone && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-1)', padding: '4px', background: '#f3f4f6', borderRadius: '4px', fontSize: '0.875rem' }}>
-                          <span className="font-['Bitter',serif] text-gray-700">{contact.phone}</span>
-                          <button type="button" onClick={() => copyToClipboard(contact.phone)} className="text-purple-600 hover:text-purple-800 text-xs px-2 py-1">📋</button>
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCustomer({ firstName: contact.firstName, lastName: contact.lastName, email: contact.email || '', phone: contact.phone || '' });
-                          setContactSearch('');
-                          setAvailableContacts([]);
-                        }}
-                        className="w-full mt-2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-3 rounded-lg font-['Jost',sans-serif] text-sm"
-                      >
-                        ✓ Use This Contact
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {contactSearch.length >= 2 && availableContacts.length === 0 && !isSearchingContacts && (
-                <p className="text-red-600 font-['Bitter',serif]">No contacts found.</p>
-              )}
-            </div>
 
             {/* Customer Information */}
             <div className="card" style={{ marginBottom: 'var(--space-4)' }}>

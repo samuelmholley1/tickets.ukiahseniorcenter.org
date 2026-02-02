@@ -1328,7 +1328,7 @@ export default function LunchPage() {
                                       ? 'bg-blue-50 text-blue-700 border-blue-300 hover:border-blue-500'
                                       : 'bg-white text-gray-700 border-gray-300 hover:border-[#427d78]'
                               }`}
-                              style={{ height: '80px', minHeight: '80px', maxHeight: '80px', padding: '1px', overflow: 'hidden' }}
+                              style={{ height: '80px', minHeight: '80px', maxHeight: '80px', padding: '0px 1px 1px 1px', overflow: 'hidden' }}
                             >
                               {/* Date label - click to toggle */}
                               <button

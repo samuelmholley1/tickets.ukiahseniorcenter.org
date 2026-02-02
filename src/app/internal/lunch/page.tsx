@@ -189,10 +189,7 @@ export default function LunchPage() {
   const [mealType, setMealType] = useState<MealType>('dineIn');
   
   // Per-date meal tracking: { "2026-02-02": [{ name: "John", specialRequest: "" }, ...] }
-  const [dateMeals, setDateMeals] = useState<DateMeals>(() => {
-    const initialDate = getNextAvailableLunch();
-    return { [initialDate]: [{ name: '', specialRequest: '' }] };
-  });
+  const [dateMeals, setDateMeals] = useState<DateMeals>({});
 
   // Lunch card options
   const [cardMealCount, setCardMealCount] = useState<MealCount>(5);
@@ -1343,7 +1340,7 @@ export default function LunchPage() {
                                 {day.isFrozenFriday ? (
                                   <>
                                     <div style={{ fontSize: isSelected ? '9px' : '11px', fontWeight: 'bold', lineHeight: 1.1 }}>THURSDAY PICKUP</div>
-                                    <div style={{ fontSize: isSelected ? '7px' : '9px', fontWeight: 'normal', opacity: 0.7, lineHeight: 1 }}>Chef&apos;s Choice</div>
+                                    <div style={{ fontSize: isSelected ? '7px' : '9px', fontWeight: 'bold', opacity: 0.7, lineHeight: 1 }}>Chef&apos;s Choice</div>
                                   </>
                                 ) : (
                                   <div style={{ fontSize: isSelected ? '12px' : '16px', fontWeight: 'bold', lineHeight: 1 }}>{day.label}</div>

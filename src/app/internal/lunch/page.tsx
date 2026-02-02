@@ -1328,7 +1328,7 @@ export default function LunchPage() {
                                       ? 'bg-blue-50 text-blue-700 border-blue-300 hover:border-blue-500'
                                       : 'bg-white text-gray-700 border-gray-300 hover:border-[#427d78]'
                               }`}
-                              style={{ height: '80px', padding: '4px' }}
+                              style={{ height: '80px', minHeight: '80px', maxHeight: '80px', padding: '1px', overflow: 'hidden' }}
                             >
                               {/* Date label - click to toggle */}
                               <button
@@ -1336,14 +1336,15 @@ export default function LunchPage() {
                                 onClick={() => !isDisabled && handleDateClick(day.value, day.isFrozenFriday)}
                                 disabled={isDisabled}
                                 className={`w-full text-center font-bold flex-1 flex flex-col ${isSelected ? 'justify-start' : 'justify-center'}`}
+                                style={{ padding: '0' }}
                               >
                                 {day.isFrozenFriday ? (
                                   <>
-                                    <div style={{ fontSize: isSelected ? '9px' : '11px', fontWeight: 'bold', lineHeight: 1.1 }}>THURSDAY PICKUP</div>
-                                    <div style={{ fontSize: isSelected ? '7px' : '9px', fontWeight: 'bold', opacity: 0.7, lineHeight: 1 }}>Chef&apos;s Choice</div>
+                                    <div style={{ fontSize: isSelected ? '10px' : '11px', fontWeight: 'bold', lineHeight: 1.1 }}>THURSDAY PICKUP</div>
+                                    <div style={{ fontSize: isSelected ? '8px' : '9px', fontWeight: 'bold', opacity: 0.7, lineHeight: 1 }}>Chef&apos;s Choice</div>
                                   </>
                                 ) : (
-                                  <div style={{ fontSize: isSelected ? '12px' : '16px', fontWeight: 'bold', lineHeight: 1 }}>{day.label}</div>
+                                  <div style={{ fontSize: isSelected ? '14px' : '18px', fontWeight: 'bold', lineHeight: 1 }}>{day.label}</div>
                                 )}
                                 {day.isPastDeadline && !day.isClosed && (
                                   <div style={{ fontSize: '8px', fontWeight: 'normal', lineHeight: 1 }}>Deadline passed</div>
@@ -1352,7 +1353,7 @@ export default function LunchPage() {
                               
                               {/* +/- controls when selected */}
                               {isSelected && (
-                                <div className="flex items-center justify-center gap-0.5 border-t border-white/30" style={{ paddingTop: '1px' }}>
+                                <div className="flex items-center justify-center gap-0.5 border-t border-white/30" style={{ paddingTop: '2px', paddingBottom: '4px' }}>
                                   <button
                                     type="button"
                                     onClick={(e) => { e.stopPropagation(); removeMealFromDate(day.value); }}

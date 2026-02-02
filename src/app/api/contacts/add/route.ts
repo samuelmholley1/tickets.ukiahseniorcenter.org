@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 const AIRTABLE_API_BASE = 'https://api.airtable.com/v0';
 const API_KEY = process.env.AIRTABLE_API_KEY;
 const BASE_ID = process.env.AIRTABLE_BASE_ID || 'appZ6HE5luAFV0Ot2';
-const CONTACTS_TABLE_ID = process.env.AIRTABLE_CONTACTS_TABLE_ID || 'tbl3vvS5NSwR8XPDx';
+const CONTACTS_TABLE_ID = process.env.AIRTABLE_CONTACTS_TABLE_ID || 'tbl3PQZzXGpT991dH';
 
 interface AirtableRecord {
   id: string;
@@ -24,17 +24,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'First name and last name required' }, { status: 400 });
     }
 
-    // Check if contact already exists (by email or by name+phone)
+    // Check if contact already exists (by email or by name)
+    // NOTE: For the legacy Contacts table, email might be empty, so name match is important
     let formula = '';
     if (email && email !== 'cashier@seniorctr.org') {
-      // Search by email (most reliable)
+      // Search by email
       formula = `LOWER({Email}) = "${email.toLowerCase()}"`;
-    } else if (phone) {
-      // Search by name + phone
-      formula = `AND(LOWER({First Name}) = "${firstName.toLowerCase()}", LOWER({Last Name}) = "${lastName.toLowerCase()}", {Phone} = "${phone}")`;
     } else {
-      // Search by name only (least reliable, but better than duplicates)
-      formula = `AND(LOWER({First Name}) = "${firstName.toLowerCase()}", LOWER({Last Name}) = "${lastName.toLowerCase()}")`;
+      // Search by name
+       formula = `AND(LOWER({First Name}) = "${firstName.toLowerCase()}", LOWER({Last Name}) = "${lastName.toLowerCase()}")`;
     }
 
     const checkUrl = `${AIRTABLE_API_BASE}/${BASE_ID}/${CONTACTS_TABLE_ID}?filterByFormula=${encodeURIComponent(formula)}&maxRecords=1`;
@@ -61,13 +59,21 @@ export async function POST(request: NextRequest) {
           firstName: existing.fields['First Name'],
           lastName: existing.fields['Last Name'],
           email: existing.fields['Email'],
-          phone: existing.fields['Phone'],
-          memberStatus: existing.fields['Member Status'] || 'Unknown',
+          phone: existing.fields['Phone Cell'] || existing.fields['Phone Home'],
+          memberStatus: existing.fields['Contact Type'] || 'Other',
         },
       });
     }
 
     // Contact doesn't exist - create new one
+    // Mapping:
+    // Member Status -> Contact Type (Member or Other)
+    // Source -> Source (Internal)
+    // Name -> First + " " + Last
+    
+    const contactType = memberStatus === 'Member' ? 'Member' : 'Other';
+    const sourceValue = 'Internal'; // Use 'Internal' as default source for compatibility
+    
     const createResponse = await fetch(`${AIRTABLE_API_BASE}/${BASE_ID}/${CONTACTS_TABLE_ID}`, {
       method: 'POST',
       headers: {
@@ -77,13 +83,14 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         records: [{
           fields: {
+            'Name': `${firstName} ${lastName}`,
             'First Name': firstName,
             'Last Name': lastName,
-            'Email': email && email !== 'cashier@seniorctr.org' ? email : '',
-            'Phone': phone || '',
-            'Member Status': memberStatus || 'Unknown',
-            'Source': source || 'Manual Entry',
-            'Date Added': new Date().toISOString(),
+            'Email': email && email !== 'cashier@seniorctr.org' ? email : undefined,
+            'Phone Cell': phone || undefined,
+            'Contact Type': contactType,
+            'Source': sourceValue,
+            'Notes': `Added from ticket sales: ${source || 'Unknown Event'}`,
           },
         }],
       }),
@@ -106,8 +113,8 @@ export async function POST(request: NextRequest) {
         firstName: newRecord.fields['First Name'],
         lastName: newRecord.fields['Last Name'],
         email: newRecord.fields['Email'],
-        phone: newRecord.fields['Phone'],
-        memberStatus: newRecord.fields['Member Status'] || 'Unknown',
+        phone: newRecord.fields['Phone Cell'],
+        memberStatus: newRecord.fields['Contact Type'] || 'Other',
       },
     });
   } catch (error) {

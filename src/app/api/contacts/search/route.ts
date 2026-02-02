@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 const AIRTABLE_API_BASE = 'https://api.airtable.com/v0';
 const API_KEY = process.env.AIRTABLE_API_KEY;
 const BASE_ID = process.env.AIRTABLE_BASE_ID || 'appZ6HE5luAFV0Ot2';
-const CONTACTS_TABLE_ID = process.env.AIRTABLE_CONTACTS_TABLE_ID || 'tbl3vvS5NSwR8XPDx';
+const CONTACTS_TABLE_ID = process.env.AIRTABLE_CONTACTS_TABLE_ID || 'tbl3PQZzXGpT991dH';
 
 interface AirtableRecord {
   id: string;
@@ -22,7 +22,6 @@ interface Contact {
   phone: string;
   memberStatus: string;
   source: string;
-  dateAdded?: string;
 }
 
 export async function GET(request: NextRequest) {
@@ -35,12 +34,13 @@ export async function GET(request: NextRequest) {
 
     const searchLower = searchParam.toLowerCase().replace(/"/g, '');
     
-    // Build search formula for Contacts table
+    // Build search formula for Contacts table (searching First Name, Last Name, Email, Phone Cell, Phone Home)
     const formula = `OR(
       FIND("${searchLower}", LOWER({First Name})),
       FIND("${searchLower}", LOWER({Last Name})),
       FIND("${searchLower}", LOWER({Email})),
-      FIND("${searchLower}", LOWER({Phone}))
+      FIND("${searchLower}", LOWER({Phone Cell})),
+      FIND("${searchLower}", LOWER({Phone Home}))
     )`;
 
     const encodedFormula = encodeURIComponent(formula);
@@ -64,10 +64,9 @@ export async function GET(request: NextRequest) {
         firstName: (fields['First Name'] as string) || '',
         lastName: (fields['Last Name'] as string) || '',
         email: (fields['Email'] as string) || '',
-        phone: (fields['Phone'] as string) || '',
-        memberStatus: (fields['Member Status'] as string) || 'Unknown',
+        phone: (fields['Phone Cell'] as string) || (fields['Phone Home'] as string) || '',
+        memberStatus: (fields['Contact Type'] as string) || 'Other',
         source: (fields['Source'] as string) || '',
-        dateAdded: (fields['Date Added'] as string) || '',
       };
     });
 

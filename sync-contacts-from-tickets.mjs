@@ -6,7 +6,7 @@ dotenv.config({ path: '.env.local' });
 
 const API_KEY = process.env.AIRTABLE_API_KEY;
 const BASE_ID = 'appZ6HE5luAFV0Ot2';
-const CONTACTS_TABLE_ID = 'tbl3vvS5NSwR8XPDx';
+const CONTACTS_TABLE_ID = process.env.AIRTABLE_CONTACTS_TABLE_ID || 'tbl3PQZzXGpT991dH';
 
 // Source tables
 const TABLES = {
@@ -44,8 +44,6 @@ async function checkContactExists(firstName, lastName, email, phone) {
   let formula = '';
   if (email && email !== 'cashier@seniorctr.org') {
     formula = `LOWER({Email}) = "${email.toLowerCase()}"`;
-  } else if (phone) {
-    formula = `AND(LOWER({First Name}) = "${firstName.toLowerCase()}", LOWER({Last Name}) = "${lastName.toLowerCase()}", {Phone} = "${phone}")`;
   } else {
     formula = `AND(LOWER({First Name}) = "${firstName.toLowerCase()}", LOWER({Last Name}) = "${lastName.toLowerCase()}")`;
   }
@@ -61,6 +59,9 @@ async function checkContactExists(firstName, lastName, email, phone) {
 }
 
 async function createContact(contact) {
+  const contactType = contact.memberStatus === 'Member' ? 'Member' : 'Other';
+  const sourceValue = 'Internal';
+  
   const response = await fetch(`https://api.airtable.com/v0/${BASE_ID}/${CONTACTS_TABLE_ID}`, {
     method: 'POST',
     headers: {
@@ -70,23 +71,28 @@ async function createContact(contact) {
     body: JSON.stringify({
       records: [{
         fields: {
+          'Name': `${contact.firstName} ${contact.lastName}`,
           'First Name': contact.firstName,
           'Last Name': contact.lastName,
-          'Email': contact.email,
-          'Phone': contact.phone,
-          'Member Status': contact.memberStatus,
-          'Source': contact.source,
-          'Date Added': new Date().toISOString(),
+          'Email': contact.email || undefined,
+          'Phone Cell': contact.phone || undefined,
+          'Contact Type': contactType,
+          'Source': sourceValue,
+          'Notes': `Synced from ${contact.source}`,
         },
       }],
     }),
   });
   
+  if (!response.ok) {
+      const resp = await response.json();
+      console.error('Create failed:', JSON.stringify(resp));
+  }
   return response.ok;
 }
 
 async function syncContacts() {
-  console.log('Starting contact sync from ticket tables...\n');
+  console.log('Starting contact sync from ticket tables to MAIN CONTACTS table (tbl3PQZzXGpT991dH)...\n');
   
   const contactsMap = new Map(); // Key: normalized key, Value: contact info
   

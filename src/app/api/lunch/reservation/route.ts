@@ -125,8 +125,14 @@ export async function POST(request: NextRequest) {
     }
     
     const dayOfWeek = reservationDate.getDay();
-    if (dayOfWeek === 0 || dayOfWeek === 5 || dayOfWeek === 6) {
-      return NextResponse.json({ error: 'Cannot reserve on weekends (Fri-Sun closed)' }, { status: 400 });
+    // Friday (5) is allowed for Frozen Friday meals (picked up Thursday)
+    // Saturday (6) and Sunday (0) are never allowed
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      return NextResponse.json({ error: 'Cannot reserve on weekends (Sat-Sun closed)' }, { status: 400 });
+    }
+    // Friday requires isFrozenFriday flag
+    if (dayOfWeek === 5 && !isFrozenFriday) {
+      return NextResponse.json({ error: 'Friday reservations must be marked as Frozen Friday meals' }, { status: 400 });
     }
     
     // Allow reservations for today or future only (no past dates)

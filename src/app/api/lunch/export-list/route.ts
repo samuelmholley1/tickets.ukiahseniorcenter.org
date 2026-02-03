@@ -27,24 +27,29 @@ const DIETARY_KEYWORDS = {
   vegetarian: ['vegetarian', 'veggie', 'veg', 'vegetable'],
   glutenFree: ['gluten-free', 'gluten free', 'gf', 'no gluten'],
   noDessert: ['no dessert', 'no desert'],
-  noGarlic: ['no garlic'],
-  noOnions: ['no onions', 'no onion'],
+  noGarlicOnions: ['no garlic', 'no onion', 'no onions'], // Combined into one category
   dairyFree: ['dairy-free', 'dairy free', 'no dairy', 'lactose'],
   inFridge: ['in fridge', 'fridge', 'leave in fridge'],
 };
 
 // Parse notes to extract dietary restrictions (returns array of detected types)
-function parseDietaryRestrictions(notes: string): string[] {
-  if (!notes) return [];
-  const lower = notes.toLowerCase();
+// Also handles auto-fill for specific customers like Fulin Chang
+function parseDietaryRestrictions(notes: string, name?: string): string[] {
+  const lower = (notes || '').toLowerCase();
+  const nameLower = (name || '').toLowerCase();
   const detected: string[] = [];
   
-  // Check for each dietary keyword
-  if (DIETARY_KEYWORDS.vegetarian.some(k => lower.includes(k))) detected.push('Vegetarian');
+  // Fulin Chang ALWAYS gets Vegetarian + No Garlic/Onions
+  if (nameLower.includes('fulin') || nameLower.includes('fu lin')) {
+    detected.push('Vegetarian');
+    detected.push('No Garlic/Onions');
+  } else {
+    if (DIETARY_KEYWORDS.vegetarian.some(k => lower.includes(k))) detected.push('Vegetarian');
+    if (DIETARY_KEYWORDS.noGarlicOnions.some(k => lower.includes(k))) detected.push('No Garlic/Onions');
+  }
+  
   if (DIETARY_KEYWORDS.glutenFree.some(k => lower.includes(k))) detected.push('Gluten-Free');
   if (DIETARY_KEYWORDS.noDessert.some(k => lower.includes(k))) detected.push('No Dessert');
-  if (DIETARY_KEYWORDS.noGarlic.some(k => lower.includes(k))) detected.push('No Garlic');
-  if (DIETARY_KEYWORDS.noOnions.some(k => lower.includes(k))) detected.push('No Onions');
   if (DIETARY_KEYWORDS.dairyFree.some(k => lower.includes(k))) detected.push('Dairy-Free');
   if (DIETARY_KEYWORDS.inFridge.some(k => lower.includes(k))) detected.push('In Fridge');
   
@@ -362,19 +367,17 @@ export async function GET(request: NextRequest) {
     let vegetarianCount = 0;
     let glutenFreeCount = 0;
     let noDessertCount = 0;
-    let noGarlicCount = 0;
-    let noOnionsCount = 0;
+    let noGarlicOnionsCount = 0;
     let dairyFreeCount = 0;
     let inFridgeCount = 0;
     
     for (const res of reservations) {
       const cleanedNotes = cleanNotes(res.Notes || '');
-      const dietary = parseDietaryRestrictions(cleanedNotes);
+      const dietary = parseDietaryRestrictions(cleanedNotes, res.Name);
       if (dietary.includes('Vegetarian')) vegetarianCount++;
       if (dietary.includes('Gluten-Free')) glutenFreeCount++;
       if (dietary.includes('No Dessert')) noDessertCount++;
-      if (dietary.includes('No Garlic')) noGarlicCount++;
-      if (dietary.includes('No Onions')) noOnionsCount++;
+      if (dietary.includes('No Garlic/Onions')) noGarlicOnionsCount++;
       if (dietary.includes('Dairy-Free')) dairyFreeCount++;
       if (dietary.includes('In Fridge') || res.InFridge) inFridgeCount++;
     }
@@ -421,8 +424,7 @@ export async function GET(request: NextRequest) {
       `Vegetarian: ${vegetarianCount}`,
       `Gluten-Free: ${glutenFreeCount}`,
       `No Dessert: ${noDessertCount}`,
-      `No Garlic: ${noGarlicCount}`,
-      `No Onions: ${noOnionsCount}`,
+      `No Garlic/Onions: ${noGarlicOnionsCount}`,
       `Dairy-Free: ${dairyFreeCount}`,
       `In Fridge: ${inFridgeCount}`,
     ].join('  |  ');
@@ -484,7 +486,7 @@ export async function GET(request: NextRequest) {
       
       // Special Requests - extract and display dietary restrictions with color coding
       const cleanedNotes = cleanNotes(res.Notes || '');
-      const dietary = parseDietaryRestrictions(cleanedNotes);
+      const dietary = parseDietaryRestrictions(cleanedNotes, res.Name);
       
       if (dietary.length > 0) {
         doc.setFontSize(7);
@@ -499,7 +501,7 @@ export async function GET(request: NextRequest) {
           } else if (item === 'No Dessert') {
             doc.setTextColor(139, 69, 19); // Saddle brown
             doc.setFont('helvetica', 'bold');
-          } else if (item === 'No Garlic' || item === 'No Onions') {
+          } else if (item === 'No Garlic/Onions') {
             doc.setTextColor(128, 0, 128); // Purple
             doc.setFont('helvetica', 'bold');
           } else if (item === 'Gluten-Free') {

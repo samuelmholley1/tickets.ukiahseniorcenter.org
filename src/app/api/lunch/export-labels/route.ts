@@ -64,16 +64,23 @@ function cleanNotes(notes: string): string {
 }
 
 // Extract dietary/special requests from notes
-function extractSpecialRequests(notes: string): string[] {
-  if (!notes) return [];
-  const lower = notes.toLowerCase();
+function extractSpecialRequests(notes: string, name?: string): string[] {
   const requests: string[] = [];
+  const lower = (notes || '').toLowerCase();
+  const nameLower = (name || '').toLowerCase();
   
-  if (lower.includes('vegetarian')) requests.push('Vegetarian');
+  // Fulin Chang ALWAYS gets Vegetarian + No Garlic/Onions
+  if (nameLower.includes('fulin') || nameLower.includes('fu lin')) {
+    requests.push('Vegetarian');
+    requests.push('No Garlic/Onions');
+  } else {
+    if (lower.includes('vegetarian')) requests.push('Vegetarian');
+    // Combined: No Garlic/Onions is ONE category
+    if (lower.includes('no garlic') || lower.includes('no onion')) requests.push('No Garlic/Onions');
+  }
+  
   if (lower.includes('gluten-free') || lower.includes('gluten free') || lower.includes('gf')) requests.push('Gluten-Free');
   if (lower.includes('no dessert')) requests.push('No Dessert');
-  if (lower.includes('no garlic')) requests.push('No Garlic');
-  if (lower.includes('no onion')) requests.push('No Onions');
   if (lower.includes('dairy-free') || lower.includes('dairy free') || lower.includes('no dairy')) requests.push('Dairy-Free');
   if (lower.includes('in fridge') || lower.includes('fridge')) requests.push('In Fridge');
   
@@ -177,8 +184,8 @@ export async function GET(request: NextRequest) {
     // Other labels from database
     for (const res of labelReservations) {
       const notes = cleanNotes(res.Notes || '');
-      const specialReqs = extractSpecialRequests(notes);
-      if (res.InFridge) specialReqs.push('In Fridge');
+      const specialReqs = extractSpecialRequests(notes, res.Name);
+      if (res.InFridge && !specialReqs.includes('In Fridge')) specialReqs.push('In Fridge');
       
       allLabels.push({
         isCoyoteValley: false,

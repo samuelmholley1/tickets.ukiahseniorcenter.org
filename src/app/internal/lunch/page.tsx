@@ -38,6 +38,18 @@ interface MealEntry {
 // For frozen Friday: date is THE FRIDAY, isFrozenFriday=true indicates pickup is Thursday
 type DateMeals = Record<string, MealEntry[]>;
 
+// Today's reservation for manual override (transition period feature)
+interface TodayReservation {
+  id: string;
+  Name: string;
+  'Meal Type': string;
+  'Member Status': string;
+  'Payment Method': string;
+  Notes?: string;
+  Status?: string;
+  Amount?: number;
+}
+
 /* ========== LUNCH PRICING ==========
  * Individual Meals:
  *   - Member Dine In: $8
@@ -488,6 +500,11 @@ export default function LunchPage() {
   // Transaction confirmation
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [transactionLog, setTransactionLog] = useState<string[]>([]);
+  
+  // Manual Override for same-day reservations (transition period feature)
+  const [showManualOverrideModal, setShowManualOverrideModal] = useState(false);
+  const [todayReservations, setTodayReservations] = useState<TodayReservation[]>([]);
+  const [isLoadingTodayReservations, setIsLoadingTodayReservations] = useState(false);
 
   // Recent transactions for display
   const [recentTransactions, setRecentTransactions] = useState<LunchTransaction[]>([]);
@@ -512,6 +529,86 @@ export default function LunchPage() {
   useEffect(() => {
     fetchRecentTransactions();
   }, [fetchRecentTransactions]);
+  
+  // Fetch today's reservations for manual override modal
+  const fetchTodayReservations = useCallback(async () => {
+    setIsLoadingTodayReservations(true);
+    try {
+      // Get today's date in YYYY-MM-DD format
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      const todayStr = `${year}-${month}-${day}`;
+      
+      const response = await fetch(`/api/lunch/reservation?date=${todayStr}`);
+      if (response.ok) {
+        const data = await response.json();
+        setTodayReservations(data.reservations || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch today\'s reservations:', error);
+    } finally {
+      setIsLoadingTodayReservations(false);
+    }
+  }, []);
+  
+  // When manual override modal opens, fetch today's reservations
+  useEffect(() => {
+    if (showManualOverrideModal) {
+      fetchTodayReservations();
+    }
+  }, [showManualOverrideModal, fetchTodayReservations]);
+  
+  // Handle selecting a reservation from today's list for manual override
+  const handleSelectReservationForOverride = (reservation: TodayReservation) => {
+    // Parse the name into first/last
+    const nameParts = reservation.Name.trim().split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+    
+    // Get today's date
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
+    
+    // Set customer info
+    setCustomer(prev => ({
+      ...prev,
+      firstName,
+      lastName,
+    }));
+    
+    // Set meal type based on reservation
+    const mealTypeMap: Record<string, MealType> = {
+      'Dine In': 'dineIn',
+      'To Go': 'pickup',
+      'Delivery': 'delivery',
+    };
+    const reservationMealType = mealTypeMap[reservation['Meal Type']] || 'dineIn';
+    setMealType(reservationMealType);
+    
+    // Set member status
+    const memberStatusMap: Record<string, MembershipType> = {
+      'Member': 'member',
+      'Non-Member': 'nonMember',
+    };
+    const memberStatus = memberStatusMap[reservation['Member Status']] || 'member';
+    setIsMember(memberStatus);
+    
+    // Set up the date with today's date (this is a same-day override)
+    setDateMeals({
+      [todayStr]: [{ name: reservation.Name, specialRequest: reservation.Notes || '' }]
+    });
+    
+    // Set transaction type to individual meal
+    setTransactionType('individual');
+    
+    // Close modal
+    setShowManualOverrideModal(false);
+  };
 
   // Search Contacts Effect
   useEffect(() => {
@@ -1059,6 +1156,110 @@ export default function LunchPage() {
           </div>
 
           <form onSubmit={handleSubmit}>
+            {/* MANUAL OVERRIDE - Same-day reservation processing (transition period) */}
+            <div className="card" style={{ marginBottom: 'var(--space-4)', background: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)', border: '2px solid #f87171' }}>
+              <div className="flex items-center justify-between flex-wrap gap-2" style={{ marginBottom: 'var(--space-3)' }}>
+                <div>
+                  <h2 className="font-['Jost',sans-serif] font-bold text-red-700 text-xl">
+                    ⚠️ Manual Override - Today&apos;s Reservations
+                  </h2>
+                  <p className="font-['Bitter',serif] text-red-600 text-sm mt-1">
+                    Process same-day reservations that weren&apos;t prepaid (transition period)
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowManualOverrideModal(true)}
+                  className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-['Jost',sans-serif] font-bold rounded-lg transition-all shadow-md"
+                >
+                  📋 Look Up Today&apos;s Reservations
+                </button>
+              </div>
+            </div>
+            
+            {/* Manual Override Modal */}
+            {showManualOverrideModal && (
+              <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+                  <div className="bg-red-600 text-white px-6 py-4">
+                    <h3 className="font-['Jost',sans-serif] font-bold text-xl">
+                      ⚠️ Today&apos;s Reservations - Manual Override
+                    </h3>
+                    <p className="text-red-100 text-sm mt-1">
+                      Select a person to process their payment or deduct from their lunch card
+                    </p>
+                  </div>
+                  
+                  <div className="p-6 overflow-y-auto flex-1">
+                    {isLoadingTodayReservations ? (
+                      <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-red-600 mx-auto mb-3"></div>
+                        <p className="text-gray-500 font-['Bitter',serif]">Loading today&apos;s reservations...</p>
+                      </div>
+                    ) : todayReservations.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-gray-500 font-['Bitter',serif]">No reservations found for today.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="font-['Jost',sans-serif] font-bold text-gray-700 mb-3">
+                          Found {todayReservations.length} reservation(s) for today:
+                        </p>
+                        {todayReservations.map((reservation) => (
+                          <button
+                            key={reservation.id}
+                            type="button"
+                            onClick={() => handleSelectReservationForOverride(reservation)}
+                            className="w-full text-left p-4 rounded-lg border-2 border-gray-200 hover:border-red-400 hover:bg-red-50 transition-all"
+                          >
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <div className="font-['Jost',sans-serif] font-bold text-lg text-gray-800">
+                                  {reservation.Name}
+                                </div>
+                                <div className="font-['Bitter',serif] text-sm text-gray-600 mt-1">
+                                  {reservation['Meal Type']} • {reservation['Member Status']}
+                                </div>
+                                {reservation.Notes && (
+                                  <div className="font-['Bitter',serif] text-sm text-gray-500 italic mt-1">
+                                    &quot;{reservation.Notes}&quot;
+                                  </div>
+                                )}
+                              </div>
+                              <div className="text-right">
+                                <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                  reservation['Payment Method'] === 'Lunch Card' 
+                                    ? 'bg-green-100 text-green-700'
+                                    : 'bg-yellow-100 text-yellow-700'
+                                }`}>
+                                  {reservation['Payment Method']}
+                                </span>
+                                {reservation.Amount && reservation.Amount > 0 && (
+                                  <div className="font-['Jost',sans-serif] font-bold text-green-700 mt-2">
+                                    ${reservation.Amount}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
+                    <button
+                      type="button"
+                      onClick={() => setShowManualOverrideModal(false)}
+                      className="w-full px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-['Jost',sans-serif] font-bold rounded-lg"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Transaction Type Selection */}
             <div ref={transactionSectionRef} className="card" style={{ marginBottom: 'var(--space-4)' }}>
               <h2 className="font-['Jost',sans-serif] font-bold text-[#427d78] text-xl" style={{ marginBottom: 'var(--space-3)' }}>

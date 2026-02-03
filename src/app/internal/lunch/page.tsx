@@ -283,27 +283,28 @@ export default function LunchPage() {
   }
   
   // Check if a date is past its ordering deadline
-  // Deadline: 2pm the day before (Thursday 2pm for Monday)
+  // New rule: Only gray out dates that are TODAY or in the past (not based on 2pm deadline)
+  // Uses Pacific Time for consistency
   const isDatePastDeadline = (dateStr: string): boolean => {
-    const now = new Date();
+    // Get current date in Pacific Time
+    const nowPacific = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+    const todayPacific = new Date(nowPacific.getFullYear(), nowPacific.getMonth(), nowPacific.getDate());
+    
+    // Parse target date
     const targetDate = new Date(dateStr + 'T12:00:00');
-    const targetDay = targetDate.getDay(); // 0=Sun, 1=Mon, etc.
+    const targetDateOnly = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
     
-    // Calculate deadline date
-    const deadlineDate = new Date(targetDate);
-    if (targetDay === 1) {
-      // Monday's deadline is Thursday 2pm (4 days before)
-      deadlineDate.setDate(targetDate.getDate() - 4);
-    } else if (targetDay === 5) {
-      // Friday frozen meal: deadline is Wednesday 2pm (2 days before)
-      deadlineDate.setDate(targetDate.getDate() - 2);
-    } else {
-      // Tue-Thu: deadline is previous day 2pm
-      deadlineDate.setDate(targetDate.getDate() - 1);
-    }
-    deadlineDate.setHours(14, 0, 0, 0); // 2pm
-    
-    return now > deadlineDate;
+    // Gray out if target date is today or in the past
+    return targetDateOnly <= todayPacific;
+  };
+  
+  // Helper to get today's date string in Pacific Time (YYYY-MM-DD)
+  const getTodayPacificStr = (): string => {
+    const nowPacific = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+    const year = nowPacific.getFullYear();
+    const month = String(nowPacific.getMonth() + 1).padStart(2, '0');
+    const day = String(nowPacific.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
   
   const getCalendarWeeks = (): CalendarWeek[] => {
@@ -535,16 +536,19 @@ export default function LunchPage() {
   const fetchTodayReservations = useCallback(async () => {
     setIsLoadingTodayReservations(true);
     try {
-      // Get today's date in YYYY-MM-DD format
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0');
-      const day = String(today.getDate()).padStart(2, '0');
+      // Get today's date in YYYY-MM-DD format using Pacific Time
+      const nowPacific = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+      const year = nowPacific.getFullYear();
+      const month = String(nowPacific.getMonth() + 1).padStart(2, '0');
+      const day = String(nowPacific.getDate()).padStart(2, '0');
       const todayStr = `${year}-${month}-${day}`;
+      
+      console.log('[fetchTodayReservations] Fetching for Pacific date:', todayStr);
       
       const response = await fetch(`/api/lunch/reservation?date=${todayStr}`);
       if (response.ok) {
         const data = await response.json();
+        console.log('[fetchTodayReservations] Found reservations:', data.reservations?.length || 0);
         setTodayReservations(data.reservations || []);
       }
     } catch (error) {
@@ -568,11 +572,11 @@ export default function LunchPage() {
     const firstName = nameParts[0] || '';
     const lastName = nameParts.slice(1).join(' ') || '';
     
-    // Get today's date
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
+    // Get today's date in Pacific Time
+    const nowPacific = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+    const year = nowPacific.getFullYear();
+    const month = String(nowPacific.getMonth() + 1).padStart(2, '0');
+    const day = String(nowPacific.getDate()).padStart(2, '0');
     const todayStr = `${year}-${month}-${day}`;
     
     // Set customer info
@@ -1705,13 +1709,6 @@ export default function LunchPage() {
                         ({selectedDates.length} date{selectedDates.length !== 1 ? 's' : ''}, {getTotalMealsFromDateMeals()} meal{getTotalMealsFromDateMeals() !== 1 ? 's' : ''})
                       </span>
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => setShowManualOverrideModal(true)}
-                      className="px-3 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 font-['Jost',sans-serif] font-bold rounded-full text-sm transition-all border border-amber-300"
-                    >
-                      📋 Today&apos;s List
-                    </button>
                   </div>
                   
                   {/* Column Headers: Mon Tue Wed Thu Fri */}
@@ -1737,6 +1734,7 @@ export default function LunchPage() {
                           const isSelected = dateMeals[day.value] !== undefined;
                           const mealCount = dateMeals[day.value]?.length || 0;
                           const isDisabled = day.isClosed || day.isPastDeadline;
+                          const isToday = day.value === getTodayPacificStr() && !day.isFrozenFriday;
                           
                           return (
                             <div
@@ -1748,9 +1746,11 @@ export default function LunchPage() {
                                     ? day.isFrozenFriday
                                       ? 'bg-blue-600 text-white border-blue-600'
                                       : 'bg-[#427d78] text-white border-[#427d78]'
-                                    : day.isFrozenFriday
-                                      ? 'bg-blue-50 text-blue-700 border-blue-300 hover:border-blue-500'
-                                      : 'bg-white text-gray-700 border-gray-300 hover:border-[#427d78]'
+                                    : isToday
+                                      ? 'bg-amber-50 text-amber-800 border-amber-400 hover:border-amber-500'
+                                      : day.isFrozenFriday
+                                        ? 'bg-blue-50 text-blue-700 border-blue-300 hover:border-blue-500'
+                                        : 'bg-white text-gray-700 border-gray-300 hover:border-[#427d78]'
                               }`}
                               style={{ height: '80px', minHeight: '80px', maxHeight: '80px', padding: '0px 1px 1px 1px', overflow: 'hidden' }}
                             >
@@ -1759,7 +1759,7 @@ export default function LunchPage() {
                                 type="button"
                                 onClick={() => !isDisabled && handleDateClick(day.value, day.isFrozenFriday)}
                                 disabled={isDisabled}
-                                className={`w-full text-center font-bold flex flex-col justify-center ${isSelected ? '' : 'flex-1'}`}
+                                className={`w-full text-center font-bold flex flex-col justify-center ${isSelected || isToday ? '' : 'flex-1'}`}
                                 style={{ padding: '0' }}
                               >
                                 {day.isFrozenFriday ? (
@@ -1768,12 +1768,29 @@ export default function LunchPage() {
                                     <div style={{ fontSize: isSelected ? '8px' : '9px', fontWeight: 'bold', opacity: 0.7, lineHeight: 1 }}>Chef&apos;s Choice</div>
                                   </>
                                 ) : (
-                                  <div style={{ fontSize: isSelected ? '14px' : '18px', fontWeight: 'bold', lineHeight: 1 }}>{day.label}</div>
+                                  <>
+                                    <div style={{ fontSize: isSelected ? '14px' : (isToday ? '14px' : '18px'), fontWeight: 'bold', lineHeight: 1 }}>{day.label}</div>
+                                    {isToday && !isSelected && (
+                                      <div style={{ fontSize: '8px', fontWeight: 'bold', lineHeight: 1, color: '#b45309' }}>TODAY</div>
+                                    )}
+                                  </>
                                 )}
-                                {day.isPastDeadline && !day.isClosed && (
-                                  <div style={{ fontSize: '8px', fontWeight: 'normal', lineHeight: 1 }}>Deadline passed</div>
+                                {day.isPastDeadline && !day.isClosed && !isToday && (
+                                  <div style={{ fontSize: '8px', fontWeight: 'normal', lineHeight: 1 }}>Closed</div>
                                 )}
                               </button>
+                              
+                              {/* Today's List pill button - only on today's cell */}
+                              {isToday && !isSelected && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); setShowManualOverrideModal(true); }}
+                                  className="mx-auto mb-1 px-2 py-0.5 bg-amber-200 hover:bg-amber-300 text-amber-900 font-bold rounded-full transition-all border border-amber-400"
+                                  style={{ fontSize: '9px' }}
+                                >
+                                  📋 List
+                                </button>
+                              )}
                               
                               {/* +/- controls when selected */}
                               {isSelected && (
@@ -1803,7 +1820,7 @@ export default function LunchPage() {
                   ))}
                   
                   <p className="text-sm text-gray-500 mt-2 font-['Bitter',serif]">
-                    💡 Click date to select. Use +/− to add more meals per day. <span className="text-blue-600">Blue Friday = frozen meal picked up Thursday.</span> Grayed = deadline passed.
+                    💡 Click date to select. Use +/− to add more meals per day. <span className="text-blue-600">Blue Friday = frozen meal picked up Thursday.</span> <span className="text-amber-600">Amber = TODAY (click List to see reservations).</span>
                   </p>
                 </div>
                 

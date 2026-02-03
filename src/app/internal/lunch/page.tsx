@@ -287,16 +287,21 @@ export default function LunchPage() {
   // Today is always clickable until midnight - manual override button appears for same-day
   // Uses Pacific Time for consistency
   const isDatePastDeadline = (dateStr: string): boolean => {
-    // Get current date in Pacific Time
+    // Get current date in Pacific Time (just the date part, no time)
     const nowPacific = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
-    const todayPacific = new Date(nowPacific.getFullYear(), nowPacific.getMonth(), nowPacific.getDate());
+    const todayYear = nowPacific.getFullYear();
+    const todayMonth = nowPacific.getMonth();
+    const todayDay = nowPacific.getDate();
     
-    // Parse target date
-    const targetDate = new Date(dateStr + 'T12:00:00');
-    const targetDateOnly = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+    // Parse target date string (YYYY-MM-DD format)
+    const [targetYear, targetMonth, targetDay] = dateStr.split('-').map(Number);
     
-    // Gray out ONLY if target date is strictly in the past (before today)
-    return targetDateOnly < todayPacific;
+    // Compare as simple numbers - target is past if it's before today
+    if (targetYear < todayYear) return true;
+    if (targetYear > todayYear) return false;
+    if (targetMonth < todayMonth + 1) return true; // todayMonth is 0-indexed
+    if (targetMonth > todayMonth + 1) return false;
+    return targetDay < todayDay; // Same year/month, compare day
   };
   
   // Helper to get today's date string in Pacific Time (YYYY-MM-DD)

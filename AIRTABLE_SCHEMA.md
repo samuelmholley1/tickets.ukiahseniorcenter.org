@@ -1,6 +1,6 @@
 # Airtable Schema - Complete Field Reference
 
-**Last Updated:** January 13, 2026
+**Last Updated:** February 3, 2026
 
 > ⚠️ **AI CRITICAL - PATH VERIFICATION REQUIRED:**
 > When user specifies a route (e.g., "/internal" vs "/internal/lunch"), **STOP and VERIFY the exact file path** before editing:
@@ -37,7 +37,7 @@
 | **Ticket Quantity** | Number (integer) | Total number of tickets | `2` |
 | **Member Tickets** | Number (integer) | Count of member-priced tickets | `1` |
 | **Non-Member Tickets** | Number (integer) | Count of non-member tickets | `1` |
-| **Payment Method** | Single select | Options: `Cash`, `Check`, `Zeffy`, `Comp`, `Other` | `Cash` |
+| **Payment Method** | Single select | Options: `Cash`, `Check`, `Zeffy`, `Comp`, `Other`, `Cash & Check` | `Cash` |
 | **Check Number** | Single line text | For check payments | `1234` |
 | **Payment Notes** | Long text | Split payment details, other notes | `Cash: $30, Check: $45` |
 | **Amount Paid** | Currency | **TICKET PRICE ONLY** | `75.00` |
@@ -267,6 +267,7 @@ Once fields are created, you can create views:
 | **Staff** | Single line text | | Staff initials who took the order |
 | **Status** | Single select | `Reserved`, `Picked Up`, `No Show` | Reservation status |
 | **Frozen Friday** | Checkbox | | Is this a frozen Friday meal (picked up Thursday)? |
+| **Contact** | Linked record | → Contacts | Link to master contact record |
 
 ---
 
@@ -297,7 +298,7 @@ Once fields are created, you can create views:
 |------------|------|---------|-------------|
 | **Name** | Single line text | | Cardholder name |
 | **Phone** | Phone number | | Contact phone |
-| **Card Type** | Single select | `5 Meals`, `10 Meals`, `15 Meals`, `20 Meals` | Number of meals |
+| **Card Type** | Single select | `5 Meals`, `10 Meals`, `15 Meals`, `20 Meals`, `25 Meals` | Number of meals |
 | **Member Status** | Single select | `Member`, `Non-Member` | Pricing tier |
 | **Total Meals** | Number | integer | Total meals on card (5/10/15/20) |
 | **Remaining Meals** | Number | integer | Meals left on card |
@@ -309,6 +310,116 @@ Once fields are created, you can create views:
 | **Weekly Delivery** | Checkbox | | Auto-include on daily delivery list (Mon-Thu) |
 | **Delivery Address** | Long text | | Delivery address for weekly customers |
 | **Include Frozen Friday** | Checkbox | | Also get frozen Friday meal (picked up Thursday) |
+| **Contact** | Linked record | → Contacts | Link to master contact record |
+| **Lunch Card ID** | Single line text | | Unique ID for physical card |
+
+---
+
+## Core CRM Tables (New)
+
+### Contacts Table
+**Table ID:** `tbl3PQZzXGpT991dH`
+**URL:** [Record Link]
+
+#### Fields
+| Field Name | Type | Description |
+|------------|------|-------------|
+| **Name** | Single line text | Full Name (Primary Key) |
+| **First Name** | Single line text | |
+| **Last Name** | Single line text | |
+| **Contact Type** | Single select | `Member`, `Donor`, `Business`, `Agency`, `Other` |
+| **Email** | Email | |
+| **Phone Cell** | Phone number | |
+| **Phone Home** | Phone number | |
+| **Address** | Single line text | Street Address |
+| **City** | Single line text | |
+| **State** | Single line text | |
+| **Zip Code** | Single line text | |
+| **Birth Date** | Date | |
+| **Source** | Single select | `Legacy`, `Website`, `Internal`, `Paper Form`, `Donation Import` |
+| **Lunch Cards** | Linked record | → Lunch Cards (inverse) |
+| **Lunch Reservations** | Linked record | → Lunch Reservations (inverse) |
+| **MEMBERSHIPS_NEW** | Linked record | → MEMBERSHIPS_NEW |
+| **DONATIONS_NEW** | Linked record | → DONATIONS_NEW |
+
+---
+
+### Memberships Table (New)
+**Table ID:** `tbl7iQniH30UcD3dY`
+
+#### Fields
+| Field Name | Type | Options |
+|------------|------|---------|
+| **Member Name** | Single line text | Primary Key |
+| **Contact** | Linked record | → Contacts |
+| **Membership Type** | Single select | `Individual`, `Household`, `Lifetime`, `90+ Complimentary` |
+| **Status** | Single select | `Active`, `Expired`, `Pending` |
+| **Dues Amount** | Currency | |
+| **Expiration** | Date | |
+| **Lifetime Member** | Checkbox | |
+
+---
+
+### Donations Table (New)
+**Table ID:** `tblRuOB2vjyoWVwJK`
+
+#### Fields
+| Field Name | Type | Options |
+|------------|------|---------|
+| **Donor Name** | Single line text | Primary Key |
+| **Contact** | Linked record | → Contacts |
+| **Donation Amount** | Currency | |
+| **Donation Date** | Date | |
+| **Donation Type** | Single select | `Cash`, `Check`, `Credit Card`, `Zeffy`, `In-Kind`, etc. |
+| **Fund** | Single select | `General`, `Building`, `Kitchen`, `Transportation`, `Memorial`, `Lunch Bunch`, etc. |
+| **Annual Pledge** | Checkbox | |
+
+---
+
+## Internal & Metrics Tables
+
+### USC Utilization
+**Table ID:** `tbl0r8f6YkD31vUPf`
+**Purpose:** Monthly reporting metrics for board/grants.
+
+#### Fields
+| Field Name | Type | Options/Description |
+|------------|------|---------------------|
+| **Record ID** | Single line text | Primary Key |
+| **Fiscal Year** | Single select | `2024-2025`, `2025-2026`, `2026-2027` |
+| **Month** | Single select | Full month names |
+| **Category** | Single select | `Activities`, `Rentals`, `USC Events`, `Thrift Store`, `Transportation`, `Dining Room`, `Information & Referral` |
+| **Metric Name** | Single line text | Specific metric (e.g. "Meals Served") |
+| **Value** | Number | The count or amount |
+| **Is Currency** | Checkbox | True if Value is dollars |
+| **Is Subtotal** | Checkbox | True if a calculated roll-up |
+
+### Kitchen Data
+**Table ID:** `tblICSEEG5ODlMXIz`
+**Purpose:** Daily kitchen logs (produce weight, waste, temps).
+
+#### Fields
+| Field Name | Type | Description |
+|------------|------|-------------|
+| **Date** | Date | Log date |
+| **Produce Weight** | Number | |
+| **Waste Weight** | Number | |
+| **Walk-In Fridge Temp** | Number | |
+| **Walk-In Freezer Temp** | Number | |
+| **Logged By** | Single line text | Staff name/initials |
+
+### QuickBooks Tokens
+**Table ID:** `tblf3s4pHSOzRgw5X`
+**Purpose:** Stores OAuth tokens for persistent QBO connection. Be careful editing.
+
+#### Fields
+| Field Name | Type | Description |
+|------------|------|-------------|
+| **Token Type** | Single line text | e.g., "access_token" |
+| **Access Token** | Single line text | |
+| **Refresh Token** | Single line text | |
+| **Realm ID** | Single line text | Company ID |
+| **Token Expires At** | Date & Time | |
 
 ---
 

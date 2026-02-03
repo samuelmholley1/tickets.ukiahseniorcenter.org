@@ -2150,23 +2150,38 @@ export default function LunchPage() {
             )}
           </form>
 
-          {/* Recent Transactions Log */}
+          {/* Recent Transactions Log - filtered by transaction type */}
           <div className="card" style={{ marginTop: 'var(--space-6)' }}>
             <h2 className="font-['Jost',sans-serif] font-bold text-[#427d78] text-xl" style={{ marginBottom: 'var(--space-3)' }}>
-              📜 Recent Transactions
+              📜 Recent {transactionType === 'individual' ? 'Meal Reservations' : 'Lunch Card Purchases'}
             </h2>
             
-            {isLoadingTransactions ? (
-              <div className="text-center py-4 text-gray-500 font-['Bitter',serif]">Loading transactions...</div>
-            ) : recentTransactions.length === 0 ? (
-              <div className="text-center py-4 text-gray-500 font-['Bitter',serif]">No recent transactions</div>
-            ) : (
+            {(() => {
+              // Filter transactions based on current mode
+              const filteredTransactions = recentTransactions.filter(tx => 
+                transactionType === 'individual' 
+                  ? tx.type === 'reservation' 
+                  : tx.type === 'lunch_card'
+              );
+              
+              if (isLoadingTransactions) {
+                return <div className="text-center py-4 text-gray-500 font-['Bitter',serif]">Loading transactions...</div>;
+              }
+              
+              if (filteredTransactions.length === 0) {
+                return (
+                  <div className="text-center py-4 text-gray-500 font-['Bitter',serif]">
+                    No recent {transactionType === 'individual' ? 'meal reservations' : 'lunch card purchases'}
+                  </div>
+                );
+              }
+              
+              return (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
                   <thead>
                     <tr className="bg-gray-100">
                       <th className="text-left p-2 font-['Jost',sans-serif]">Time</th>
-                      <th className="text-left p-2 font-['Jost',sans-serif]">Type</th>
                       <th className="text-left p-2 font-['Jost',sans-serif]">Name</th>
                       <th className="text-left p-2 font-['Jost',sans-serif]">Details</th>
                       <th className="text-right p-2 font-['Jost',sans-serif]">Amount</th>
@@ -2175,7 +2190,7 @@ export default function LunchPage() {
                     </tr>
                   </thead>
                   <tbody className="font-['Bitter',serif]">
-                    {recentTransactions.map((tx) => {
+                    {filteredTransactions.map((tx) => {
                       const createdDate = new Date(tx.createdAt);
                       const timeStr = createdDate.toLocaleString('en-US', { 
                         timeZone: 'America/Los_Angeles',
@@ -2187,7 +2202,6 @@ export default function LunchPage() {
                       });
                       
                       const isCard = tx.type === 'lunch_card';
-                      const typeLabel = isCard ? '🎫 Card' : '🍴 Meal';
                       const typeBg = isCard ? 'bg-green-50' : 'bg-amber-50';
                       
                       // Details column content
@@ -2198,11 +2212,6 @@ export default function LunchPage() {
                       return (
                         <tr key={tx.id} className={`border-b ${typeBg}`}>
                           <td className="p-2 text-xs text-gray-600 whitespace-nowrap">{timeStr}</td>
-                          <td className="p-2 whitespace-nowrap">
-                            <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${isCard ? 'bg-green-200 text-green-800' : 'bg-amber-200 text-amber-800'}`}>
-                              {typeLabel}
-                            </span>
-                          </td>
                           <td className="p-2 font-semibold">{tx.name}</td>
                           <td className="p-2 text-gray-600 text-xs">{details}</td>
                           <td className="p-2 text-right font-bold">
@@ -2216,7 +2225,8 @@ export default function LunchPage() {
                   </tbody>
                 </table>
               </div>
-            )}
+              );
+            })()}
             
             <div className="mt-3 text-right">
               <button

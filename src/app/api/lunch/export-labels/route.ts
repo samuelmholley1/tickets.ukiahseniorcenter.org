@@ -81,11 +81,26 @@ function extractSpecialRequests(notes: string): string[] {
 }
 
 // Check if name matches a Coyote Valley customer
+// Uses strict matching to avoid false positives (e.g. "Michael" shouldn't match "Michael Brown")
 function isCoyoteValleyCustomer(name: string): boolean {
-  const nameLower = name.toLowerCase().trim();
+  const resNameLower = name.toLowerCase().trim();
+  if (resNameLower.length < 3) return false; // Ignore tiny names
+
   return COYOTE_VALLEY_ROUTE.some(cv => {
     const cvNames = cv.name.toLowerCase().split(/\s*&\s*/);
-    return cvNames.some(n => nameLower.includes(n) || n.includes(nameLower));
+    return cvNames.some(targetName => {
+      // 1. Exact match
+      if (resNameLower === targetName) return true;
+      
+      // 2. Reservation matches full target name (e.g. "Michael Brown (Manager)")
+      if (resNameLower.includes(targetName)) return true;
+      
+      // 3. Target matches full reservation name, BUT reservation must have space (First Last)
+      // This prevents "Michael" from matching "Michael Brown"
+      if (targetName.includes(resNameLower) && resNameLower.includes(' ')) return true;
+      
+      return false;
+    });
   });
 }
 
@@ -185,18 +200,28 @@ export async function GET(request: NextRequest) {
     for (const cv of COYOTE_VALLEY_ROUTE) {
       const cvNames = cv.name.toLowerCase().split(/\s*&\s*/);
       
-      // Find if ANY reservation matches this CV stop
-      const hasReservation = coyoteValleyRes.some(res => {
-        const resNameLower = res.Name.toLowerCase().trim();
-        return cvNames.some(n => resNameLower.includes(n) || n.includes(resNameLower));
-      });
+      // Find if ANY reservation matches this CV stop (using same strict logic)
+      const hasReservation = coyoteValleyRes.some(res => isCoyoteValleyCustomer(res.Name) && 
+        cvNames.some(targetName => {
+          const resNameLower = res.Name.toLowerCase().trim();
+          if (resNameLower === targetName) return true;
+          if (resNameLower.includes(targetName)) return true;
+          if (targetName.includes(resNameLower) && resNameLower.includes(' ')) return true;
+          return false;
+        })
+      );
       
       if (hasReservation) {
         // Get notes from matching reservation for special requests
-        const matchingRes = coyoteValleyRes.find(res => {
-          const resNameLower = res.Name.toLowerCase().trim();
-          return cvNames.some(n => resNameLower.includes(n) || n.includes(resNameLower));
-        });
+        const matchingRes = coyoteValleyRes.find(res => isCoyoteValleyCustomer(res.Name) &&
+          cvNames.some(targetName => {
+            const resNameLower = res.Name.toLowerCase().trim();
+            if (resNameLower === targetName) return true;
+            if (resNameLower.includes(targetName)) return true;
+            if (targetName.includes(resNameLower) && resNameLower.includes(' ')) return true;
+            return false;
+          })
+        );
         
         const notes = cleanNotes(matchingRes?.Notes || '');
         const specialReqs = extractSpecialRequests(notes);

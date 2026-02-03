@@ -283,7 +283,8 @@ export default function LunchPage() {
   }
   
   // Check if a date is past its ordering deadline
-  // New rule: Only gray out dates that are TODAY or in the past (not based on 2pm deadline)
+  // Rule: Only gray out dates that are BEFORE today (past dates only)
+  // Today is always clickable until midnight - manual override button appears for same-day
   // Uses Pacific Time for consistency
   const isDatePastDeadline = (dateStr: string): boolean => {
     // Get current date in Pacific Time
@@ -294,8 +295,8 @@ export default function LunchPage() {
     const targetDate = new Date(dateStr + 'T12:00:00');
     const targetDateOnly = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
     
-    // Gray out if target date is today or in the past
-    return targetDateOnly <= todayPacific;
+    // Gray out ONLY if target date is strictly in the past (before today)
+    return targetDateOnly < todayPacific;
   };
   
   // Helper to get today's date string in Pacific Time (YYYY-MM-DD)
@@ -2563,7 +2564,7 @@ export default function LunchPage() {
                           <td className="p-2 font-semibold">{tx.name}</td>
                           <td className="p-2 text-gray-600 text-xs">{details}</td>
                           <td className="p-2 text-right font-bold">
-                            {tx.amount > 0 ? `$${tx.amount.toFixed(2)}` : <span className="text-gray-400">$0</span>}
+                            {tx.amount > 0 ? `$${tx.amount.toFixed(2)}` : ''}
                           </td>
                           <td className="p-2 text-xs">{tx.paymentMethod}</td>
                           <td className="p-2 text-center text-xs font-bold text-gray-600">{tx.staff}</td>

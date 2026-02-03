@@ -19,6 +19,63 @@ interface Reservation {
   Amount?: number;
   LunchCardId?: string; // Linked lunch card record ID
   LunchCardRemaining?: number; // Remaining meals on lunch card
+  InFridge?: boolean; // Wants meal left in fridge
+}
+
+// Dietary/special request keywords to detect
+const DIETARY_KEYWORDS = {
+  vegetarian: ['vegetarian', 'veggie', 'veg', 'vegetable'],
+  glutenFree: ['gluten-free', 'gluten free', 'gf', 'no gluten'],
+  noDessert: ['no dessert', 'no desert'],
+  noGarlic: ['no garlic'],
+  noOnions: ['no onions', 'no onion'],
+  dairyFree: ['dairy-free', 'dairy free', 'no dairy', 'lactose'],
+  inFridge: ['in fridge', 'fridge', 'leave in fridge'],
+};
+
+// Parse notes to extract dietary restrictions (returns array of detected types)
+function parseDietaryRestrictions(notes: string): string[] {
+  if (!notes) return [];
+  const lower = notes.toLowerCase();
+  const detected: string[] = [];
+  
+  // Check for each dietary keyword
+  if (DIETARY_KEYWORDS.vegetarian.some(k => lower.includes(k))) detected.push('Vegetarian');
+  if (DIETARY_KEYWORDS.glutenFree.some(k => lower.includes(k))) detected.push('Gluten-Free');
+  if (DIETARY_KEYWORDS.noDessert.some(k => lower.includes(k))) detected.push('No Dessert');
+  if (DIETARY_KEYWORDS.noGarlic.some(k => lower.includes(k))) detected.push('No Garlic');
+  if (DIETARY_KEYWORDS.noOnions.some(k => lower.includes(k))) detected.push('No Onions');
+  if (DIETARY_KEYWORDS.dairyFree.some(k => lower.includes(k))) detected.push('Dairy-Free');
+  if (DIETARY_KEYWORDS.inFridge.some(k => lower.includes(k))) detected.push('In Fridge');
+  
+  return detected;
+}
+
+// Clean up notes to remove system/internal markers and keep only meaningful content
+function cleanNotes(notes: string): string {
+  if (!notes) return '';
+  
+  // Remove common system markers
+  const cleaned = notes
+    .replace(/handwritten/gi, '')
+    .replace(/handwritten entry/gi, '')
+    .replace(/handwritten;?\s*/gi, '')
+    .replace(/DIET:\s*/gi, '')
+    .replace(/pink highlight\s*['"]\+['"]/gi, '')
+    .replace(/pink highlight/gi, '')
+    .replace(/green highlight[^|]*/gi, '')
+    .replace(/highlighted/gi, '')
+    .replace(/\(Highlighted\)/gi, '')
+    .replace(/marked\s*['"][^'"]+['"]\s*with\s*/gi, '')
+    .replace(/\s*\|\s*\|\s*/g, ' | ') // Fix double pipes
+    .replace(/^\s*\|\s*/g, '') // Remove leading pipe
+    .replace(/\s*\|\s*$/g, '') // Remove trailing pipe
+    .trim();
+  
+  // If only system markers remain or is empty after cleaning, return empty
+  if (cleaned.length < 2) return '';
+  
+  return cleaned;
 }
 
 /**
@@ -202,6 +259,11 @@ export async function GET(request: NextRequest) {
       day: 'numeric' 
     });
 
+    // Calculate meal type counts
+    const dineInCount = reservations.filter(r => r['Meal Type'] === 'Dine In').length;
+    const toGoCount = reservations.filter(r => r['Meal Type'] === 'To Go').length;
+    const deliveryCount = reservations.filter(r => r['Meal Type'] === 'Delivery').length;
+
     // Load logo
     const logoBase64 = await getUSCLogo();
 
@@ -218,29 +280,64 @@ export async function GET(request: NextRequest) {
     const contentWidth = pageWidth - (2 * margin);
     let y = margin;
 
-    // Helper function to draw table header
+    // Column widths: #, Name, Type, Status, Paid, Special Requests, Meals Remaining
+    const colWidths = [0.35, 1.9, 0.7, 0.85, 0.5, 1.8, 1.4];
+
+    // Helper function to draw a colored pill/badge
+    const drawPill = (text: string, x: number, yPos: number, bgColor: [number, number, number], textColor: [number, number, number] = [255, 255, 255]) => {
+      doc.setFontSize(9);
+      const textWidth = doc.getTextWidth(text);
+      const pillWidth = textWidth + 0.15;
+      const pillHeight = 0.22;
+      
+      // Draw rounded rectangle
+      doc.setFillColor(...bgColor);
+      doc.roundedRect(x, yPos - 0.15, pillWidth, pillHeight, 0.05, 0.05, 'F');
+      
+      // Draw text
+      doc.setTextColor(...textColor);
+      doc.text(text, x + 0.075, yPos);
+      
+      return pillWidth + 0.1; // Return width for positioning next pill
+    };
+
+    // Helper function to draw table header (2 rows for long headers)
     const drawTableHeader = () => {
       doc.setFillColor(66, 125, 120);
-      doc.rect(margin, y, contentWidth, 0.3, 'F');
+      doc.rect(margin, y, contentWidth, 0.45, 'F'); // Taller header for 2 lines
       
-      doc.setFontSize(9);
+      doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(255, 255, 255);
       
       let hx = margin + 0.05;
-      doc.text('#', hx, y + 0.2);
-      hx += colWidths[0];
-      doc.text('Name', hx, y + 0.2);
-      hx += colWidths[1];
-      doc.text('Type', hx, y + 0.2);
-      hx += colWidths[2];
-      doc.text('Status', hx, y + 0.2);
-      hx += colWidths[3];
-      doc.text('Payment', hx, y + 0.2);
-      hx += colWidths[4];
-      doc.text('Sp. Req.', hx, y + 0.2);
       
-      y += 0.35;
+      // Row 1 headers
+      doc.text('#', hx, y + 0.18);
+      hx += colWidths[0];
+      
+      doc.text('Name', hx, y + 0.18);
+      hx += colWidths[1];
+      
+      doc.text('Type', hx, y + 0.18);
+      hx += colWidths[2];
+      
+      doc.text('Status', hx, y + 0.18);
+      hx += colWidths[3];
+      
+      doc.text('Paid', hx, y + 0.18);
+      hx += colWidths[4];
+      
+      // Multi-line header: Special Requests
+      doc.text('Special', hx, y + 0.13);
+      doc.text('Requests', hx, y + 0.28);
+      hx += colWidths[5];
+      
+      // Multi-line header: Meals Remaining
+      doc.text('Meals', hx, y + 0.13);
+      doc.text('Remaining', hx, y + 0.28);
+      
+      y += 0.5;
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(0, 0, 0);
     };
@@ -261,7 +358,26 @@ export async function GET(request: NextRequest) {
       return false;
     };
 
-    const colWidths = [0.4, 2.2, 0.8, 0.8, 1.0, 2.3]; // #, Name, Type, Status, Payment, Notes
+    // Calculate dietary totals
+    let vegetarianCount = 0;
+    let glutenFreeCount = 0;
+    let noDessertCount = 0;
+    let noGarlicCount = 0;
+    let noOnionsCount = 0;
+    let dairyFreeCount = 0;
+    let inFridgeCount = 0;
+    
+    for (const res of reservations) {
+      const cleanedNotes = cleanNotes(res.Notes || '');
+      const dietary = parseDietaryRestrictions(cleanedNotes);
+      if (dietary.includes('Vegetarian')) vegetarianCount++;
+      if (dietary.includes('Gluten-Free')) glutenFreeCount++;
+      if (dietary.includes('No Dessert')) noDessertCount++;
+      if (dietary.includes('No Garlic')) noGarlicCount++;
+      if (dietary.includes('No Onions')) noOnionsCount++;
+      if (dietary.includes('Dairy-Free')) dairyFreeCount++;
+      if (dietary.includes('In Fridge') || res.InFridge) inFridgeCount++;
+    }
 
     // Header
     if (logoBase64) {
@@ -278,15 +394,42 @@ export async function GET(request: NextRequest) {
     doc.setTextColor(100, 100, 100);
     doc.text(formattedDate, margin + 0.75, y + 0.45);
     
-    // Stats
-    const dineInCount = reservations.filter(r => r['Meal Type'] === 'Dine In').length;
-    const toGoCount = reservations.filter(r => r['Meal Type'] === 'To Go').length;
-    const deliveryCount = reservations.filter(r => r['Meal Type'] === 'Delivery').length;
+    // Stats row 1 - Meal type pills with distinct colors
+    y += 0.75;
+    doc.setFont('helvetica', 'bold');
+    let pillX = margin;
     
-    doc.setFontSize(10);
-    doc.text(`Total: ${reservations.length} | Dine In: ${dineInCount} | To Go: ${toGoCount} | Delivery: ${deliveryCount}`, margin + 0.75, y + 0.6);
+    // Total pill (dark gray)
+    pillX += drawPill(`Total: ${reservations.length}`, pillX, y, [80, 80, 80]);
     
-    y += 0.9;
+    // Dine In pill (teal/green)
+    pillX += drawPill(`Dine In: ${dineInCount}`, pillX, y, [66, 125, 120]);
+    
+    // To Go pill (orange)
+    pillX += drawPill(`To Go: ${toGoCount}`, pillX, y, [230, 126, 34]);
+    
+    // Delivery pill (blue) - no need to capture return value
+    drawPill(`Delivery: ${deliveryCount}`, pillX, y, [52, 152, 219]);
+    
+    // Stats row 2 - Dietary totals
+    y += 0.35;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(80, 80, 80);
+    
+    const dietaryStats = [
+      `Vegetarian: ${vegetarianCount}`,
+      `Gluten-Free: ${glutenFreeCount}`,
+      `No Dessert: ${noDessertCount}`,
+      `No Garlic: ${noGarlicCount}`,
+      `No Onions: ${noOnionsCount}`,
+      `Dairy-Free: ${dairyFreeCount}`,
+      `In Fridge: ${inFridgeCount}`,
+    ].join('  |  ');
+    
+    doc.text(dietaryStats, margin, y);
+    
+    y += 0.35;
 
     // Table header (first page)
     drawTableHeader();
@@ -295,69 +438,136 @@ export async function GET(request: NextRequest) {
     let x = margin; // row x position
     
     reservations.forEach((res, index) => {
-      checkNewPage(0.25);
+      checkNewPage(0.28);
       
       // Alternating row colors
       if (index % 2 === 0) {
         doc.setFillColor(245, 245, 245);
-        doc.rect(margin, y - 0.05, contentWidth, 0.25, 'F');
+        doc.rect(margin, y - 0.05, contentWidth, 0.28, 'F');
       }
       
       x = margin + 0.05;
       doc.setFontSize(8);
+      doc.setTextColor(0, 0, 0);
       
       // Row number
       doc.text(String(index + 1), x, y + 0.12);
       x += colWidths[0];
       
       // Name (truncate if too long)
-      const name = res.Name.length > 28 ? res.Name.substring(0, 26) + '...' : res.Name;
+      const name = res.Name.length > 24 ? res.Name.substring(0, 22) + '...' : res.Name;
       doc.setFont('helvetica', 'bold');
       doc.text(name, x, y + 0.12);
       doc.setFont('helvetica', 'normal');
       x += colWidths[1];
       
-      // Meal Type (abbreviated)
-      const typeAbbrev = res['Meal Type'] === 'Dine In' ? 'DI' : res['Meal Type'] === 'To Go' ? 'TG' : 'DEL';
-      doc.text(typeAbbrev, x, y + 0.12);
+      // Meal Type - written out fully
+      doc.text(res['Meal Type'] || '', x, y + 0.12);
       x += colWidths[2];
       
-      // Member Status (abbreviated)
-      const statusAbbrev = res['Member Status'] === 'Member' ? 'M' : 'NM';
-      doc.text(statusAbbrev, x, y + 0.12);
+      // Member Status - written out fully
+      doc.text(res['Member Status'] || '', x, y + 0.12);
       x += colWidths[3];
       
-      // Payment (abbreviated) - show remaining meals for lunch cards
+      // Paid column - simple checkmark or empty
       const payment = res['Payment Method'] || '';
-      let payAbbrev = payment === 'Lunch Card' ? 'LC' : 
-                        payment === 'Cash' ? 'Cash' : 
-                        payment === 'Check' ? 'Chk' : 
-                        payment === 'Cash & Check' ? 'C&C' :
-                        payment === 'Card (Zeffy)' ? 'Card' :
-                        payment === 'Comp Card' ? 'Comp' :
-                        payment === 'Prepaid Weekly' ? 'PW' : payment.substring(0, 4);
-      
-      // Add remaining meals info for lunch card or prepaid weekly payments
-      if ((payment === 'Lunch Card' || payment === 'Prepaid Weekly') && res.LunchCardRemaining !== undefined) {
-        const remaining = res.LunchCardRemaining;
-        const warning = remaining <= 3 ? '!' : '';
-        const prefix = payment === 'Prepaid Weekly' ? 'PW' : 'LC';
-        payAbbrev = `${prefix}:${remaining}${warning}`;
-        // Highlight low-remaining cards with red text
-        if (remaining <= 3) {
-          doc.setTextColor(180, 0, 0);
-        }
+      const isPaid = payment === 'Cash' || payment === 'Check' || payment === 'Card (Zeffy)' || 
+                     payment === 'Lunch Card' || payment === 'Prepaid Weekly' || payment === 'Comp Card';
+      doc.setFontSize(10);
+      if (isPaid) {
+        doc.setTextColor(0, 128, 0);
+        doc.text('✓', x + 0.1, y + 0.13);
       }
-      doc.text(payAbbrev, x, y + 0.12);
-      doc.setTextColor(0, 0, 0); // Reset text color
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(8);
       x += colWidths[4];
       
-      // Notes (truncate)
-      const notes = res.Notes ? (res.Notes.length > 30 ? res.Notes.substring(0, 28) + '...' : res.Notes) : '';
-      doc.setFontSize(7);
-      doc.text(notes, x, y + 0.12);
+      // Special Requests - extract and display dietary restrictions with color coding
+      const cleanedNotes = cleanNotes(res.Notes || '');
+      const dietary = parseDietaryRestrictions(cleanedNotes);
       
-      y += 0.22;
+      if (dietary.length > 0) {
+        doc.setFontSize(7);
+        let reqX = x;
+        const reqY = y + 0.08;
+        
+        for (const item of dietary) {
+          // Color code different dietary items
+          if (item === 'Vegetarian') {
+            doc.setTextColor(34, 139, 34); // Forest green
+            doc.setFont('helvetica', 'bold');
+          } else if (item === 'No Dessert') {
+            doc.setTextColor(139, 69, 19); // Saddle brown
+            doc.setFont('helvetica', 'bold');
+          } else if (item === 'No Garlic' || item === 'No Onions') {
+            doc.setTextColor(128, 0, 128); // Purple
+            doc.setFont('helvetica', 'bold');
+          } else if (item === 'Gluten-Free') {
+            doc.setTextColor(184, 134, 11); // Dark goldenrod
+            doc.setFont('helvetica', 'bold');
+          } else if (item === 'Dairy-Free') {
+            doc.setTextColor(0, 0, 139); // Dark blue
+            doc.setFont('helvetica', 'bold');
+          } else if (item === 'In Fridge') {
+            doc.setTextColor(0, 128, 255); // Bright blue
+            doc.setFont('helvetica', 'bold');
+          }
+          
+          const itemText = item + (dietary.indexOf(item) < dietary.length - 1 ? ', ' : '');
+          doc.text(itemText, reqX, reqY + 0.05);
+          reqX += doc.getTextWidth(itemText);
+        }
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(0, 0, 0);
+      }
+      x += colWidths[5];
+      
+      // Meals Remaining column
+      doc.setFontSize(8);
+      if (res.LunchCardRemaining !== undefined) {
+        const remaining = res.LunchCardRemaining;
+        
+        // Color-code based on remaining meals
+        if (remaining <= 1) {
+          // Red highlight for 1-2 remaining
+          doc.setFillColor(255, 200, 200);
+          doc.rect(x - 0.05, y - 0.03, colWidths[6] - 0.1, 0.24, 'F');
+          doc.setTextColor(139, 0, 0);
+          doc.setFont('helvetica', 'bold');
+          doc.text(`${remaining}`, x, y + 0.12);
+          // Warning emoji for 1 remaining
+          if (remaining === 1) {
+            doc.text(' ⚠️', x + 0.15, y + 0.12);
+          }
+        } else if (remaining === 2) {
+          // Red highlight for 2 remaining
+          doc.setFillColor(255, 200, 200);
+          doc.rect(x - 0.05, y - 0.03, colWidths[6] - 0.1, 0.24, 'F');
+          doc.setTextColor(139, 0, 0);
+          doc.setFont('helvetica', 'bold');
+          doc.text(`${remaining}`, x, y + 0.12);
+        } else if (remaining === 3) {
+          // Yellow highlight for 3 remaining
+          doc.setFillColor(255, 255, 200);
+          doc.rect(x - 0.05, y - 0.03, colWidths[6] - 0.1, 0.24, 'F');
+          doc.setTextColor(139, 119, 0);
+          doc.setFont('helvetica', 'bold');
+          doc.text(`${remaining}`, x, y + 0.12);
+        } else {
+          // Normal display for 4+ remaining
+          doc.setTextColor(0, 0, 0);
+          doc.text(`${remaining}`, x, y + 0.12);
+        }
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(0, 0, 0);
+      } else {
+        // No lunch card
+        doc.setTextColor(150, 150, 150);
+        doc.text('N/A', x, y + 0.12);
+        doc.setTextColor(0, 0, 0);
+      }
+      
+      y += 0.25;
     });
 
     // Footer

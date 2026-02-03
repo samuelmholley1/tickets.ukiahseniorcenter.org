@@ -9,10 +9,6 @@ const AIRTABLE_API_BASE = 'https://api.airtable.com/v0';
  * Sheet: 8.5" x 11" letter
  * Labels per sheet: 30 (3 columns x 10 rows)
  * Label size: 2.625" x 1" (2-5/8" x 1")
- * Top margin: 0.5"
- * Left margin: 0.1875" (3/16")
- * Horizontal gap: 0.125" (1/8")
- * Vertical gap: 0" (labels touch vertically)
  */
 const AVERY_5160 = {
   pageWidth: 8.5,
@@ -34,13 +30,68 @@ interface Reservation {
   'Meal Type': string;
   'Member Status': string;
   'Payment Method': string;
-  Notes?: string; // aka "Special Request" in the UI
+  Notes?: string;
+  InFridge?: boolean;
+}
+
+// Hardcoded Coyote Valley delivery route - always in this exact order
+const COYOTE_VALLEY_ROUTE = [
+  { routeId: 'COYOTE VALLEY #1', name: 'Iris Martinez', address: '5875 Hwy 20' },
+  { routeId: 'COYOTE VALLEY #2', name: 'Margaret Olea', address: '7601 N State St, Tribal Office' },
+  { routeId: 'COYOTE VALLEY #3', name: 'Victor Olea', address: '7601 N State St, Tribal Office' },
+  { routeId: 'COYOTE VALLEY #4', name: 'Michael Brown', address: '104 Coyote Valley Blvd.' },
+  { routeId: 'COYOTE VALLEY #5', name: 'Guadalupe Munoz', address: '4 Shodakai Ct.' },
+  { routeId: 'COYOTE VALLEY #6 + #7', name: 'Ronald Hoel Sr. & Sherry Knight', address: '128 Campbell Dr.' },
+  { routeId: 'COYOTE VALLEY #8', name: 'Trudy Ramos', address: '129 Campbell Dr.' },
+  { routeId: 'COYOTE VALLEY #9', name: 'John Feliz Sr.', address: '6 Coyote Valley Blvd.' },
+];
+
+// Clean notes to remove system markers
+function cleanNotes(notes: string): string {
+  if (!notes) return '';
+  return notes
+    .replace(/handwritten/gi, '')
+    .replace(/\(handwritten\)/gi, '')
+    .replace(/handwritten;?\s*/gi, '')
+    .replace(/DIET:\s*/gi, '')
+    .replace(/pink highlight[^|]*/gi, '')
+    .replace(/green highlight[^|]*/gi, '')
+    .replace(/highlighted/gi, '')
+    .replace(/\s*\|\s*\|\s*/g, ' | ')
+    .replace(/^\s*\|\s*/g, '')
+    .replace(/\s*\|\s*$/g, '')
+    .trim();
+}
+
+// Extract dietary/special requests from notes
+function extractSpecialRequests(notes: string): string[] {
+  if (!notes) return [];
+  const lower = notes.toLowerCase();
+  const requests: string[] = [];
+  
+  if (lower.includes('vegetarian')) requests.push('Vegetarian');
+  if (lower.includes('gluten-free') || lower.includes('gluten free') || lower.includes('gf')) requests.push('Gluten-Free');
+  if (lower.includes('no dessert')) requests.push('No Dessert');
+  if (lower.includes('no garlic')) requests.push('No Garlic');
+  if (lower.includes('no onion')) requests.push('No Onions');
+  if (lower.includes('dairy-free') || lower.includes('dairy free') || lower.includes('no dairy')) requests.push('Dairy-Free');
+  if (lower.includes('in fridge') || lower.includes('fridge')) requests.push('In Fridge');
+  
+  return requests;
+}
+
+// Check if name matches a Coyote Valley customer
+function isCoyoteValleyCustomer(name: string): boolean {
+  const nameLower = name.toLowerCase().trim();
+  return COYOTE_VALLEY_ROUTE.some(cv => {
+    const cvNames = cv.name.toLowerCase().split(/\s*&\s*/);
+    return cvNames.some(n => nameLower.includes(n) || n.includes(nameLower));
+  });
 }
 
 /**
  * GET /api/lunch/export-labels?date=YYYY-MM-DD
  * Generate Avery 5160 labels for lunch reservations
- * Each label shows: Name, Meal Type, Member Status, Notes
  */
 export async function GET(request: NextRequest) {
   try {
@@ -51,7 +102,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Date parameter required (YYYY-MM-DD)' }, { status: 400 });
     }
 
-    // Validate date format
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return NextResponse.json({ error: 'Invalid date format. Use YYYY-MM-DD' }, { status: 400 });
     }
@@ -60,31 +110,24 @@ export async function GET(request: NextRequest) {
       throw new Error('Airtable environment variables not configured');
     }
 
-    // Fetch ALL reservations for the date (handle Airtable pagination - 100 record limit per request)
+    // Fetch ALL reservations for the date
     const allRecords: Array<{ id: string; fields: Record<string, unknown> }> = [];
     let offset: string | undefined = undefined;
-    // Use IS_SAME for date comparison - Airtable date fields need proper date comparison, not string equality
     const baseFilter = `filterByFormula=${encodeURIComponent(`IS_SAME({Date}, '${date}', 'day')`)}`;
     
     do {
       let url = `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_RESERVATIONS_TABLE_ID}?${baseFilter}`;
-      if (offset) {
-        url += `&offset=${offset}`;
-      }
+      if (offset) url += `&offset=${offset}`;
       
       const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
-        },
+        headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}` },
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch reservations from Airtable');
-      }
+      if (!response.ok) throw new Error('Failed to fetch reservations from Airtable');
 
       const data = await response.json();
       allRecords.push(...data.records);
-      offset = data.offset; // Will be undefined if no more pages
+      offset = data.offset;
     } while (offset);
 
     const reservations: Reservation[] = allRecords.map((record) => ({
@@ -95,74 +138,28 @@ export async function GET(request: NextRequest) {
       'Member Status': record.fields['Member Status'] as string || '',
       'Payment Method': record.fields['Payment Method'] as string || '',
       Notes: record.fields['Notes'] as string || '',
+      InFridge: record.fields['In Fridge'] as boolean || false,
     }));
 
-    // Fetch Weekly Delivery customers (auto-include Mon-Thu, + frozen Fri on Thu)
-    const targetDate = new Date(date + 'T12:00:00');
-    const dayOfWeek = targetDate.getDay(); // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri
-    const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 4; // Mon-Thu
-    const isThursday = dayOfWeek === 4;
-    
-    // Track names already in reservations to avoid duplicates
-    const existingNames = new Set(reservations.map(r => r.Name.toLowerCase().trim()));
-    
-    if (isWeekday && process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID) {
-      // Fetch all active weekly delivery customers
-      const weeklyFilter = `AND({Weekly Delivery}, {Remaining Meals} > 0)`;
-      const weeklyUrl = `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID}?filterByFormula=${encodeURIComponent(weeklyFilter)}`;
-      
-      const weeklyResponse = await fetch(weeklyUrl, {
-        headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}` },
-      });
-      
-      if (weeklyResponse.ok) {
-        const weeklyData = await weeklyResponse.json();
-        
-        for (const card of weeklyData.records) {
-          const cardName = card.fields['Name'] as string || 'Unknown';
-          const memberStatus = card.fields['Member Status'] as string || 'Member';
-          const deliveryAddress = card.fields['Delivery Address'] as string || '';
-          const includeFrozenFriday = card.fields['Include Frozen Friday'] as boolean || false;
-          
-          // Skip if this customer already has a manual reservation for today
-          if (existingNames.has(cardName.toLowerCase().trim())) {
-            continue;
-          }
-          
-          // Add regular daily delivery
-          reservations.push({
-            id: `weekly-${card.id}`,
-            Name: cardName,
-            Date: date,
-            'Meal Type': 'Delivery',
-            'Member Status': memberStatus,
-            'Payment Method': 'Prepaid Weekly',
-            Notes: deliveryAddress || '',
-          });
-          
-          // On Thursday, also add frozen Friday meal
-          if (isThursday && includeFrozenFriday) {
-            reservations.push({
-              id: `weekly-fri-${card.id}`,
-              Name: cardName,
-              Date: date,
-              'Meal Type': 'Delivery',
-              'Member Status': memberStatus,
-              'Payment Method': 'Prepaid Weekly',
-              Notes: `🧊 FROZEN FRI | ${deliveryAddress || ''}`.trim(),
-            });
-          }
-        }
-      }
-    }
-
-    // Filter out Dine In - labels only needed for To Go and Delivery
+    // Filter: labels only needed for To Go and Delivery
     const labelReservations = reservations.filter(r => 
       r['Meal Type'] === 'To Go' || r['Meal Type'] === 'Delivery'
     );
 
-    // Sort by last name alphabetically
-    labelReservations.sort((a, b) => {
+    // Separate Coyote Valley from others
+    const coyoteValleyRes: Reservation[] = [];
+    const otherRes: Reservation[] = [];
+    
+    for (const res of labelReservations) {
+      if (res['Meal Type'] === 'Delivery' && isCoyoteValleyCustomer(res.Name)) {
+        coyoteValleyRes.push(res);
+      } else {
+        otherRes.push(res);
+      }
+    }
+
+    // Sort others by last name
+    otherRes.sort((a, b) => {
       const getLastName = (name: string) => {
         const parts = name.trim().split(/\s+/);
         return parts[parts.length - 1].toLowerCase();
@@ -170,7 +167,71 @@ export async function GET(request: NextRequest) {
       return getLastName(a.Name).localeCompare(getLastName(b.Name));
     });
 
-    // Create PDF - Letter size
+    // Build label data
+    interface LabelData {
+      isCoyoteValley: boolean;
+      routeId?: string;
+      name: string;
+      address?: string;
+      mealType: string;
+      memberStatus: string;
+      specialRequests: string[];
+      inFridge: boolean;
+    }
+    
+    const allLabels: LabelData[] = [];
+    
+    // Coyote Valley labels FIRST in hardcoded order (one label per route stop)
+    for (const cv of COYOTE_VALLEY_ROUTE) {
+      const cvNames = cv.name.toLowerCase().split(/\s*&\s*/);
+      
+      // Find if ANY reservation matches this CV stop
+      const hasReservation = coyoteValleyRes.some(res => {
+        const resNameLower = res.Name.toLowerCase().trim();
+        return cvNames.some(n => resNameLower.includes(n) || n.includes(resNameLower));
+      });
+      
+      if (hasReservation) {
+        // Get notes from matching reservation for special requests
+        const matchingRes = coyoteValleyRes.find(res => {
+          const resNameLower = res.Name.toLowerCase().trim();
+          return cvNames.some(n => resNameLower.includes(n) || n.includes(resNameLower));
+        });
+        
+        const notes = cleanNotes(matchingRes?.Notes || '');
+        const specialReqs = extractSpecialRequests(notes);
+        if (matchingRes?.InFridge) specialReqs.push('In Fridge');
+        
+        allLabels.push({
+          isCoyoteValley: true,
+          routeId: cv.routeId,
+          name: cv.name,
+          address: cv.address,
+          mealType: 'Delivery',
+          memberStatus: matchingRes?.['Member Status'] || 'Member',
+          specialRequests: specialReqs,
+          inFridge: matchingRes?.InFridge || false,
+        });
+      }
+    }
+    
+    // Other labels
+    for (const res of otherRes) {
+      const notes = cleanNotes(res.Notes || '');
+      const specialReqs = extractSpecialRequests(notes);
+      if (res.InFridge) specialReqs.push('In Fridge');
+      
+      allLabels.push({
+        isCoyoteValley: false,
+        name: res.Name,
+        mealType: res['Meal Type'],
+        memberStatus: res['Member Status'],
+        specialRequests: specialReqs,
+        inFridge: res.InFridge || false,
+      });
+    }
+
+    // Create PDF
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'in',
@@ -180,18 +241,15 @@ export async function GET(request: NextRequest) {
     const { cols, rows, labelWidth, labelHeight, topMargin, leftMargin, hGap } = AVERY_5160;
     const labelsPerPage = cols * rows;
 
-    // Format date for display on labels
     const dateObj = new Date(date + 'T12:00:00');
     const shortDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
     // Draw each label
-    labelReservations.forEach((res, index) => {
-      // Add new page if needed
+    allLabels.forEach((label, index) => {
       if (index > 0 && index % labelsPerPage === 0) {
         doc.addPage();
       }
 
-      // Calculate position
       const pageIndex = index % labelsPerPage;
       const col = pageIndex % cols;
       const row = Math.floor(pageIndex / cols);
@@ -199,108 +257,100 @@ export async function GET(request: NextRequest) {
       const x = leftMargin + col * (labelWidth + hGap);
       const y = topMargin + row * labelHeight;
 
-      // Draw label border (light gray, helps with alignment when printing)
+      // Label border
       doc.setDrawColor(220, 220, 220);
       doc.setLineWidth(0.01);
       doc.rect(x, y, labelWidth, labelHeight);
 
-      // Padding inside label
-      const px = 0.08; // horizontal padding
-      const py = 0.1;  // vertical padding
+      const px = 0.08;
+      const py = 0.08;
 
-      // Check if this is a route delivery (e.g., "COYOTE VALLEY #1")
-      // Notes format: "COYOTE VALLEY #X\n123 Address St."
-      const notes = res.Notes || '';
-      const routeMatch = notes.match(/^(COYOTE VALLEY #\d+)/i);
-      const routeId = routeMatch ? routeMatch[1].toUpperCase() : null;
-      const addressPart = routeId ? notes.substring(routeId.length).replace(/^\n/, '').trim() : notes;
-
-      if (routeId) {
-        // ROUTE DELIVERY LABEL - Route ID is most important
-        // Row 1: Route ID (largest, bold, prominent)
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(180, 0, 0); // Red for emphasis
-        doc.text(routeId, x + px, y + py + 0.12);
-
-        // Row 2: Name (medium)
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(0, 0, 0);
-        let name = res.Name;
-        if (name.length > 28) name = name.substring(0, 26) + '...';
-        doc.text(name, x + px, y + py + 0.30);
-
-        // Row 3: Address (small)
-        doc.setFontSize(7);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(80, 80, 80);
-        const addr = addressPart.length > 30 ? addressPart.substring(0, 28) + '...' : addressPart;
-        doc.text(addr, x + px, y + py + 0.46);
-
-        // Row 4: Date + Frozen indicator
-        doc.setFontSize(6);
-        doc.setTextColor(100, 100, 100);
-        const frozenTag = notes.includes('FROZEN') ? ' 🧊 FROZEN' : '';
-        doc.text(`${shortDate}${frozenTag}`, x + px, y + py + 0.58);
-      } else {
-        // REGULAR LABEL - Name first
-        // Row 1: Name (large, bold)
+      if (label.isCoyoteValley) {
+        // COYOTE VALLEY LABEL
+        // Row 1: Route ID (bold, black)
         doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(0, 0, 0);
-        
-        let name = res.Name;
-        if (name.length > 24) name = name.substring(0, 22) + '...';
+        doc.text(label.routeId || '', x + px, y + py + 0.12);
+
+        // Row 2: Name
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(0, 0, 0);
+        let name = label.name;
+        if (name.length > 32) name = name.substring(0, 30) + '...';
+        doc.text(name, x + px, y + py + 0.28);
+
+        // Row 3: Address
+        doc.setFontSize(7);
+        doc.setTextColor(80, 80, 80);
+        const addr = label.address || '';
+        doc.text(addr.length > 38 ? addr.substring(0, 36) + '...' : addr, x + px, y + py + 0.42);
+
+        // Row 4: Special requests + In Fridge
+        doc.setFontSize(7);
+        if (label.specialRequests.length > 0) {
+          doc.setTextColor(180, 0, 0);
+          doc.setFont('helvetica', 'bold');
+          const reqText = label.specialRequests.join(', ');
+          doc.text(reqText.length > 40 ? reqText.substring(0, 38) + '...' : reqText, x + px, y + py + 0.56);
+        } else {
+          doc.setTextColor(100, 100, 100);
+          doc.setFont('helvetica', 'normal');
+          doc.text(shortDate, x + px, y + py + 0.56);
+        }
+      } else {
+        // REGULAR LABEL
+        // Row 1: Name (bold)
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
+        let name = label.name;
+        if (name.length > 26) name = name.substring(0, 24) + '...';
         doc.text(name, x + px, y + py + 0.12);
 
-        // Row 2: Meal Type & Member Status
+        // Row 2: Meal Type + Member Status (full word)
         doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
         
-        const mealType = res['Meal Type'] || 'Unknown';
-        const memberStatus = res['Member Status'] === 'Member' ? 'M' : 'NM';
+        const mealType = label.mealType || 'Unknown';
+        const memberStatus = label.memberStatus === 'Member' ? 'Member' : 'Non-Member';
         
-        // Color code meal type
         if (mealType === 'Delivery') {
-          doc.setTextColor(180, 0, 0); // Red for delivery
+          doc.setTextColor(180, 0, 0);
         } else if (mealType === 'To Go') {
-          doc.setTextColor(0, 100, 180); // Blue for to-go
+          doc.setTextColor(0, 100, 180);
         } else {
-          doc.setTextColor(0, 120, 0); // Green for dine-in
+          doc.setTextColor(0, 120, 0);
         }
         
-        doc.text(`${mealType} (${memberStatus})`, x + px, y + py + 0.32);
+        doc.text(`${mealType} · ${memberStatus}`, x + px, y + py + 0.30);
 
-        // Row 3: Date and Notes (small)
-        doc.setFontSize(7);
-        doc.setTextColor(100, 100, 100);
-        
-        let bottomLine = shortDate;
-        if (notes.trim()) {
-          const truncNotes = notes.length > 25 ? notes.substring(0, 23) + '...' : notes;
-          bottomLine += ` | ${truncNotes}`;
+        // Row 3: Special Requests (red, bold if present)
+        if (label.specialRequests.length > 0) {
+          doc.setFontSize(8);
+          doc.setTextColor(180, 0, 0);
+          doc.setFont('helvetica', 'bold');
+          const reqText = label.specialRequests.join(', ');
+          doc.text(reqText.length > 35 ? reqText.substring(0, 33) + '...' : reqText, x + px, y + py + 0.46);
+          
+          // Row 4: Date
+          doc.setFontSize(6);
+          doc.setTextColor(100, 100, 100);
+          doc.setFont('helvetica', 'normal');
+          doc.text(shortDate, x + px, y + py + 0.58);
+        } else {
+          // No special requests - just date
+          doc.setFontSize(7);
+          doc.setTextColor(100, 100, 100);
+          doc.setFont('helvetica', 'normal');
+          doc.text(shortDate, x + px, y + py + 0.46);
         }
-        doc.text(bottomLine, x + px, y + py + 0.52);
       }
-
-      // Number badge in corner (for counting/verification)
-      doc.setFillColor(66, 125, 120);
-      const badgeRadius = 0.12;
-      const badgeCenterX = x + labelWidth - 0.18;
-      const badgeCenterY = y + 0.18;
-      doc.circle(badgeCenterX, badgeCenterY, badgeRadius, 'F');
-      doc.setFontSize(7);
-      doc.setTextColor(255, 255, 255);
-      doc.setFont('helvetica', 'bold');
-      const numText = String(index + 1);
-      // Center text in badge
-      const textWidth = doc.getTextWidth(numText);
-      doc.text(numText, badgeCenterX - textWidth / 2, badgeCenterY + 0.03);
     });
 
-    // If no To Go/Delivery reservations, add a message
-    if (labelReservations.length === 0) {
+    // Empty message
+    if (allLabels.length === 0) {
       doc.setFontSize(14);
       doc.setTextColor(100, 100, 100);
       const dineInCount = reservations.filter(r => r['Meal Type'] === 'Dine In').length;
@@ -310,11 +360,9 @@ export async function GET(request: NextRequest) {
       doc.text(message, AVERY_5160.pageWidth / 2, AVERY_5160.pageHeight / 2, { align: 'center' });
     }
 
-    // Generate PDF buffer
     const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
     validatePDFSize(pdfBuffer);
 
-    // Return PDF
     return new NextResponse(pdfBuffer, {
       status: 200,
       headers: {

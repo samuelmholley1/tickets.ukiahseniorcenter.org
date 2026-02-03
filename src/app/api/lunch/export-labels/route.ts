@@ -80,30 +80,6 @@ function extractSpecialRequests(notes: string): string[] {
   return requests;
 }
 
-// Check if name matches a Coyote Valley customer
-// Uses strict matching to avoid false positives (e.g. "Michael" shouldn't match "Michael Brown")
-function isCoyoteValleyCustomer(name: string): boolean {
-  const resNameLower = name.toLowerCase().trim();
-  if (resNameLower.length < 3) return false; // Ignore tiny names
-
-  return COYOTE_VALLEY_ROUTE.some(cv => {
-    const cvNames = cv.name.toLowerCase().split(/\s*&\s*/);
-    return cvNames.some(targetName => {
-      // 1. Exact match
-      if (resNameLower === targetName) return true;
-      
-      // 2. Reservation matches full target name (e.g. "Michael Brown (Manager)")
-      if (resNameLower.includes(targetName)) return true;
-      
-      // 3. Target matches full reservation name, BUT reservation must have space (First Last)
-      // This prevents "Michael" from matching "Michael Brown"
-      if (targetName.includes(resNameLower) && resNameLower.includes(' ')) return true;
-      
-      return false;
-    });
-  });
-}
-
 /**
  * GET /api/lunch/export-labels?date=YYYY-MM-DD
  * Generate Avery 5160 labels for lunch reservations
@@ -156,25 +132,13 @@ export async function GET(request: NextRequest) {
       InFridge: record.fields['In Fridge'] as boolean || false,
     }));
 
-    // Filter: labels only needed for To Go and Delivery
+    // Filter: labels only needed for To Go and Delivery (excluding Coyote Valley - they're hardcoded)
     const labelReservations = reservations.filter(r => 
       r['Meal Type'] === 'To Go' || r['Meal Type'] === 'Delivery'
     );
 
-    // Separate Coyote Valley from others
-    const coyoteValleyRes: Reservation[] = [];
-    const otherRes: Reservation[] = [];
-    
-    for (const res of labelReservations) {
-      if (res['Meal Type'] === 'Delivery' && isCoyoteValleyCustomer(res.Name)) {
-        coyoteValleyRes.push(res);
-      } else {
-        otherRes.push(res);
-      }
-    }
-
-    // Sort others by last name
-    otherRes.sort((a, b) => {
+    // Sort by last name
+    labelReservations.sort((a, b) => {
       const getLastName = (name: string) => {
         const parts = name.trim().split(/\s+/);
         return parts[parts.length - 1].toLowerCase();
@@ -196,52 +160,22 @@ export async function GET(request: NextRequest) {
     
     const allLabels: LabelData[] = [];
     
-    // Coyote Valley labels FIRST in hardcoded order (one label per route stop)
+    // Coyote Valley labels FIRST - ALWAYS included, hardcoded (not from database)
     for (const cv of COYOTE_VALLEY_ROUTE) {
-      const cvNames = cv.name.toLowerCase().split(/\s*&\s*/);
-      
-      // Find if ANY reservation matches this CV stop (using same strict logic)
-      const hasReservation = coyoteValleyRes.some(res => isCoyoteValleyCustomer(res.Name) && 
-        cvNames.some(targetName => {
-          const resNameLower = res.Name.toLowerCase().trim();
-          if (resNameLower === targetName) return true;
-          if (resNameLower.includes(targetName)) return true;
-          if (targetName.includes(resNameLower) && resNameLower.includes(' ')) return true;
-          return false;
-        })
-      );
-      
-      if (hasReservation) {
-        // Get notes from matching reservation for special requests
-        const matchingRes = coyoteValleyRes.find(res => isCoyoteValleyCustomer(res.Name) &&
-          cvNames.some(targetName => {
-            const resNameLower = res.Name.toLowerCase().trim();
-            if (resNameLower === targetName) return true;
-            if (resNameLower.includes(targetName)) return true;
-            if (targetName.includes(resNameLower) && resNameLower.includes(' ')) return true;
-            return false;
-          })
-        );
-        
-        const notes = cleanNotes(matchingRes?.Notes || '');
-        const specialReqs = extractSpecialRequests(notes);
-        if (matchingRes?.InFridge) specialReqs.push('In Fridge');
-        
-        allLabels.push({
-          isCoyoteValley: true,
-          routeId: cv.routeId,
-          name: cv.name,
-          address: cv.address,
-          mealType: 'Delivery',
-          memberStatus: matchingRes?.['Member Status'] || 'Member',
-          specialRequests: specialReqs,
-          inFridge: matchingRes?.InFridge || false,
-        });
-      }
+      allLabels.push({
+        isCoyoteValley: true,
+        routeId: cv.routeId,
+        name: cv.name,
+        address: cv.address,
+        mealType: 'Delivery',
+        memberStatus: 'Member',
+        specialRequests: [],
+        inFridge: false,
+      });
     }
     
-    // Other labels
-    for (const res of otherRes) {
+    // Other labels from database
+    for (const res of labelReservations) {
       const notes = cleanNotes(res.Notes || '');
       const specialReqs = extractSpecialRequests(notes);
       if (res.InFridge) specialReqs.push('In Fridge');

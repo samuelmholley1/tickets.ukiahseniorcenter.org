@@ -94,12 +94,12 @@ export default function LunchList() {
           </div>
 
           {/* Date Controls */}
-          <div className="bg-white rounded-xl shadow-lg p-6 mb-8 flex justify-between items-center">
+          <div className="bg-white rounded-xl shadow-lg p-4 mb-8 flex justify-between items-center">
             <button 
               onClick={() => changeDate(-1)}
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-bold text-gray-700"
+              className="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-full font-bold text-gray-700 text-lg"
             >
-              ← Prev Day
+              ‹
             </button>
             <div className="text-center">
                <input 
@@ -108,15 +108,15 @@ export default function LunchList() {
                  onChange={(e) => setCurrentDate(e.target.value)}
                  className="text-2xl font-bold text-[#427d78] border-b-2 border-[#427d78] focus:outline-none text-center bg-transparent"
                />
-               <p className="text-gray-500 text-sm mt-1">
+               <p className="text-gray-500 text-sm mt-0.5">
                  {new Date(currentDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
                </p>
             </div>
             <button 
               onClick={() => changeDate(1)}
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-bold text-gray-700"
+              className="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-full font-bold text-gray-700 text-lg"
             >
-              Next Day →
+              ›
             </button>
           </div>
 

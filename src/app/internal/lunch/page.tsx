@@ -908,6 +908,25 @@ export default function LunchPage() {
         let errorMessage = '';
         let isFirstMeal = true;
 
+        // Build email data for the first request (contains all dates info)
+        const emailDateInfo = selectedDates.map(date => {
+          const meals = dateMeals[date] || [];
+          const hasFrozen = meals.some(m => m.isFrozenFriday);
+          return {
+            date: date,
+            mealCount: meals.length,
+            isFrozenFriday: hasFrozen,
+          };
+        });
+        
+        // Calculate card balance before/after for lunch card payments
+        const cardBalanceBefore = paymentMethod === 'lunchCard' && selectedCardInfo 
+          ? selectedCardInfo.totalMeals 
+          : undefined;
+        const cardBalanceAfter = paymentMethod === 'lunchCard' && selectedCardInfo
+          ? selectedCardInfo.totalMeals - totalMeals
+          : undefined;
+
         // Iterate through all dates and meals
         for (const date of selectedDates) {
           const meals = dateMeals[date] || [];
@@ -941,6 +960,14 @@ export default function LunchPage() {
                 quantity: isFirstMeal ? totalMeals : 1, // Deduct total on first call
                 deductMeal: isFirstMeal, // Only deduct from card on first meal
                 isFrozenFriday: meal.isFrozenFriday || false,
+                // Only include email data on first meal
+                emailData: isFirstMeal ? {
+                  allDates: emailDateInfo,
+                  totalMeals: totalMeals,
+                  totalAmount: getTotal(),
+                  cardBalanceBefore,
+                  cardBalanceAfter,
+                } : undefined,
               }),
             });
 

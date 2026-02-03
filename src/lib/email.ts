@@ -877,19 +877,28 @@ interface LunchCardNotificationData {
   timestamp: string;
 }
 
+interface MealDateInfo {
+  date: string;
+  mealCount: number;
+  names?: string[]; // Individual names if different from main customer
+  isFrozenFriday?: boolean;
+}
+
 interface LunchReservationNotificationData {
   type: 'lunch_reservation';
   name: string;
-  date: string;
+  dates: MealDateInfo[]; // All dates with meal counts
   mealType: string; // "Dine In", "To Go", "Delivery"
   memberStatus: string; // "Member", "Non-Member"
-  amount: number;
+  totalMeals: number;
+  amount: number; // Total amount (0 if lunch card)
   paymentMethod: string;
   lunchCardName?: string; // Name on the lunch card if paying with card
+  cardBalanceBefore?: number; // Meals remaining before this transaction
+  cardBalanceAfter?: number; // Meals remaining after this transaction
   notes?: string;
   staff: string;
   timestamp: string;
-  isFrozenFriday?: boolean;
 }
 
 export type LunchNotificationData = LunchCardNotificationData | LunchReservationNotificationData;
@@ -916,14 +925,36 @@ export function generateLunchNotificationEmail(data: LunchNotificationData): str
     `;
   } else {
     const resData = data as LunchReservationNotificationData;
-    const frozenTag = resData.isFrozenFriday ? ' 🧊 FROZEN FRIDAY' : '';
+    // Build dates list with meal counts
+    const datesHtml = resData.dates.map(d => {
+      const frozen = d.isFrozenFriday ? ' 🧊' : '';
+      const count = d.mealCount > 1 ? ` (×${d.mealCount})` : '';
+      return `${d.date}${frozen}${count}`;
+    }).join('<br/>');
+    
+    // Payment display - show card balance for lunch card, amount for cash/check
+    const isLunchCard = resData.paymentMethod === 'Lunch Card';
+    let paymentDisplay = '';
+    if (isLunchCard && resData.lunchCardName) {
+      paymentDisplay = `
+        <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Lunch Card</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${resData.lunchCardName}'s card</td></tr>
+        <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Meals Used</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-size: 16px; font-weight: bold; color: #d97706;">${resData.totalMeals} meal${resData.totalMeals > 1 ? 's' : ''}</td></tr>
+        <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Card Balance</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${resData.cardBalanceBefore ?? '?'} → <strong>${resData.cardBalanceAfter ?? '?'}</strong> meals remaining</td></tr>
+      `;
+    } else {
+      paymentDisplay = `
+        <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Payment</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${resData.paymentMethod}</td></tr>
+        <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Amount</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-size: 18px; font-weight: bold; color: ${borderColor};">$${resData.amount.toFixed(2)}</td></tr>
+      `;
+    }
+    
     detailsHtml = `
       <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Customer</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${resData.name}</td></tr>
-      <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Date</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${resData.date}${frozenTag}</td></tr>
+      <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Total Meals</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-size: 16px; font-weight: bold;">${resData.totalMeals}</td></tr>
+      <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Date(s)</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${datesHtml}</td></tr>
       <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Meal Type</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${resData.mealType}</td></tr>
       <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Status</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${resData.memberStatus}</td></tr>
-      <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Amount</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-size: 18px; font-weight: bold; color: ${borderColor};">$${resData.amount.toFixed(2)}</td></tr>
-      <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Payment</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${resData.paymentMethod}${resData.lunchCardName ? ` (${resData.lunchCardName}'s card)` : ''}</td></tr>
+      ${paymentDisplay}
       ${resData.notes ? `<tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Notes</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${resData.notes}</td></tr>` : ''}
       <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Staff</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${resData.staff}</td></tr>
     `;
@@ -959,9 +990,17 @@ export function generateLunchNotificationEmail(data: LunchNotificationData): str
 export async function sendLunchNotification(data: LunchNotificationData): Promise<{ success: boolean; error?: unknown }> {
   const html = generateLunchNotificationEmail(data);
   const isCard = data.type === 'lunch_card';
-  const subject = isCard 
-    ? `🎫 Lunch Card: ${(data as LunchCardNotificationData).cardType} - ${data.name} - $${data.amount.toFixed(2)}`
-    : `🍴 Lunch: ${(data as LunchReservationNotificationData).date} - ${data.name} - $${data.amount.toFixed(2)}`;
+  let subject: string;
+  if (isCard) {
+    const cardData = data as LunchCardNotificationData;
+    subject = `🎫 Lunch Card: ${cardData.cardType} - ${cardData.name} - $${cardData.amount.toFixed(2)}`;
+  } else {
+    const resData = data as LunchReservationNotificationData;
+    const isLunchCardPayment = resData.paymentMethod === 'Lunch Card';
+    const dateDisplay = resData.dates.length === 1 ? resData.dates[0].date : `${resData.dates.length} dates`;
+    const amountDisplay = isLunchCardPayment ? `${resData.totalMeals} meals` : `$${resData.amount.toFixed(2)}`;
+    subject = `🍴 Lunch: ${dateDisplay} - ${resData.name} - ${amountDisplay}`;
+  }
   
   // Send to all three recipients
   // Using sam@samuelholley.com as the primary recipient, others as CC

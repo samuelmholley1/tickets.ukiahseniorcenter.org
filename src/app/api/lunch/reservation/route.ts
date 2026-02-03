@@ -19,6 +19,12 @@ type MealType = 'dineIn' | 'toGo' | 'delivery';
 type MemberStatus = 'member' | 'nonMember';
 type PaymentMethod = 'cash' | 'check' | 'cashCheckSplit' | 'card' | 'lunchCard' | 'compCard';
 
+interface MealDateInfo {
+  date: string;
+  mealCount: number;
+  isFrozenFriday?: boolean;
+}
+
 interface ReservationRequest {
   name: string;
   date: string; // ISO date string
@@ -32,6 +38,14 @@ interface ReservationRequest {
   quantity?: number; // defaults to 1
   deductMeal?: boolean; // Only deduct from lunch card if true (for first meal in batch)
   isFrozenFriday?: boolean; // Is this a frozen Friday meal (picked up Thursday)?
+  // Email data (only sent on first meal of batch)
+  emailData?: {
+    allDates: MealDateInfo[]; // All dates in this transaction
+    totalMeals: number;
+    totalAmount: number;
+    cardBalanceBefore?: number;
+    cardBalanceAfter?: number;
+  };
 }
 
 // Map our field names to Airtable field names
@@ -317,7 +331,7 @@ export async function POST(request: NextRequest) {
 
     // Send email notification only on first meal of a multi-meal transaction
     // (shouldDeduct is true only for the first meal)
-    if (shouldDeduct) {
+    if (shouldDeduct && body.emailData) {
       try {
         // Get lunch card owner name if paying with lunch card
         let lunchCardName: string | undefined;
@@ -337,16 +351,18 @@ export async function POST(request: NextRequest) {
         await sendLunchNotification({
           type: 'lunch_reservation',
           name: name.trim(),
-          date: date,
+          dates: body.emailData.allDates,
           mealType: MEAL_TYPE_MAP[mealType],
           memberStatus: MEMBER_STATUS_MAP[memberStatus],
-          amount: totalAmount,
+          totalMeals: body.emailData.totalMeals,
+          amount: body.emailData.totalAmount,
           paymentMethod: PAYMENT_METHOD_MAP[paymentMethod],
           lunchCardName,
+          cardBalanceBefore: body.emailData.cardBalanceBefore,
+          cardBalanceAfter: body.emailData.cardBalanceAfter,
           notes: notes?.trim() || undefined,
           staff: staff.trim(),
           timestamp: new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }),
-          isFrozenFriday,
         });
         console.log('Lunch reservation notification email sent');
       } catch (emailError) {

@@ -240,19 +240,21 @@ button:hover,
 
 /* ============================================
    FORM INPUT ACCESSIBILITY - SENIOR FRIENDLY
-   Makes all input text solid dark black
+   Makes all input text BOLD DARK BLACK
    ============================================ */
 input,
 textarea,
 select {
   color: #000000 !important;
   font-size: 1rem;
+  font-weight: 600 !important;
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: #666666 !important;
+  color: #444444 !important;
   opacity: 1;
+  font-weight: 500 !important;
 }
 
 /* Override Tailwind gray text classes on inputs */
@@ -269,9 +271,10 @@ select.text-gray-400,
 select.text-gray-600,
 select.text-gray-700 {
   color: #000000 !important;
+  font-weight: 600 !important;
 }
 
-/* Ensure typed text in any input field is solid black */
+/* Ensure typed text in any input field is BOLD BLACK */
 input[type="text"],
 input[type="email"],
 input[type="tel"],
@@ -284,4 +287,5 @@ textarea,
 select {
   color: #000000 !important;
   -webkit-text-fill-color: #000000 !important;
+  font-weight: 600 !important;
 }

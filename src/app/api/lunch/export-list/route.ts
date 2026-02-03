@@ -180,6 +180,44 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // For reservations without explicit lunch card links, look up by name
+    // This helps with handwritten entries that weren't linked to cards
+    if (process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID) {
+      const reservationsWithoutCard = reservations.filter(r => r.LunchCardRemaining === undefined && r.Name);
+      
+      if (reservationsWithoutCard.length > 0) {
+        // Fetch ALL active lunch cards to do name matching
+        const activeCardsUrl = `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID}?filterByFormula=${encodeURIComponent('{Remaining Meals}>0')}`;
+        
+        const activeCardsResponse = await fetch(activeCardsUrl, {
+          headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}` },
+        });
+        
+        if (activeCardsResponse.ok) {
+          const activeCardsData = await activeCardsResponse.json();
+          
+          // Build a map of lowercase name -> remaining meals
+          const nameToMeals = new Map<string, number>();
+          for (const card of activeCardsData.records) {
+            const cardName = (card.fields['Name'] as string || '').toLowerCase().trim();
+            const remaining = card.fields['Remaining Meals'] as number || 0;
+            // If multiple cards for same name, use the one with more remaining meals
+            if (!nameToMeals.has(cardName) || (nameToMeals.get(cardName) || 0) < remaining) {
+              nameToMeals.set(cardName, remaining);
+            }
+          }
+          
+          // Match reservations by name
+          for (const res of reservationsWithoutCard) {
+            const resName = res.Name.toLowerCase().trim();
+            if (nameToMeals.has(resName)) {
+              res.LunchCardRemaining = nameToMeals.get(resName);
+            }
+          }
+        }
+      }
+    }
+
     // Fetch Weekly Delivery customers (auto-include Mon-Thu, + frozen Fri on Thu)
     const targetDate = new Date(date + 'T12:00:00');
     const dayOfWeek = targetDate.getDay(); // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri

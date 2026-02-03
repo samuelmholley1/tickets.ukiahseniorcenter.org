@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { sendLunchNotification } from '@/lib/email';
 
 const AIRTABLE_API_BASE = 'https://api.airtable.com/v0';
 
@@ -199,6 +200,28 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await response.json();
+
+    // Send email notification
+    try {
+      await sendLunchNotification({
+        type: 'lunch_card',
+        name: name.trim(),
+        phone: phone.trim(),
+        cardType: CARD_TYPE_MAP[cardType],
+        mealType: MEAL_TYPE_MAP[mealType],
+        memberStatus: MEMBER_STATUS_MAP[memberStatus],
+        amount: price,
+        paymentMethod: PAYMENT_METHOD_MAP[paymentMethod],
+        checkNumber: checkNumber || undefined,
+        compCardNumber: body.compCardNumber || undefined,
+        staff: staff.trim(),
+        timestamp: new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }),
+      });
+      console.log('Lunch card notification email sent');
+    } catch (emailError) {
+      console.error('Failed to send lunch card notification email:', emailError);
+      // Don't fail the request if email fails - the card was still created
+    }
 
     return NextResponse.json({
       success: true,

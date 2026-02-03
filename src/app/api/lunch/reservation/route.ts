@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { sendLunchNotification } from '@/lib/email';
 
 const AIRTABLE_API_BASE = 'https://api.airtable.com/v0';
 
@@ -262,6 +263,46 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await response.json();
+
+    // Send email notification only on first meal of a multi-meal transaction
+    // (shouldDeduct is true only for the first meal)
+    if (shouldDeduct) {
+      try {
+        // Get lunch card owner name if paying with lunch card
+        let lunchCardName: string | undefined;
+        if (paymentMethod === 'lunchCard' && lunchCardId) {
+          // cardData is already fetched above in the lunchCard flow
+          // We need to re-fetch it here since it's out of scope
+          const cardFetchRes = await fetch(
+            `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID}/${lunchCardId}`,
+            { headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}` } }
+          );
+          if (cardFetchRes.ok) {
+            const cardInfo = await cardFetchRes.json();
+            lunchCardName = cardInfo.fields?.['Name'];
+          }
+        }
+
+        await sendLunchNotification({
+          type: 'lunch_reservation',
+          name: name.trim(),
+          date: date,
+          mealType: MEAL_TYPE_MAP[mealType],
+          memberStatus: MEMBER_STATUS_MAP[memberStatus],
+          amount: totalAmount,
+          paymentMethod: PAYMENT_METHOD_MAP[paymentMethod],
+          lunchCardName,
+          notes: notes?.trim() || undefined,
+          staff: staff.trim(),
+          timestamp: new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }),
+          isFrozenFriday,
+        });
+        console.log('Lunch reservation notification email sent');
+      } catch (emailError) {
+        console.error('Failed to send lunch reservation notification email:', emailError);
+        // Don't fail the request if email fails - the reservation was still created
+      }
+    }
 
     return NextResponse.json({
       success: true,

@@ -237,3 +237,51 @@ button:hover,
   background-color: var(--tealHover);
   border-color: var(--tealHover);
 }
+
+/* ============================================
+   FORM INPUT ACCESSIBILITY - SENIOR FRIENDLY
+   Makes all input text solid dark black
+   ============================================ */
+input,
+textarea,
+select {
+  color: #000000 !important;
+  font-size: 1rem;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #666666 !important;
+  opacity: 1;
+}
+
+/* Override Tailwind gray text classes on inputs */
+input.text-gray-500,
+input.text-gray-400,
+input.text-gray-600,
+input.text-gray-700,
+textarea.text-gray-500,
+textarea.text-gray-400,
+textarea.text-gray-600,
+textarea.text-gray-700,
+select.text-gray-500,
+select.text-gray-400,
+select.text-gray-600,
+select.text-gray-700 {
+  color: #000000 !important;
+}
+
+/* Ensure typed text in any input field is solid black */
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="password"],
+input[type="number"],
+input[type="search"],
+input[type="date"],
+input[type="url"],
+textarea,
+select {
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+}

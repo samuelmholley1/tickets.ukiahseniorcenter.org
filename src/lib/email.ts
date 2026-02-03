@@ -857,3 +857,118 @@ export function generateSpeakeasyEmail(data: SpeakeasyReceiptData): string {
   `;
 }
 ========== END 2025 EVENT EMAIL TEMPLATES ==========*/
+
+// ============================================================================
+// LUNCH TRANSACTION NOTIFICATION EMAILS
+// ============================================================================
+
+interface LunchCardNotificationData {
+  type: 'lunch_card';
+  name: string;
+  phone: string;
+  cardType: string; // e.g., "5 Meals"
+  mealType: string; // "Dine In", "To Go", "Delivery"
+  memberStatus: string; // "Member", "Non-Member"
+  amount: number;
+  paymentMethod: string;
+  checkNumber?: string;
+  compCardNumber?: string;
+  staff: string;
+  timestamp: string;
+}
+
+interface LunchReservationNotificationData {
+  type: 'lunch_reservation';
+  name: string;
+  date: string;
+  mealType: string; // "Dine In", "To Go", "Delivery"
+  memberStatus: string; // "Member", "Non-Member"
+  amount: number;
+  paymentMethod: string;
+  lunchCardName?: string; // Name on the lunch card if paying with card
+  notes?: string;
+  staff: string;
+  timestamp: string;
+  isFrozenFriday?: boolean;
+}
+
+export type LunchNotificationData = LunchCardNotificationData | LunchReservationNotificationData;
+
+export function generateLunchNotificationEmail(data: LunchNotificationData): string {
+  const isCard = data.type === 'lunch_card';
+  const title = isCard ? '🎫 New Lunch Card Sold' : '🍴 New Lunch Reservation';
+  const bgColor = isCard ? '#f0fdf4' : '#fef3c7'; // green-ish for card, yellow-ish for meal
+  const borderColor = isCard ? '#16a34a' : '#d97706';
+  
+  let detailsHtml = '';
+  
+  if (isCard) {
+    const cardData = data as LunchCardNotificationData;
+    detailsHtml = `
+      <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Customer</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${cardData.name}</td></tr>
+      <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Phone</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${cardData.phone}</td></tr>
+      <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Card Type</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${cardData.cardType}</td></tr>
+      <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Meal Type</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${cardData.mealType}</td></tr>
+      <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Status</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${cardData.memberStatus}</td></tr>
+      <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Amount</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-size: 18px; font-weight: bold; color: ${borderColor};">$${cardData.amount.toFixed(2)}</td></tr>
+      <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Payment</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${cardData.paymentMethod}${cardData.checkNumber ? ` (Check #${cardData.checkNumber})` : ''}${cardData.compCardNumber ? ` (Comp #${cardData.compCardNumber})` : ''}</td></tr>
+      <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Staff</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${cardData.staff}</td></tr>
+    `;
+  } else {
+    const resData = data as LunchReservationNotificationData;
+    const frozenTag = resData.isFrozenFriday ? ' 🧊 FROZEN FRIDAY' : '';
+    detailsHtml = `
+      <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Customer</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${resData.name}</td></tr>
+      <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Date</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${resData.date}${frozenTag}</td></tr>
+      <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Meal Type</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${resData.mealType}</td></tr>
+      <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Status</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${resData.memberStatus}</td></tr>
+      <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Amount</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-size: 18px; font-weight: bold; color: ${borderColor};">$${resData.amount.toFixed(2)}</td></tr>
+      <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Payment</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${resData.paymentMethod}${resData.lunchCardName ? ` (${resData.lunchCardName}'s card)` : ''}</td></tr>
+      ${resData.notes ? `<tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Notes</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${resData.notes}</td></tr>` : ''}
+      <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Staff</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${resData.staff}</td></tr>
+    `;
+  }
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 20px; background-color: #f5f5f5;">
+      <div style="max-width: 500px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <div style="background: ${bgColor}; padding: 20px; border-bottom: 4px solid ${borderColor}; text-align: center;">
+          <h1 style="margin: 0; font-size: 24px; color: ${borderColor};">${title}</h1>
+          <p style="margin: 5px 0 0; font-size: 14px; color: #666;">${data.timestamp}</p>
+        </div>
+        <div style="padding: 20px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+            ${detailsHtml}
+          </table>
+        </div>
+        <div style="background: #f9fafb; padding: 15px; text-align: center; font-size: 12px; color: #666;">
+          Ukiah Senior Center Lunch Program<br/>
+          495 Leslie Street, Ukiah, CA 95482
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+export async function sendLunchNotification(data: LunchNotificationData): Promise<{ success: boolean; error?: unknown }> {
+  const html = generateLunchNotificationEmail(data);
+  const isCard = data.type === 'lunch_card';
+  const subject = isCard 
+    ? `🎫 Lunch Card: ${(data as LunchCardNotificationData).cardType} - ${data.name} - $${data.amount.toFixed(2)}`
+    : `🍴 Lunch: ${(data as LunchReservationNotificationData).date} - ${data.name} - $${data.amount.toFixed(2)}`;
+  
+  // Send to all three recipients
+  // Using sam@samuelholley.com as the primary recipient, others as CC
+  return sendEmail({
+    to: 'sam@samuelholley.com',
+    subject,
+    html,
+    additionalCC: [], // cashier@ and activities@ are already in the default CC list
+  });
+}

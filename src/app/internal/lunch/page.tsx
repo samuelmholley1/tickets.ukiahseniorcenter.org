@@ -175,6 +175,25 @@ interface Contact {
   source?: string;
 }
 
+// Transaction log entry from API
+interface LunchTransaction {
+  id: string;
+  type: 'lunch_card' | 'reservation';
+  createdAt: string;
+  name: string;
+  date?: string;
+  mealType: string;
+  memberStatus: string;
+  amount: number;
+  paymentMethod: string;
+  staff: string;
+  cardType?: string;
+  remainingMeals?: number;
+  phone?: string;
+  notes?: string;
+  isFrozenFriday?: boolean;
+}
+
 export default function LunchPage() {
   // Sticky header state
   const [isSticky, setIsSticky] = useState(false);
@@ -428,6 +447,30 @@ export default function LunchPage() {
   // Transaction confirmation
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [transactionLog, setTransactionLog] = useState<string[]>([]);
+
+  // Recent transactions for display
+  const [recentTransactions, setRecentTransactions] = useState<LunchTransaction[]>([]);
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
+
+  // Fetch recent transactions
+  const fetchRecentTransactions = useCallback(async () => {
+    try {
+      const response = await fetch('/api/lunch/transactions');
+      if (response.ok) {
+        const data = await response.json();
+        setRecentTransactions(data.transactions || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch transactions:', error);
+    } finally {
+      setIsLoadingTransactions(false);
+    }
+  }, []);
+
+  // Load transactions on mount
+  useEffect(() => {
+    fetchRecentTransactions();
+  }, [fetchRecentTransactions]);
 
   // Search Contacts Effect
   useEffect(() => {
@@ -757,6 +800,8 @@ export default function LunchPage() {
             message: `Created ${totalMeals} reservation(s) for ${selectedDates.length} date(s). Total: $${getTotal().toFixed(2)}`,
             amount: getTotal(),
           });
+          // Refresh transaction list
+          fetchRecentTransactions();
         } else {
           // Partial failure - this is serious if lunch card was debited
           const partialFailureMsg = paymentMethod === 'lunchCard' && successCount > 0
@@ -797,6 +842,8 @@ export default function LunchPage() {
             message: result.message,
             amount: result.amount,
           });
+          // Refresh transaction list
+          fetchRecentTransactions();
         } else {
           log.push(`✗ Failed: ${result.error}`);
           setSubmitResult({
@@ -950,45 +997,6 @@ export default function LunchPage() {
               List PDF: Alphabetical reservation list for the day. Labels: Print on Avery 5160 sheets (30 labels/page).
             </p>
           </div>
-
-          {/* Success/Error Message */}
-          {submitResult && (
-            <div className={`card ${submitResult.success ? 'bg-green-100 border-green-500' : 'bg-red-100 border-red-500'}`} style={{ marginBottom: 'var(--space-4)', borderWidth: '3px' }}>
-              <div className="flex items-center gap-3">
-                <span className="text-3xl">{submitResult.success ? '✅' : '❌'}</span>
-                <div>
-                  <div className={`font-['Jost',sans-serif] font-bold text-lg ${submitResult.success ? 'text-green-800' : 'text-red-800'}`}>
-                    {submitResult.success ? 'Success!' : 'Error'}
-                  </div>
-                  <div className={`font-['Bitter',serif] ${submitResult.success ? 'text-green-700' : 'text-red-700'}`}>
-                    {submitResult.message}
-                  </div>
-                </div>
-              </div>
-              
-              {/* Transaction Log */}
-              {transactionLog.length > 0 && (
-                <div className="mt-3 p-3 bg-white rounded-lg border">
-                  <div className="font-['Jost',sans-serif] font-bold text-gray-700 mb-2">Transaction Log:</div>
-                  <div className="font-['Bitter',serif] text-sm text-gray-600 space-y-1">
-                    {transactionLog.map((entry, i) => (
-                      <div key={i}>{entry}</div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {submitResult.success && (
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="mt-3 bg-green-600 hover:bg-green-700 text-white font-['Jost',sans-serif] font-bold px-4 py-2 rounded-lg"
-                >
-                  Start New Transaction
-                </button>
-              )}
-            </div>
-          )}
 
           <form onSubmit={handleSubmit}>
             {/* Transaction Type Selection */}
@@ -2142,6 +2150,85 @@ export default function LunchPage() {
             )}
           </form>
 
+          {/* Recent Transactions Log */}
+          <div className="card" style={{ marginTop: 'var(--space-6)' }}>
+            <h2 className="font-['Jost',sans-serif] font-bold text-[#427d78] text-xl" style={{ marginBottom: 'var(--space-3)' }}>
+              📜 Recent Transactions
+            </h2>
+            
+            {isLoadingTransactions ? (
+              <div className="text-center py-4 text-gray-500 font-['Bitter',serif]">Loading transactions...</div>
+            ) : recentTransactions.length === 0 ? (
+              <div className="text-center py-4 text-gray-500 font-['Bitter',serif]">No recent transactions</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="text-left p-2 font-['Jost',sans-serif]">Time</th>
+                      <th className="text-left p-2 font-['Jost',sans-serif]">Type</th>
+                      <th className="text-left p-2 font-['Jost',sans-serif]">Name</th>
+                      <th className="text-left p-2 font-['Jost',sans-serif]">Details</th>
+                      <th className="text-right p-2 font-['Jost',sans-serif]">Amount</th>
+                      <th className="text-left p-2 font-['Jost',sans-serif]">Payment</th>
+                      <th className="text-center p-2 font-['Jost',sans-serif]">Staff</th>
+                    </tr>
+                  </thead>
+                  <tbody className="font-['Bitter',serif]">
+                    {recentTransactions.map((tx) => {
+                      const createdDate = new Date(tx.createdAt);
+                      const timeStr = createdDate.toLocaleString('en-US', { 
+                        timeZone: 'America/Los_Angeles',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                      });
+                      
+                      const isCard = tx.type === 'lunch_card';
+                      const typeLabel = isCard ? '🎫 Card' : '🍴 Meal';
+                      const typeBg = isCard ? 'bg-green-50' : 'bg-amber-50';
+                      
+                      // Details column content
+                      const details = isCard
+                        ? `${tx.cardType} • ${tx.mealType} • ${tx.memberStatus}`
+                        : `${tx.date || ''}${tx.isFrozenFriday ? ' 🧊' : ''} • ${tx.mealType} • ${tx.memberStatus}`;
+                      
+                      return (
+                        <tr key={tx.id} className={`border-b ${typeBg}`}>
+                          <td className="p-2 text-xs text-gray-600 whitespace-nowrap">{timeStr}</td>
+                          <td className="p-2 whitespace-nowrap">
+                            <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${isCard ? 'bg-green-200 text-green-800' : 'bg-amber-200 text-amber-800'}`}>
+                              {typeLabel}
+                            </span>
+                          </td>
+                          <td className="p-2 font-semibold">{tx.name}</td>
+                          <td className="p-2 text-gray-600 text-xs">{details}</td>
+                          <td className="p-2 text-right font-bold">
+                            {tx.amount > 0 ? `$${tx.amount.toFixed(2)}` : <span className="text-gray-400">$0</span>}
+                          </td>
+                          <td className="p-2 text-xs">{tx.paymentMethod}</td>
+                          <td className="p-2 text-center text-xs font-bold text-gray-600">{tx.staff}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            
+            <div className="mt-3 text-right">
+              <button
+                type="button"
+                onClick={() => fetchRecentTransactions()}
+                className="text-sm text-[#427d78] hover:underline font-['Jost',sans-serif]"
+              >
+                🔄 Refresh
+              </button>
+            </div>
+          </div>
+
           {/* Pricing Reference */}
           <div className="card" style={{ marginTop: 'var(--space-6)' }}>
             <h2 className="font-['Jost',sans-serif] font-bold text-[#427d78] text-xl" style={{ marginBottom: 'var(--space-3)' }}>
@@ -2228,6 +2315,138 @@ export default function LunchPage() {
 
         </div>
       </div>
+
+      {/* Success/Failure Modal Popup */}
+      {submitResult && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
+          onClick={() => {
+            if (submitResult.success) {
+              resetForm();
+            } else {
+              setSubmitResult(null);
+              setShowConfirmation(false);
+            }
+          }}
+        >
+          <div 
+            className={`relative w-full max-w-md rounded-2xl shadow-2xl transform transition-all ${
+              submitResult.success 
+                ? 'bg-gradient-to-br from-green-50 to-emerald-100 border-4 border-green-500' 
+                : 'bg-gradient-to-br from-red-50 to-rose-100 border-4 border-red-500'
+            }`}
+            style={{ padding: 'var(--space-5)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              type="button"
+              onClick={() => {
+                if (submitResult.success) {
+                  resetForm();
+                } else {
+                  setSubmitResult(null);
+                  setShowConfirmation(false);
+                }
+              }}
+              className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600 text-xl font-bold"
+            >
+              ×
+            </button>
+
+            {/* Icon */}
+            <div className="text-center mb-4">
+              <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full ${
+                submitResult.success ? 'bg-green-500' : 'bg-red-500'
+              }`}>
+                <span className="text-5xl text-white">
+                  {submitResult.success ? '✓' : '✗'}
+                </span>
+              </div>
+            </div>
+
+            {/* Title */}
+            <h2 className={`text-center font-['Jost',sans-serif] font-bold text-2xl mb-2 ${
+              submitResult.success ? 'text-green-800' : 'text-red-800'
+            }`}>
+              {submitResult.success ? 'Transaction Complete!' : 'Transaction Failed'}
+            </h2>
+
+            {/* Message */}
+            <p className={`text-center font-['Bitter',serif] text-lg mb-4 ${
+              submitResult.success ? 'text-green-700' : 'text-red-700'
+            }`}>
+              {submitResult.message}
+            </p>
+
+            {/* Amount (if success) */}
+            {submitResult.success && submitResult.amount !== undefined && submitResult.amount > 0 && (
+              <div className="text-center mb-4 p-3 bg-white rounded-lg border-2 border-green-300">
+                <span className="font-['Jost',sans-serif] text-gray-600">Amount Collected:</span>
+                <span className="font-['Jost',sans-serif] font-bold text-green-700 text-2xl ml-2">
+                  ${submitResult.amount.toFixed(2)}
+                </span>
+              </div>
+            )}
+
+            {/* Transaction Log */}
+            {transactionLog.length > 0 && (
+              <div className="mb-4 p-3 bg-white rounded-lg border max-h-40 overflow-y-auto">
+                <div className="font-['Jost',sans-serif] font-bold text-gray-700 text-sm mb-2">Details:</div>
+                <div className="font-['Bitter',serif] text-sm text-gray-600 space-y-1">
+                  {transactionLog.map((entry, i) => (
+                    <div key={i}>{entry}</div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              {submitResult.success ? (
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="flex-1 py-3 px-4 bg-green-600 hover:bg-green-700 text-white font-['Jost',sans-serif] font-bold text-lg rounded-xl transition-colors shadow-lg"
+                >
+                  ✓ Start New Transaction
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSubmitResult(null);
+                      setShowConfirmation(false);
+                    }}
+                    className="flex-1 py-3 px-4 bg-gray-500 hover:bg-gray-600 text-white font-['Jost',sans-serif] font-bold rounded-xl transition-colors"
+                  >
+                    ← Back to Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSubmitResult(null);
+                      // Keep showConfirmation true to retry
+                    }}
+                    className="flex-1 py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-['Jost',sans-serif] font-bold rounded-xl transition-colors"
+                  >
+                    🔄 Retry
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Branding */}
+            <div className="mt-4 text-center">
+              <span className="font-['Jost',sans-serif] text-sm text-gray-500">
+                Ukiah Senior Center Lunch Program
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <SiteFooterContent />
     </>

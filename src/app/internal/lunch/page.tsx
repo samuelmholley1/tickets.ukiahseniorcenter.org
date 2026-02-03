@@ -1156,36 +1156,15 @@ export default function LunchPage() {
           </div>
 
           <form onSubmit={handleSubmit}>
-            {/* MANUAL OVERRIDE - Same-day reservation processing (transition period) */}
-            <div className="card" style={{ marginBottom: 'var(--space-4)', background: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)', border: '2px solid #f87171' }}>
-              <div className="flex items-center justify-between flex-wrap gap-2" style={{ marginBottom: 'var(--space-3)' }}>
-                <div>
-                  <h2 className="font-['Jost',sans-serif] font-bold text-red-700 text-xl">
-                    ⚠️ Manual Override - Today&apos;s Reservations
-                  </h2>
-                  <p className="font-['Bitter',serif] text-red-600 text-sm mt-1">
-                    Process same-day reservations that weren&apos;t prepaid (transition period)
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowManualOverrideModal(true)}
-                  className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-['Jost',sans-serif] font-bold rounded-lg transition-all shadow-md"
-                >
-                  📋 Look Up Today&apos;s Reservations
-                </button>
-              </div>
-            </div>
-            
             {/* Manual Override Modal */}
             {showManualOverrideModal && (
               <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                 <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
-                  <div className="bg-red-600 text-white px-6 py-4">
+                  <div className="bg-[#427d78] text-white px-6 py-4">
                     <h3 className="font-['Jost',sans-serif] font-bold text-xl">
-                      ⚠️ Today&apos;s Reservations - Manual Override
+                      📋 Today&apos;s Reservations
                     </h3>
-                    <p className="text-red-100 text-sm mt-1">
+                    <p className="text-[#a8d5d0] text-sm mt-1">
                       Select a person to process their payment or deduct from their lunch card
                     </p>
                   </div>
@@ -1193,7 +1172,7 @@ export default function LunchPage() {
                   <div className="p-6 overflow-y-auto flex-1">
                     {isLoadingTodayReservations ? (
                       <div className="text-center py-8">
-                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-red-600 mx-auto mb-3"></div>
+                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#427d78] mx-auto mb-3"></div>
                         <p className="text-gray-500 font-['Bitter',serif]">Loading today&apos;s reservations...</p>
                       </div>
                     ) : todayReservations.length === 0 ? (
@@ -1210,7 +1189,7 @@ export default function LunchPage() {
                             key={reservation.id}
                             type="button"
                             onClick={() => handleSelectReservationForOverride(reservation)}
-                            className="w-full text-left p-4 rounded-lg border-2 border-gray-200 hover:border-red-400 hover:bg-red-50 transition-all"
+                            className="w-full text-left p-4 rounded-lg border-2 border-gray-200 hover:border-[#427d78] hover:bg-[#f0faf9] transition-all"
                           >
                             <div className="flex justify-between items-start">
                               <div>
@@ -1702,13 +1681,20 @@ export default function LunchPage() {
 
                 {/* Weekly Calendar Grid - Mon-Fri columns */}
                 <div style={{ marginBottom: 'var(--space-3)' }}>
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
                     <label className="block font-['Bitter',serif] text-gray-700 font-medium">
                       Select Dates &amp; Meals * 
                       <span className="text-sm text-gray-500 ml-1">
                         ({selectedDates.length} date{selectedDates.length !== 1 ? 's' : ''}, {getTotalMealsFromDateMeals()} meal{getTotalMealsFromDateMeals() !== 1 ? 's' : ''})
                       </span>
                     </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowManualOverrideModal(true)}
+                      className="px-3 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 font-['Jost',sans-serif] font-bold rounded-full text-sm transition-all border border-amber-300"
+                    >
+                      📋 Today&apos;s List
+                    </button>
                   </div>
                   
                   {/* Column Headers: Mon Tue Wed Thu Fri */}

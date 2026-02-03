@@ -15,6 +15,17 @@ interface LunchCard {
   memberStatus: string;
 }
 
+// Aggregated card info for customers with multiple cards (including buffer)
+interface AggregatedCardInfo {
+  baseName: string;
+  primaryCard: LunchCard;  // The card to use for deductions
+  allCards: LunchCard[];
+  regularMeals: number;    // Meals from non-buffer cards
+  bufferMeals: number;     // Meals from [BUFFER] cards  
+  totalMeals: number;      // Total available
+  hasBuffer: boolean;
+}
+
 // Individual meal info - each meal gets its own entry
 interface MealEntry {
   name: string;         // Customer name for this meal
@@ -424,8 +435,38 @@ export default function LunchPage() {
   const [selectedLunchCard, setSelectedLunchCard] = useState<LunchCard | null>(null);
   const [isSearchingCards, setIsSearchingCards] = useState(false);
   
-  // Auto-detected lunch card from customer name
-  const [autoDetectedCard, setAutoDetectedCard] = useState<LunchCard | null>(null);
+  // Auto-detected lunch card from customer name (aggregated with buffer info)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_autoDetectedCard, setAutoDetectedCard] = useState<LunchCard | null>(null);
+  const [autoDetectedCardInfo, setAutoDetectedCardInfo] = useState<AggregatedCardInfo | null>(null);
+  
+  // Helper to aggregate cards by base name
+  const aggregateCards = (cards: LunchCard[]): AggregatedCardInfo | null => {
+    if (!cards || cards.length === 0) return null;
+    
+    const getBaseName = (name: string) => name.replace(/\s*\[BUFFER\]\s*/gi, '').trim();
+    const baseName = getBaseName(cards[0].name);
+    
+    const regularCards = cards.filter(c => !c.name.includes('[BUFFER]'));
+    const bufferCards = cards.filter(c => c.name.includes('[BUFFER]'));
+    const regularMeals = regularCards.reduce((sum, c) => sum + c.remainingMeals, 0);
+    const bufferMeals = bufferCards.reduce((sum, c) => sum + c.remainingMeals, 0);
+    
+    // Primary card: prefer regular card with meals, then buffer card with meals
+    const primaryCard = regularCards.find(c => c.remainingMeals > 0) || 
+                       bufferCards.find(c => c.remainingMeals > 0) || 
+                       cards[0];
+    
+    return {
+      baseName,
+      primaryCard,
+      allCards: cards,
+      regularMeals,
+      bufferMeals,
+      totalMeals: regularMeals + bufferMeals,
+      hasBuffer: bufferCards.length > 0 && bufferMeals > 0,
+    };
+  };
   
   // Add un-entered card modal
   const [showAddCardModal, setShowAddCardModal] = useState(false);
@@ -550,6 +591,7 @@ export default function LunchPage() {
     const fullName = `${firstName} ${lastName}`.trim();
     if (fullName.length < 3) {
       setAutoDetectedCard(null);
+      setAutoDetectedCardInfo(null);
       return;
     }
     
@@ -557,16 +599,28 @@ export default function LunchPage() {
       const response = await fetch(`/api/lunch/card?search=${encodeURIComponent(fullName)}`);
       const data = await response.json();
       if (data.success && data.cards && data.cards.length > 0) {
-        // Find exact or close match
-        const exactMatch = data.cards.find((card: LunchCard) => 
-          card.name.toLowerCase() === fullName.toLowerCase()
+        // Get all cards that match this person (including buffer cards)
+        const getBaseName = (name: string) => name.replace(/\s*\[BUFFER\]\s*/gi, '').trim().toLowerCase();
+        const matchingCards = data.cards.filter((card: LunchCard) => 
+          getBaseName(card.name) === fullName.toLowerCase() ||
+          card.name.toLowerCase().includes(fullName.toLowerCase())
         );
-        setAutoDetectedCard(exactMatch || data.cards[0]);
+        
+        if (matchingCards.length > 0) {
+          const aggregated = aggregateCards(matchingCards);
+          setAutoDetectedCardInfo(aggregated);
+          setAutoDetectedCard(aggregated?.primaryCard || matchingCards[0]);
+        } else {
+          setAutoDetectedCard(data.cards[0]);
+          setAutoDetectedCardInfo(aggregateCards([data.cards[0]]));
+        }
       } else {
         setAutoDetectedCard(null);
+        setAutoDetectedCardInfo(null);
       }
     } catch {
       setAutoDetectedCard(null);
+      setAutoDetectedCardInfo(null);
     }
   }, []);
   
@@ -662,6 +716,7 @@ export default function LunchPage() {
     setLunchCardSearch('');
     setAvailableLunchCards([]);
     setAutoDetectedCard(null);
+    setAutoDetectedCardInfo(null);
     setSubmitResult(null);
     setShowConfirmation(false);
     setTransactionLog([]);
@@ -901,12 +956,17 @@ export default function LunchPage() {
               </button>
             </div>
             
-            {/* Show auto-detected card balance in sticky header */}
-            {autoDetectedCard && transactionType === 'individual' && (
-              <div className={`px-3 py-1 rounded-full ${autoDetectedCard.remainingMeals > 0 ? 'bg-green-100' : 'bg-yellow-100'}`}>
-                <span className={`font-['Jost',sans-serif] text-sm font-bold ${autoDetectedCard.remainingMeals > 0 ? 'text-green-700' : 'text-yellow-700'}`}>
-                  🎫 {autoDetectedCard.name}: {autoDetectedCard.remainingMeals} meals left
-                  {autoDetectedCard.remainingMeals === 0 && ' (EMPTY)'}
+            {/* Show auto-detected card balance in sticky header - with buffer breakdown */}
+            {autoDetectedCardInfo && transactionType === 'individual' && (
+              <div className={`px-3 py-1 rounded-full ${autoDetectedCardInfo.totalMeals > 0 ? 'bg-green-100' : 'bg-yellow-100'}`}>
+                <span className={`font-['Jost',sans-serif] text-sm font-bold ${autoDetectedCardInfo.totalMeals > 0 ? 'text-green-700' : 'text-yellow-700'}`}>
+                  🎫 {autoDetectedCardInfo.baseName}: {autoDetectedCardInfo.totalMeals} meals
+                  {autoDetectedCardInfo.hasBuffer && (
+                    <span className="text-amber-600 ml-1">
+                      ({autoDetectedCardInfo.regularMeals}+{autoDetectedCardInfo.bufferMeals}buf)
+                    </span>
+                  )}
+                  {autoDetectedCardInfo.totalMeals === 0 && ' (EMPTY)'}
                 </span>
               </div>
             )}
@@ -1070,52 +1130,93 @@ export default function LunchPage() {
               
               {availableLunchCards.length > 0 && (
                 <div className="mt-3 space-y-2">
-                  {availableLunchCards.map((card) => (
-                    <div
-                      key={card.id}
-                      className="w-full text-left p-3 rounded-lg border-2 bg-white border-amber-200"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <div className="font-['Jost',sans-serif] font-bold text-gray-800">{card.name}</div>
-                          <div className="font-['Bitter',serif] text-sm text-gray-600">
-                            📞 {card.phone} • {card.cardType} • {card.memberStatus}
-                            {card.mealType && <span className="ml-1 font-semibold text-blue-600">• {card.mealType}</span>}
-                          </div>
-                          <div className="font-['Jost',sans-serif] font-bold text-lg mt-1">
-                            <span className={card.remainingMeals > 0 ? 'text-green-600' : 'text-red-600'}>{card.remainingMeals} meals remaining</span>
-                            <span className="text-gray-400 text-sm ml-2">/ {card.totalMeals} total</span>
+                  {(() => {
+                    // Group cards by base name (remove [BUFFER] suffix for grouping)
+                    const getBaseName = (name: string) => name.replace(/\s*\[BUFFER\]\s*/gi, '').trim();
+                    const grouped = new Map<string, typeof availableLunchCards>();
+                    
+                    availableLunchCards.forEach(card => {
+                      const baseName = getBaseName(card.name);
+                      if (!grouped.has(baseName)) {
+                        grouped.set(baseName, []);
+                      }
+                      grouped.get(baseName)!.push(card);
+                    });
+                    
+                    return Array.from(grouped.entries()).map(([baseName, cards]) => {
+                      // Calculate totals
+                      const regularCards = cards.filter(c => !c.name.includes('[BUFFER]'));
+                      const bufferCards = cards.filter(c => c.name.includes('[BUFFER]'));
+                      const regularMeals = regularCards.reduce((sum, c) => sum + c.remainingMeals, 0);
+                      const bufferMeals = bufferCards.reduce((sum, c) => sum + c.remainingMeals, 0);
+                      const totalMeals = regularMeals + bufferMeals;
+                      
+                      // Use the first card with meals for selection (prefer regular over buffer)
+                      const primaryCard = regularCards.find(c => c.remainingMeals > 0) || 
+                                         bufferCards.find(c => c.remainingMeals > 0) || 
+                                         cards[0];
+                      
+                      const hasBuffer = bufferCards.length > 0 && bufferMeals > 0;
+                      
+                      return (
+                        <div
+                          key={baseName}
+                          className="w-full text-left p-3 rounded-lg border-2 bg-white border-amber-200"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <div className="font-['Jost',sans-serif] font-bold text-gray-800">{baseName}</div>
+                              <div className="font-['Bitter',serif] text-sm text-gray-600">
+                                📞 {primaryCard.phone} • {primaryCard.cardType} • {primaryCard.memberStatus}
+                                {primaryCard.mealType && <span className="ml-1 font-semibold text-blue-600">• {primaryCard.mealType}</span>}
+                              </div>
+                              <div className="font-['Jost',sans-serif] font-bold text-lg mt-1">
+                                <span className={totalMeals > 0 ? 'text-green-600' : 'text-red-600'}>
+                                  {totalMeals} meals remaining
+                                </span>
+                                {hasBuffer && (
+                                  <span className="text-amber-600 text-sm ml-2">
+                                    ({regularMeals} paid + {bufferMeals} buffer)
+                                  </span>
+                                )}
+                              </div>
+                              {hasBuffer && (
+                                <div className="text-xs text-amber-700 mt-1 bg-amber-50 px-2 py-1 rounded inline-block">
+                                  ⚡ Weekly buyer - buffer refreshes on card purchase
+                                </div>
+                              )}
+                            </div>
+                            {totalMeals > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  // Parse name into first/last
+                                  const nameParts = baseName.split(' ');
+                                  const firstName = nameParts[0] || '';
+                                  const lastName = nameParts.slice(1).join(' ') || '';
+                                  // Auto-populate everything
+                                  setCustomer(prev => ({
+                                    ...prev,
+                                    firstName,
+                                    lastName,
+                                    phone: primaryCard.phone || prev.phone,
+                                  }));
+                                  setSelectedLunchCard(primaryCard);
+                                  setAutoDetectedCard(primaryCard);
+                                  setPaymentMethod('lunchCard');
+                                  setLunchCardSearch('');
+                                  setAvailableLunchCards([]);
+                                }}
+                                className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white font-['Jost',sans-serif] font-bold rounded-lg text-sm whitespace-nowrap"
+                              >
+                                Use This Card
+                              </button>
+                            )}
                           </div>
                         </div>
-                        {card.remainingMeals > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              // Parse name into first/last
-                              const nameParts = card.name.split(' ');
-                              const firstName = nameParts[0] || '';
-                              const lastName = nameParts.slice(1).join(' ') || '';
-                              // Auto-populate everything
-                              setCustomer(prev => ({
-                                ...prev,
-                                firstName,
-                                lastName,
-                                phone: card.phone || prev.phone,
-                              }));
-                              setSelectedLunchCard(card);
-                              setAutoDetectedCard(card);
-                              setPaymentMethod('lunchCard');
-                              setLunchCardSearch('');
-                              setAvailableLunchCards([]);
-                            }}
-                            className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white font-['Jost',sans-serif] font-bold rounded-lg text-sm whitespace-nowrap"
-                          >
-                            Use This Card
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                      );
+                    });
+                  })()}
                 </div>
               )}
               
@@ -1269,6 +1370,7 @@ export default function LunchPage() {
                   onClick={() => {
                     setCustomer({ firstName: '', lastName: '', email: 'cashier@seniorctr.org', phone: '' });
                     setAutoDetectedCard(null);
+                    setAutoDetectedCardInfo(null);
                   }}
                   className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-['Jost',sans-serif] font-bold rounded-lg transition-all text-sm"
                 >
@@ -1276,24 +1378,34 @@ export default function LunchPage() {
                 </button>
               </div>
               
-              {/* Auto-detected lunch card notification */}
-              {autoDetectedCard && transactionType === 'individual' && (
-                <div className={`mb-4 p-3 border-2 rounded-lg ${autoDetectedCard.remainingMeals > 0 ? 'bg-green-100 border-green-400' : 'bg-yellow-100 border-yellow-400'}`}>
+              {/* Auto-detected lunch card notification - with buffer breakdown */}
+              {autoDetectedCardInfo && transactionType === 'individual' && (
+                <div className={`mb-4 p-3 border-2 rounded-lg ${autoDetectedCardInfo.totalMeals > 0 ? 'bg-green-100 border-green-400' : 'bg-yellow-100 border-yellow-400'}`}>
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div>
-                      <div className={`font-['Jost',sans-serif] font-bold ${autoDetectedCard.remainingMeals > 0 ? 'text-green-800' : 'text-yellow-800'}`}>
-                        🎫 Lunch Card Found: {autoDetectedCard.name}
+                      <div className={`font-['Jost',sans-serif] font-bold ${autoDetectedCardInfo.totalMeals > 0 ? 'text-green-800' : 'text-yellow-800'}`}>
+                        🎫 Lunch Card Found: {autoDetectedCardInfo.baseName}
                       </div>
-                      <div className={`font-['Bitter',serif] ${autoDetectedCard.remainingMeals > 0 ? 'text-green-700' : 'text-yellow-700'}`}>
-                        <span className="font-bold text-lg">{autoDetectedCard.remainingMeals}</span> meals remaining
-                        {autoDetectedCard.remainingMeals === 0 && <span className="ml-2 text-red-600 font-bold">(EMPTY)</span>}
+                      <div className={`font-['Bitter',serif] ${autoDetectedCardInfo.totalMeals > 0 ? 'text-green-700' : 'text-yellow-700'}`}>
+                        <span className="font-bold text-lg">{autoDetectedCardInfo.totalMeals}</span> meals remaining
+                        {autoDetectedCardInfo.hasBuffer && (
+                          <span className="ml-2 text-amber-600">
+                            ({autoDetectedCardInfo.regularMeals} paid + {autoDetectedCardInfo.bufferMeals} buffer)
+                          </span>
+                        )}
+                        {autoDetectedCardInfo.totalMeals === 0 && <span className="ml-2 text-red-600 font-bold">(EMPTY)</span>}
                       </div>
+                      {autoDetectedCardInfo.hasBuffer && (
+                        <div className="text-xs text-amber-700 mt-1 bg-amber-50 px-2 py-1 rounded inline-block">
+                          ⚡ Weekly buyer - buffer refreshes on card purchase
+                        </div>
+                      )}
                     </div>
-                    {autoDetectedCard.remainingMeals > 0 && (
+                    {autoDetectedCardInfo.totalMeals > 0 && (
                       <button
                         type="button"
                         onClick={() => {
-                          setSelectedLunchCard(autoDetectedCard);
+                          setSelectedLunchCard(autoDetectedCardInfo.primaryCard);
                           setPaymentMethod('lunchCard');
                         }}
                         className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-['Jost',sans-serif] font-bold rounded-lg"

@@ -25,7 +25,8 @@ interface ReservationRequest {
   mealType: MealType;
   memberStatus: MemberStatus;
   paymentMethod: PaymentMethod;
-  lunchCardId?: string; // Airtable record ID if paying with lunch card
+  lunchCardId?: string; // Airtable record ID if paying with lunch card (primary card)
+  bufferCardId?: string; // Optional buffer card ID for weekly buyers
   notes?: string;
   staff: string;
   quantity?: number; // defaults to 1
@@ -164,13 +165,14 @@ export async function POST(request: NextRequest) {
     // IMPORTANT: The 'deductMeal' flag controls whether to actually deduct.
     // Frontend should ONLY set deductMeal=true on ONE request to avoid double-deduction.
     const shouldDeduct = body.deductMeal !== false; // Default true for backwards compat
+    const bufferCardId = body.bufferCardId; // Optional buffer card for weekly buyers
     
     if (paymentMethod === 'lunchCard') {
       if (!lunchCardId) {
         return NextResponse.json({ error: 'Lunch card selection is required' }, { status: 400 });
       }
 
-      // Fetch the lunch card to check balance
+      // Fetch the primary lunch card to check balance
       const cardResponse = await fetch(
         `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID}/${lunchCardId}`,
         {
@@ -185,37 +187,80 @@ export async function POST(request: NextRequest) {
       }
 
       const cardData = await cardResponse.json();
-      const remainingMeals = cardData.fields['Remaining Meals'] || 0;
+      const primaryMeals = cardData.fields['Remaining Meals'] || 0;
+      
+      // If buffer card exists, fetch its balance too
+      let bufferMeals = 0;
+      if (bufferCardId) {
+        const bufferResponse = await fetch(
+          `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID}/${bufferCardId}`,
+          { headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}` } }
+        );
+        if (bufferResponse.ok) {
+          const bufferData = await bufferResponse.json();
+          bufferMeals = bufferData.fields['Remaining Meals'] || 0;
+        }
+      }
+      
+      const totalAvailable = primaryMeals + bufferMeals;
 
       // Only check balance if we're going to deduct
-      if (shouldDeduct && remainingMeals < quantity) {
+      if (shouldDeduct && totalAvailable < quantity) {
         return NextResponse.json({ 
-          error: `Insufficient meals on card. Has ${remainingMeals}, needs ${quantity}` 
+          error: `Insufficient meals on card. Has ${totalAvailable}, needs ${quantity}` 
         }, { status: 400 });
       }
 
       // Only decrement if shouldDeduct is true
       if (shouldDeduct) {
-        const updateCardResponse = await fetch(
-          `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID}/${lunchCardId}`,
-          {
-            method: 'PATCH',
-            headers: {
-              'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              fields: {
-                'Remaining Meals': remainingMeals - quantity,
+        let mealsToDeduct = quantity;
+        
+        // First deduct from primary card
+        const deductFromPrimary = Math.min(primaryMeals, mealsToDeduct);
+        if (deductFromPrimary > 0) {
+          const updateCardResponse = await fetch(
+            `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID}/${lunchCardId}`,
+            {
+              method: 'PATCH',
+              headers: {
+                'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
+                'Content-Type': 'application/json',
               },
-            }),
-          }
-        );
+              body: JSON.stringify({
+                fields: { 'Remaining Meals': primaryMeals - deductFromPrimary },
+              }),
+            }
+          );
 
-        if (!updateCardResponse.ok) {
-          const errorText = await updateCardResponse.text();
-          console.error('Failed to update lunch card:', errorText);
-          throw new Error('Failed to update lunch card balance');
+          if (!updateCardResponse.ok) {
+            const errorText = await updateCardResponse.text();
+            console.error('Failed to update lunch card:', errorText);
+            throw new Error('Failed to update lunch card balance');
+          }
+          mealsToDeduct -= deductFromPrimary;
+        }
+        
+        // If more meals needed, deduct from buffer card
+        if (mealsToDeduct > 0 && bufferCardId && bufferMeals > 0) {
+          const deductFromBuffer = Math.min(bufferMeals, mealsToDeduct);
+          const updateBufferResponse = await fetch(
+            `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID}/${bufferCardId}`,
+            {
+              method: 'PATCH',
+              headers: {
+                'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                fields: { 'Remaining Meals': bufferMeals - deductFromBuffer },
+              }),
+            }
+          );
+
+          if (!updateBufferResponse.ok) {
+            console.error('Failed to update buffer card - primary already deducted!');
+            // Note: Primary card was already deducted, this is a partial failure
+          }
         }
       }
     }

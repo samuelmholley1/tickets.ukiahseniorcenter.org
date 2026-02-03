@@ -152,10 +152,68 @@ export async function GET(request: NextRequest) {
       };
       return getLastName(a.Name).localeCompare(getLastName(b.Name));
     });
+    
+    // Check if Thursday - need to also fetch Friday frozen meals
+    const targetDate = new Date(date + 'T12:00:00');
+    const isThursday = targetDate.getDay() === 4;
+    
+    let fridayFrozenReservations: Reservation[] = [];
+    if (isThursday) {
+      // Calculate Friday's date
+      const fridayDate = new Date(targetDate);
+      fridayDate.setDate(fridayDate.getDate() + 1);
+      const fridayDateStr = fridayDate.toISOString().split('T')[0];
+      
+      // Fetch Friday reservations where Frozen Friday = true
+      const fridayFilter = `AND(IS_SAME({Date}, '${fridayDateStr}', 'day'), {Frozen Friday})`;
+      let fridayOffset: string | undefined = undefined;
+      const fridayRecords: Array<{ id: string; fields: Record<string, unknown> }> = [];
+      
+      do {
+        let url = `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_RESERVATIONS_TABLE_ID}?filterByFormula=${encodeURIComponent(fridayFilter)}`;
+        if (fridayOffset) url += `&offset=${fridayOffset}`;
+        
+        const response = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}` },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          fridayRecords.push(...data.records);
+          fridayOffset = data.offset;
+        } else {
+          break;
+        }
+      } while (fridayOffset);
+      
+      // Only include To Go and Delivery for labels
+      fridayFrozenReservations = fridayRecords
+        .map((record) => ({
+          id: record.id,
+          Name: record.fields['Name'] as string || '',
+          Date: record.fields['Date'] as string || '',
+          'Meal Type': record.fields['Meal Type'] as string || '',
+          'Member Status': record.fields['Member Status'] as string || '',
+          'Payment Method': record.fields['Payment Method'] as string || '',
+          Notes: record.fields['Notes'] as string || '',
+          InFridge: record.fields['In Fridge'] as boolean || false,
+        }))
+        .filter(r => r['Meal Type'] === 'To Go' || r['Meal Type'] === 'Delivery');
+      
+      // Sort Friday frozen by last name
+      fridayFrozenReservations.sort((a, b) => {
+        const getLastName = (name: string) => {
+          const parts = name.trim().split(/\s+/);
+          return parts[parts.length - 1].toLowerCase();
+        };
+        return getLastName(a.Name).localeCompare(getLastName(b.Name));
+      });
+    }
 
     // Build label data
     interface LabelData {
       isCoyoteValley: boolean;
+      isFrozenFriday?: boolean;
       routeId?: string;
       name: string;
       address?: string;
@@ -171,6 +229,7 @@ export async function GET(request: NextRequest) {
     for (const cv of COYOTE_VALLEY_ROUTE) {
       allLabels.push({
         isCoyoteValley: true,
+        isFrozenFriday: false,
         routeId: cv.routeId,
         name: cv.name,
         address: cv.address,
@@ -189,6 +248,26 @@ export async function GET(request: NextRequest) {
       
       allLabels.push({
         isCoyoteValley: false,
+        isFrozenFriday: false,
+        name: res.Name,
+        mealType: res['Meal Type'],
+        memberStatus: res['Member Status'],
+        specialRequests: specialReqs,
+        inFridge: res.InFridge || false,
+      });
+    }
+    
+    // Friday Frozen labels (Thursday only) - add as separate section
+    for (const res of fridayFrozenReservations) {
+      const notes = cleanNotes(res.Notes || '');
+      const specialReqs = extractSpecialRequests(notes, res.Name);
+      // Always add "FROZEN FRI" marker
+      if (!specialReqs.includes('FROZEN FRI')) specialReqs.unshift('🧊 FROZEN FRI');
+      if (res.InFridge && !specialReqs.includes('In Fridge')) specialReqs.push('In Fridge');
+      
+      allLabels.push({
+        isCoyoteValley: false,
+        isFrozenFriday: true,
         name: res.Name,
         mealType: res['Meal Type'],
         memberStatus: res['Member Status'],

@@ -445,6 +445,7 @@ export default function LunchPage() {
   const [lunchCardSearch, setLunchCardSearch] = useState('');
   const [availableLunchCards, setAvailableLunchCards] = useState<LunchCard[]>([]);
   const [selectedLunchCard, setSelectedLunchCard] = useState<LunchCard | null>(null);
+  const [selectedCardInfo, setSelectedCardInfo] = useState<AggregatedCardInfo | null>(null); // Full info including buffer cards
   const [isSearchingCards, setIsSearchingCards] = useState(false);
   
   // Auto-detected lunch card from customer name (aggregated with buffer info)
@@ -810,6 +811,7 @@ export default function LunchPage() {
     setCashAmount('');
     setCheckAmount('');
     setSelectedLunchCard(null);
+    setSelectedCardInfo(null); // Also clear aggregated card info
     setLunchCardSearch('');
     setAvailableLunchCards([]);
     setAutoDetectedCard(null);
@@ -910,6 +912,9 @@ export default function LunchPage() {
               compCardNumber ? `Comp #${compCardNumber}` : '',
             ].filter(Boolean).join(' | ');
             
+            // Get buffer card ID if available (for weekly buyers)
+            const bufferCard = selectedCardInfo?.allCards?.find(c => c.name.includes('[BUFFER]') && c.remainingMeals > 0);
+            
             const response = await fetch('/api/lunch/reservation', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -920,6 +925,7 @@ export default function LunchPage() {
                 memberStatus: isMember,
                 paymentMethod: paymentMethod,
                 lunchCardId: selectedLunchCard?.id,
+                bufferCardId: bufferCard?.id, // Pass buffer card for multi-card deduction
                 notes: mealNotes,
                 staff: staffInitials,
                 quantity: isFirstMeal ? totalMeals : 1, // Deduct total on first call
@@ -1382,6 +1388,16 @@ export default function LunchPage() {
                                     phone: primaryCard.phone || prev.phone,
                                   }));
                                   setSelectedLunchCard(primaryCard);
+                                  // Store full aggregated info for buffer support
+                                  setSelectedCardInfo({
+                                    baseName,
+                                    primaryCard,
+                                    allCards: cards,
+                                    regularMeals,
+                                    bufferMeals,
+                                    totalMeals,
+                                    hasBuffer,
+                                  });
                                   setAutoDetectedCard(primaryCard);
                                   setPaymentMethod('lunchCard');
                                   setLunchCardSearch('');
@@ -1586,6 +1602,7 @@ export default function LunchPage() {
                         type="button"
                         onClick={() => {
                           setSelectedLunchCard(autoDetectedCardInfo.primaryCard);
+                          setSelectedCardInfo(autoDetectedCardInfo); // Store full info for buffer support
                           setPaymentMethod('lunchCard');
                         }}
                         className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-['Jost',sans-serif] font-bold rounded-lg"
@@ -2267,34 +2284,49 @@ export default function LunchPage() {
                   )}
 
                   {selectedLunchCard && (
-                    <div className={`mt-3 border-2 rounded-lg p-3 ${
-                      selectedLunchCard.remainingMeals >= getTotalMeals()
-                        ? 'bg-green-100 border-green-400'
-                        : 'bg-red-100 border-red-400'
-                    }`}>
-                      <div className={`font-['Jost',sans-serif] font-bold ${
-                        selectedLunchCard.remainingMeals >= getTotalMeals() ? 'text-green-800' : 'text-red-800'
-                      }`}>Selected Card:</div>
-                      <div className={`font-['Bitter',serif] ${
-                        selectedLunchCard.remainingMeals >= getTotalMeals() ? 'text-green-700' : 'text-red-700'
-                      }`}>
-                        {selectedLunchCard.name} - {selectedLunchCard.remainingMeals} meals remaining
-                        {selectedLunchCard.mealType && <span className="text-blue-600 ml-1">({selectedLunchCard.mealType})</span>}
-                      </div>
-                      {selectedLunchCard.remainingMeals < getTotalMeals() && (
-                        <div className="mt-2 p-2 bg-red-200 rounded text-red-800 font-['Jost',sans-serif] font-bold text-sm">
-                          ⚠️ Not enough meals! Need {getTotalMeals()}, has {selectedLunchCard.remainingMeals}.
-                          Reduce dates or quantity.
+                    (() => {
+                      // Use selectedCardInfo for total meals if available (includes buffer)
+                      const totalAvailable = selectedCardInfo?.totalMeals ?? selectedLunchCard.remainingMeals;
+                      const hasEnough = totalAvailable >= getTotalMeals();
+                      const hasBuffer = selectedCardInfo?.hasBuffer ?? false;
+                      
+                      return (
+                        <div className={`mt-3 border-2 rounded-lg p-3 ${
+                          hasEnough ? 'bg-green-100 border-green-400' : 'bg-red-100 border-red-400'
+                        }`}>
+                          <div className={`font-['Jost',sans-serif] font-bold ${hasEnough ? 'text-green-800' : 'text-red-800'}`}>
+                            Selected Card:
+                          </div>
+                          <div className={`font-['Bitter',serif] ${hasEnough ? 'text-green-700' : 'text-red-700'}`}>
+                            {selectedCardInfo?.baseName ?? selectedLunchCard.name} - {totalAvailable} meals remaining
+                            {hasBuffer && (
+                              <span className="text-amber-600 ml-1">
+                                ({selectedCardInfo!.regularMeals} paid + {selectedCardInfo!.bufferMeals} buffer)
+                              </span>
+                            )}
+                            {selectedLunchCard.mealType && <span className="text-blue-600 ml-1">({selectedLunchCard.mealType})</span>}
+                          </div>
+                          {hasBuffer && (
+                            <div className="text-xs text-amber-700 mt-1 bg-amber-50 px-2 py-1 rounded inline-block">
+                              ⚡ Weekly buyer - will use buffer meals if needed
+                            </div>
+                          )}
+                          {!hasEnough && (
+                            <div className="mt-2 p-2 bg-red-200 rounded text-red-800 font-['Jost',sans-serif] font-bold text-sm">
+                              ⚠️ Not enough meals! Need {getTotalMeals()}, has {totalAvailable}.
+                              Reduce dates or quantity.
+                            </div>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => { setSelectedLunchCard(null); setSelectedCardInfo(null); }}
+                            className="mt-2 text-sm text-red-600 hover:text-red-800 font-['Jost',sans-serif]"
+                          >
+                            ✕ Remove selection
+                          </button>
                         </div>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => setSelectedLunchCard(null)}
-                        className="mt-2 text-sm text-red-600 hover:text-red-800 font-['Jost',sans-serif]"
-                      >
-                        ✕ Remove selection
-                      </button>
-                    </div>
+                      );
+                    })()
                   )}
                   
                   {!selectedLunchCard && lunchCardSearch.length >= 2 && availableLunchCards.length === 0 && !isSearchingCards && (

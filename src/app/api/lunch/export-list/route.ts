@@ -292,6 +292,58 @@ export async function GET(request: NextRequest) {
       };
       return getLastName(a.Name).localeCompare(getLastName(b.Name));
     });
+    
+    // On Thursday, also fetch Friday's Frozen Friday reservations (picked up Thursday)
+    let fridayFrozenReservations: Reservation[] = [];
+    if (isThursday) {
+      // Calculate Friday's date
+      const fridayDate = new Date(targetDate);
+      fridayDate.setDate(fridayDate.getDate() + 1);
+      const fridayDateStr = fridayDate.toISOString().split('T')[0];
+      
+      // Fetch Friday reservations where Frozen Friday = true
+      const fridayFilter = `AND(IS_SAME({Date}, '${fridayDateStr}', 'day'), {Frozen Friday})`;
+      let fridayOffset: string | undefined = undefined;
+      const fridayRecords: Array<{ id: string; fields: Record<string, unknown> }> = [];
+      
+      do {
+        let url = `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_RESERVATIONS_TABLE_ID}?filterByFormula=${encodeURIComponent(fridayFilter)}`;
+        if (fridayOffset) url += `&offset=${fridayOffset}`;
+        
+        const response = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}` },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          fridayRecords.push(...data.records);
+          fridayOffset = data.offset;
+        } else {
+          break;
+        }
+      } while (fridayOffset);
+      
+      fridayFrozenReservations = fridayRecords.map((record) => ({
+        id: record.id,
+        Name: record.fields['Name'] as string || '',
+        Date: record.fields['Date'] as string || '',
+        'Meal Type': record.fields['Meal Type'] as string || '',
+        'Member Status': record.fields['Member Status'] as string || '',
+        'Payment Method': record.fields['Payment Method'] as string || '',
+        Notes: `🧊 FROZEN FRIDAY | ${record.fields['Notes'] as string || ''}`.trim(),
+        Amount: record.fields['Amount'] as number || 0,
+        LunchCardId: (record.fields['Lunch Card'] as string[] | undefined)?.[0],
+      }));
+      
+      // Sort Friday frozen by last name too
+      fridayFrozenReservations.sort((a, b) => {
+        const getLastName = (name: string) => {
+          const parts = name.trim().split(/\s+/);
+          return parts[parts.length - 1].toLowerCase();
+        };
+        return getLastName(a.Name).localeCompare(getLastName(b.Name));
+      });
+    }
 
     // Format date for display
     const dateObj = new Date(date + 'T12:00:00');
@@ -609,6 +661,110 @@ export async function GET(request: NextRequest) {
       
       y += 0.25;
     });
+
+    // ========== FRIDAY FROZEN SECTION (only on Thursdays) ==========
+    if (isThursday && fridayFrozenReservations.length > 0) {
+      // Start on a new page for Friday frozen meals
+      doc.addPage();
+      y = margin;
+      
+      // Friday Frozen header
+      if (logoBase64) {
+        doc.addImage(logoBase64, 'PNG', margin, y, 0.6, 0.6);
+      }
+      
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(52, 152, 219); // Blue for frozen
+      doc.text('🧊 Friday Frozen Meals', margin + 0.75, y + 0.25);
+      
+      const fridayDate = new Date(targetDate);
+      fridayDate.setDate(fridayDate.getDate() + 1);
+      const fridayFormattedDate = fridayDate.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+      
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 100, 100);
+      doc.text(`${fridayFormattedDate} (Pick up Thursday)`, margin + 0.75, y + 0.45);
+      
+      // Stats
+      y += 0.75;
+      const fridayDineIn = fridayFrozenReservations.filter(r => r['Meal Type'] === 'Dine In').length;
+      const fridayToGo = fridayFrozenReservations.filter(r => r['Meal Type'] === 'To Go').length;
+      const fridayDelivery = fridayFrozenReservations.filter(r => r['Meal Type'] === 'Delivery').length;
+      
+      let pillX = margin;
+      pillX += drawPill(`Total: ${fridayFrozenReservations.length}`, pillX, y, [52, 152, 219]);
+      pillX += drawPill(`Dine In/Pickup: ${fridayDineIn + fridayToGo}`, pillX, y, [66, 125, 120]);
+      drawPill(`Delivery: ${fridayDelivery}`, pillX, y, [230, 126, 34]);
+      
+      y += 0.45;
+      drawTableHeader();
+      
+      // Friday frozen rows
+      fridayFrozenReservations.forEach((res, index) => {
+        checkNewPage(0.28);
+        
+        // Alternating row colors - blue tint for frozen
+        if (index % 2 === 0) {
+          doc.setFillColor(230, 244, 255);
+        } else {
+          doc.setFillColor(245, 250, 255);
+        }
+        doc.rect(margin, y - 0.05, contentWidth, 0.28, 'F');
+        
+        x = margin + 0.05;
+        doc.setFontSize(8);
+        doc.setTextColor(0, 0, 0);
+        
+        // Row number
+        doc.text(String(index + 1), x, y + 0.12);
+        x += colWidths[0];
+        
+        // Name
+        const name = res.Name.length > 24 ? res.Name.substring(0, 22) + '...' : res.Name;
+        doc.setFont('helvetica', 'bold');
+        doc.text(name, x, y + 0.12);
+        doc.setFont('helvetica', 'normal');
+        x += colWidths[1];
+        
+        // Meal Type
+        doc.text(res['Meal Type'] || '', x, y + 0.12);
+        x += colWidths[2];
+        
+        // Member Status
+        const statusShort = res['Member Status'] === 'Member' ? 'Member' : 'Non-Mem';
+        doc.text(statusShort, x, y + 0.12);
+        x += colWidths[3];
+        
+        // Paid (checkmark or X)
+        const isPaid = res['Payment Method'] && res['Payment Method'] !== 'Unpaid';
+        doc.text(isPaid ? '✓' : '✗', x, y + 0.12);
+        x += colWidths[4];
+        
+        // Notes (simplified for frozen)
+        const cleanedNotes = cleanNotes(res.Notes || '').replace(/🧊 FROZEN FRIDAY \|?\s*/g, '');
+        if (cleanedNotes) {
+          doc.setFontSize(7);
+          const truncatedNotes = cleanedNotes.length > 25 ? cleanedNotes.substring(0, 23) + '...' : cleanedNotes;
+          doc.text(truncatedNotes, x, y + 0.12);
+          doc.setFontSize(8);
+        }
+        x += colWidths[5];
+        
+        // Meals remaining - N/A for frozen section
+        doc.setTextColor(150, 150, 150);
+        doc.text('N/A', x, y + 0.12);
+        doc.setTextColor(0, 0, 0);
+        
+        y += 0.25;
+      });
+    }
 
     // Footer
     y += 0.3;

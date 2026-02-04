@@ -225,6 +225,17 @@ export default function LunchPage() {
   const headerRef = useRef<HTMLDivElement>(null);
   const transactionSectionRef = useRef<HTMLDivElement>(null);
   
+  // Section refs for navigation
+  const exportSectionRef = useRef<HTMLDivElement>(null);
+  const lunchCardLookupRef = useRef<HTMLDivElement>(null);
+  const customerInfoRef = useRef<HTMLDivElement>(null);
+  const paymentRef = useRef<HTMLDivElement>(null);
+  const recentTransactionsRef = useRef<HTMLDivElement>(null);
+  const pricingRef = useRef<HTMLDivElement>(null);
+  
+  // Navigation widget state
+  const [showNavWidget, setShowNavWidget] = useState(false);
+  
   // Track last auto-filled customer name for meal names
   const lastAutoFilledNameRef = useRef('');
 
@@ -556,6 +567,20 @@ export default function LunchPage() {
   useEffect(() => {
     fetchRecentTransactions();
   }, [fetchRecentTransactions]);
+  
+  // Check for scroll target from sessionStorage (after refresh from confirmation dialog)
+  useEffect(() => {
+    const scrollTarget = sessionStorage.getItem('scrollToSection');
+    if (scrollTarget) {
+      sessionStorage.removeItem('scrollToSection');
+      // Wait for DOM to render, then scroll
+      setTimeout(() => {
+        if (scrollTarget === 'transaction' && transactionSectionRef.current) {
+          transactionSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    }
+  }, []);
   
   // Fetch today's reservations for manual override modal
   const fetchTodayReservations = useCallback(async () => {
@@ -1082,6 +1107,55 @@ export default function LunchPage() {
     <>
       <SiteNavigation />
       
+      {/* Navigation Widget - floating button and menu */}
+      <div className="fixed bottom-4 right-4 z-50">
+        {showNavWidget && (
+          <div className="mb-2 bg-white rounded-lg shadow-2xl border-2 border-[#427d78] overflow-hidden animate-in slide-in-from-bottom-4">
+            <div className="bg-[#427d78] text-white px-4 py-2 flex justify-between items-center">
+              <span className="font-['Jost',sans-serif] font-bold text-sm">Jump to Section</span>
+              <button
+                type="button"
+                onClick={() => setShowNavWidget(false)}
+                className="w-6 h-6 flex items-center justify-center rounded hover:bg-white/20 text-white font-bold"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-2 space-y-1">
+              {[
+                { ref: exportSectionRef, label: '📤 Export Reports', id: 'export' },
+                { ref: transactionSectionRef, label: '🍴 Transaction Type', id: 'transaction' },
+                { ref: lunchCardLookupRef, label: '🔍 Card Lookup', id: 'lookup' },
+                { ref: customerInfoRef, label: '👤 Customer Info', id: 'customer' },
+                { ref: paymentRef, label: '💵 Payment', id: 'payment' },
+                { ref: recentTransactionsRef, label: '📜 Recent Transactions', id: 'recent' },
+                { ref: pricingRef, label: '📋 Pricing Reference', id: 'pricing' },
+              ].map(item => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => {
+                    item.ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    setShowNavWidget(false);
+                  }}
+                  className="w-full text-left px-3 py-2 rounded hover:bg-[#e8f5f3] text-gray-700 font-['Jost',sans-serif] text-sm transition-colors"
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={() => setShowNavWidget(!showNavWidget)}
+          className="w-12 h-12 rounded-full bg-[#427d78] hover:bg-[#5eb3a1] text-white shadow-lg flex items-center justify-center text-xl transition-all"
+          title="Navigation Menu"
+        >
+          {showNavWidget ? '×' : '☰'}
+        </button>
+      </div>
+      
       {/* Sticky Transaction Type Widget - appears when scrolled past main toggle */}
       {isSticky && (
         <div 
@@ -1163,7 +1237,7 @@ export default function LunchPage() {
           </div>
           
           {/* Export Section */}
-          <div className="card" style={{ marginBottom: 'var(--space-4)', background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)' }}>
+          <div ref={exportSectionRef} className="card" style={{ marginBottom: 'var(--space-4)', background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)' }}>
             <h2 className="font-['Jost',sans-serif] font-bold text-[#427d78] text-lg" style={{ marginBottom: 'var(--space-3)' }}>
               📤 Export Daily Reports
             </h2>
@@ -1335,7 +1409,7 @@ export default function LunchPage() {
             </div>
 
             {/* Quick Lunch Card Lookup */}
-            <div className="card" style={{ marginBottom: 'var(--space-4)', background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)', border: '2px solid #f59e0b' }}>
+            <div ref={lunchCardLookupRef} className="card" style={{ marginBottom: 'var(--space-4)', background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)', border: '2px solid #f59e0b' }}>
               <div className="flex items-center justify-between flex-wrap gap-2" style={{ marginBottom: 'var(--space-3)' }}>
                 <h2 className="font-['Jost',sans-serif] font-bold text-amber-700 text-xl">
                   🔍 Quick Lunch Card Lookup
@@ -1613,7 +1687,7 @@ export default function LunchPage() {
             )}
 
             {/* Customer Information */}
-            <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
+            <div ref={customerInfoRef} className="card" style={{ marginBottom: 'var(--space-4)' }}>
               <div className="flex items-center justify-between flex-wrap gap-2" style={{ marginBottom: 'var(--space-3)' }}>
                 <h2 className="font-['Jost',sans-serif] font-bold text-[#427d78] text-xl">
                   Customer Information
@@ -2096,7 +2170,7 @@ export default function LunchPage() {
             )}
 
             {/* Payment Method */}
-            <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
+            <div ref={paymentRef} className="card" style={{ marginBottom: 'var(--space-4)' }}>
               <h2 className="font-['Jost',sans-serif] font-bold text-[#427d78] text-xl" style={{ marginBottom: 'var(--space-3)' }}>
                 Payment
               </h2>
@@ -2529,10 +2603,14 @@ export default function LunchPage() {
                 <div className="flex gap-3 mt-4">
                   <button
                     type="button"
-                    onClick={() => setShowConfirmation(false)}
+                    onClick={() => {
+                      // Store scroll target in sessionStorage and refresh
+                      sessionStorage.setItem('scrollToSection', 'transaction');
+                      window.location.reload();
+                    }}
                     className="flex-1 px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-['Jost',sans-serif] font-bold rounded-lg"
                   >
-                    ← Back to Edit
+                    ← Cancel & Refresh
                   </button>
                   <button
                     type="submit"
@@ -2576,7 +2654,7 @@ export default function LunchPage() {
           </form>
 
           {/* Recent Transactions Log - filtered by transaction type */}
-          <div className="card" style={{ marginTop: 'var(--space-6)' }}>
+          <div ref={recentTransactionsRef} className="card" style={{ marginTop: 'var(--space-6)' }}>
             <h2 className="font-['Jost',sans-serif] font-bold text-[#427d78] text-xl" style={{ marginBottom: 'var(--space-3)' }}>
               📜 Recent {transactionType === 'individual' ? 'Meal Reservations' : 'Lunch Card Purchases'}
             </h2>
@@ -2665,7 +2743,7 @@ export default function LunchPage() {
           </div>
 
           {/* Pricing Reference */}
-          <div className="card" style={{ marginTop: 'var(--space-6)' }}>
+          <div ref={pricingRef} className="card" style={{ marginTop: 'var(--space-6)' }}>
             <h2 className="font-['Jost',sans-serif] font-bold text-[#427d78] text-xl" style={{ marginBottom: 'var(--space-3)' }}>
               📋 Pricing Reference
             </h2>

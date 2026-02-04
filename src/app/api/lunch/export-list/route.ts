@@ -20,6 +20,8 @@ interface Reservation {
   LunchCardId?: string; // Linked lunch card record ID
   LunchCardRemaining?: number; // Remaining meals on lunch card
   InFridge?: boolean; // Wants meal left in fridge
+  Phone?: string; // Customer phone number
+  ContactId?: string; // Linked Contact record ID
 }
 
 // Dietary/special request keywords to detect
@@ -138,6 +140,10 @@ export async function GET(request: NextRequest) {
       const lunchCardLinks = record.fields['Lunch Card'] as string[] | undefined;
       const lunchCardId = lunchCardLinks?.[0];
       
+      // Get linked contact ID
+      const contactLinks = record.fields['Contact'] as string[] | undefined;
+      const contactId = contactLinks?.[0];
+      
       return {
         id: record.id,
         Name: record.fields['Name'] as string || '',
@@ -148,11 +154,39 @@ export async function GET(request: NextRequest) {
         Notes: record.fields['Notes'] as string || '',
         Amount: record.fields['Amount'] as number || 0,
         LunchCardId: lunchCardId,
+        ContactId: contactId,
       };
     });
 
-    // Fetch lunch card remaining meals for reservations that use lunch cards
+    // 1. Fetch Phone Numbers from linked Contacts
+    const contactIds = [...new Set(reservations.filter(r => r.ContactId).map(r => r.ContactId!))];
+    const contactPhoneMap = new Map<string, string>();
+    const CONTACTS_TABLE_ID = process.env.AIRTABLE_CONTACTS_TABLE_ID || 'tbl3PQZzXGpT991dH';
+    
+    if (contactIds.length > 0) {
+      try {
+        const contactFilter = `OR(${contactIds.map(id => `RECORD_ID()='${id}'`).join(',')})`;
+        const contactUrl = `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${CONTACTS_TABLE_ID}?filterByFormula=${encodeURIComponent(contactFilter)}`;
+        
+        const contactRes = await fetch(contactUrl, {
+          headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}` },
+        });
+        
+        if (contactRes.ok) {
+          const contactData = await contactRes.json();
+          for (const c of contactData.records) {
+            const phone = (c.fields['Phone Cell'] || c.fields['Phone Home'] || c.fields['Phone']) as string;
+            if (phone) contactPhoneMap.set(c.id, phone);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to fetch contacts for list:', e);
+      }
+    }
+
+    // 2. Fetch lunch card info (Remaining Meals + Phone)
     const lunchCardIds = [...new Set(reservations.filter(r => r.LunchCardId).map(r => r.LunchCardId!))];
+    const cardPhoneMap = new Map<string, string>();
     
     if (lunchCardIds.length > 0 && process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID) {
       // Fetch lunch cards in batch using OR formula
@@ -169,9 +203,12 @@ export async function GET(request: NextRequest) {
         
         for (const card of cardData.records) {
           cardMap.set(card.id, card.fields['Remaining Meals'] as number || 0);
+          // Also capture phone from card if available
+          const phone = card.fields['Phone'] as string;
+          if (phone) cardPhoneMap.set(card.id, phone);
         }
         
-        // Update reservations with remaining meals
+        // Update reservations with remaining meals AND phones
         for (const res of reservations) {
           if (res.LunchCardId && cardMap.has(res.LunchCardId)) {
             res.LunchCardRemaining = cardMap.get(res.LunchCardId);
@@ -180,7 +217,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // For reservations without explicit lunch card links, look up by name
+    // 3. For reservations without explicit lunch card links, look up by name
     // This helps with handwritten entries that weren't linked to cards
     if (process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID) {
       const reservationsWithoutCard = reservations.filter(r => r.LunchCardRemaining === undefined && r.Name);
@@ -196,26 +233,45 @@ export async function GET(request: NextRequest) {
         if (activeCardsResponse.ok) {
           const activeCardsData = await activeCardsResponse.json();
           
-          // Build a map of lowercase name -> remaining meals
-          const nameToMeals = new Map<string, number>();
+          // Build a map of lowercase name -> {remaining, phone}
+          const nameToInfo = new Map<string, { remaining: number; phone?: string }>();
           for (const card of activeCardsData.records) {
             const cardName = (card.fields['Name'] as string || '').toLowerCase().trim();
             const remaining = card.fields['Remaining Meals'] as number || 0;
+            const phone = card.fields['Phone'] as string;
+            
             // If multiple cards for same name, use the one with more remaining meals
-            if (!nameToMeals.has(cardName) || (nameToMeals.get(cardName) || 0) < remaining) {
-              nameToMeals.set(cardName, remaining);
+            if (!nameToInfo.has(cardName) || (nameToInfo.get(cardName)?.remaining || 0) < remaining) {
+              nameToInfo.set(cardName, { remaining, phone });
             }
           }
           
           // Match reservations by name
           for (const res of reservationsWithoutCard) {
             const resName = res.Name.toLowerCase().trim();
-            if (nameToMeals.has(resName)) {
-              res.LunchCardRemaining = nameToMeals.get(resName);
+            if (nameToInfo.has(resName)) {
+              const info = nameToInfo.get(resName)!;
+              res.LunchCardRemaining = info.remaining;
+              // If we found a phone here and don't have one yet, use it?
+              // Actually, populate into cardPhoneMap but we don't have card ID.
+              // We'll set it directly on the object momentarily
+              if (!res.Phone && info.phone) {
+                 res.Phone = info.phone;
+              }
             }
           }
         }
       }
+    }
+    
+    // 4. Assign Final Phones (Priority: Contact > Lunch Card > Name Match)
+    for (const res of reservations) {
+      if (res.ContactId && contactPhoneMap.has(res.ContactId)) {
+        res.Phone = contactPhoneMap.get(res.ContactId);
+      } else if (res.LunchCardId && cardPhoneMap.has(res.LunchCardId)) {
+        res.Phone = cardPhoneMap.get(res.LunchCardId);
+      }
+      // Name match phone was already assigned in step 3
     }
 
     // Fetch Weekly Delivery customers (auto-include Mon-Thu, + frozen Fri on Thu)
@@ -375,8 +431,9 @@ export async function GET(request: NextRequest) {
     const contentWidth = pageWidth - (2 * margin);
     let y = margin;
 
-    // Column widths: #, Name, Type, Status, Paid, Special Requests, Meals Remaining
-    const colWidths = [0.35, 1.9, 0.7, 0.85, 0.5, 1.8, 1.4];
+    // Column widths: #, Name, Phone, Type, Status, Paid, Special Requests, Meals Remaining
+    // Total width available: 7.5 inches
+    const colWidths = [0.3, 1.5, 1.1, 0.6, 0.7, 0.4, 1.5, 1.4];
 
     // Helper function to draw a colored pill/badge
     const drawPill = (text: string, x: number, yPos: number, bgColor: [number, number, number], textColor: [number, number, number] = [255, 255, 255]) => {
@@ -413,20 +470,23 @@ export async function GET(request: NextRequest) {
       
       doc.text('Name', hx, y + 0.18);
       hx += colWidths[1];
-      
-      doc.text('Type', hx, y + 0.18);
+
+      doc.text('Phone', hx, y + 0.18);
       hx += colWidths[2];
       
-      doc.text('Status', hx, y + 0.18);
+      doc.text('Type', hx, y + 0.18);
       hx += colWidths[3];
       
-      doc.text('Paid', hx, y + 0.18);
+      doc.text('Status', hx, y + 0.18);
       hx += colWidths[4];
+      
+      doc.text('Paid', hx, y + 0.18);
+      hx += colWidths[5];
       
       // Multi-line header: Special Requests
       doc.text('Special', hx, y + 0.13);
       doc.text('Requests', hx, y + 0.28);
-      hx += colWidths[5];
+      hx += colWidths[6];
       
       // Multi-line header: Meals Remaining
       doc.text('Meals', hx, y + 0.13);
@@ -530,38 +590,73 @@ export async function GET(request: NextRequest) {
     let x = margin; // row x position
     
     reservations.forEach((res, index) => {
-      checkNewPage(0.28);
+      // 1. Prepare Content & Calculate Height
+      // Name wrapping
+      const nameLines = doc.splitTextToSize(res.Name, colWidths[1] - 0.1);
+      
+      // Special Requests / Dietary logic
+      const cleanedNotes = cleanNotes(res.Notes || '');
+      const dietary = parseDietaryRestrictions(cleanedNotes, res.Name);
+      
+      // Calculate height for Requests column (simulate wrapping)
+      let reqLinesCount = 1;
+      if (dietary.length > 0) {
+        let currentLineWidth = 0;
+        const maxReqWidth = colWidths[6] - 0.1;
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'bold');
+        for (let i = 0; i < dietary.length; i++) {
+          const itemText = dietary[i] + (i < dietary.length - 1 ? ', ' : '');
+          const w = doc.getTextWidth(itemText);
+          if (currentLineWidth + w > maxReqWidth && currentLineWidth > 0) {
+            reqLinesCount++;
+            currentLineWidth = w;
+          } else {
+            currentLineWidth += w;
+          }
+        }
+      }
+      
+      const maxLines = Math.max(nameLines.length, reqLinesCount);
+      const lineHeight = 0.14;
+      const rowHeight = Math.max(0.28, (maxLines * lineHeight) + 0.14);
+      
+      checkNewPage(rowHeight);
       
       // Alternating row colors
       if (index % 2 === 0) {
         doc.setFillColor(245, 245, 245);
-        doc.rect(margin, y - 0.05, contentWidth, 0.28, 'F');
+        doc.rect(margin, y - 0.05, contentWidth, rowHeight, 'F');
       }
       
-      x = margin + 0.05;
+      let x = margin + 0.05;
       doc.setFontSize(8);
       doc.setTextColor(0, 0, 0);
+      doc.setFont('helvetica', 'normal');
       
-      // Row number
+      // 1. Row number
       doc.text(String(index + 1), x, y + 0.12);
       x += colWidths[0];
       
-      // Name (truncate if too long)
-      const name = res.Name.length > 24 ? res.Name.substring(0, 22) + '...' : res.Name;
+      // 2. Name (Wrapped)
       doc.setFont('helvetica', 'bold');
-      doc.text(name, x, y + 0.12);
+      doc.text(nameLines, x, y + 0.12);
       doc.setFont('helvetica', 'normal');
       x += colWidths[1];
       
-      // Meal Type - written out fully
-      doc.text(res['Meal Type'] || '', x, y + 0.12);
+      // 3. Phone (New)
+      doc.text(res.Phone || '', x, y + 0.12);
       x += colWidths[2];
       
-      // Member Status - written out fully
-      doc.text(res['Member Status'] || '', x, y + 0.12);
+      // 4. Meal Type
+      doc.text(res['Meal Type'] || '', x, y + 0.12);
       x += colWidths[3];
       
-      // Paid column - simple checkmark or empty
+      // 5. Member Status
+      doc.text(res['Member Status'] || '', x, y + 0.12);
+      x += colWidths[4];
+      
+      // 6. Paid
       const payment = res['Payment Method'] || '';
       const isPaid = payment === 'Cash' || payment === 'Check' || payment === 'Card (Zeffy)' || 
                      payment === 'Lunch Card' || payment === 'Prepaid Weekly' || payment === 'Comp Card';
@@ -572,94 +667,81 @@ export async function GET(request: NextRequest) {
       }
       doc.setTextColor(0, 0, 0);
       doc.setFontSize(8);
-      x += colWidths[4];
+      x += colWidths[5];
       
-      // Special Requests - extract and display dietary restrictions with color coding
-      const cleanedNotes = cleanNotes(res.Notes || '');
-      const dietary = parseDietaryRestrictions(cleanedNotes, res.Name);
-      
+      // 7. Special Requests (Wrapped & Colored)
       if (dietary.length > 0) {
         doc.setFontSize(7);
         let reqX = x;
-        const reqY = y + 0.08;
+        let reqY = y + 0.13; // slightly offset for alignment
+        let currentLineWidth = 0;
+        const maxReqWidth = colWidths[6] - 0.1;
         
-        for (const item of dietary) {
-          // Color code different dietary items
-          if (item === 'Vegetarian') {
-            doc.setTextColor(34, 139, 34); // Forest green
-            doc.setFont('helvetica', 'bold');
-          } else if (item === 'No Dessert') {
-            doc.setTextColor(139, 69, 19); // Saddle brown
-            doc.setFont('helvetica', 'bold');
-          } else if (item === 'No Garlic/Onions') {
-            doc.setTextColor(128, 0, 128); // Purple
-            doc.setFont('helvetica', 'bold');
-          } else if (item === 'Gluten-Free') {
-            doc.setTextColor(184, 134, 11); // Dark goldenrod
-            doc.setFont('helvetica', 'bold');
-          } else if (item === 'Dairy-Free') {
-            doc.setTextColor(0, 0, 139); // Dark blue
-            doc.setFont('helvetica', 'bold');
-          } else if (item === 'In Fridge') {
-            doc.setTextColor(0, 128, 255); // Bright blue
-            doc.setFont('helvetica', 'bold');
+        for (let i = 0; i < dietary.length; i++) {
+          const item = dietary[i];
+          
+          // Color code
+          if (item === 'Vegetarian') doc.setTextColor(34, 139, 34);
+          else if (item === 'No Dessert') doc.setTextColor(139, 69, 19);
+          else if (item === 'No Garlic/Onions') doc.setTextColor(128, 0, 128);
+          else if (item === 'Gluten-Free') doc.setTextColor(184, 134, 11);
+          else if (item === 'Dairy-Free') doc.setTextColor(0, 0, 139);
+          else if (item === 'In Fridge') doc.setTextColor(0, 128, 255);
+          else doc.setTextColor(0, 0, 0);
+          
+          doc.setFont('helvetica', 'bold');
+          
+          const itemText = item + (i < dietary.length - 1 ? ', ' : '');
+          const w = doc.getTextWidth(itemText);
+          
+          // Wrap if needed
+          if (currentLineWidth + w > maxReqWidth && currentLineWidth > 0) {
+            reqX = x;
+            reqY += lineHeight;
+            currentLineWidth = 0;
           }
           
-          const itemText = item + (dietary.indexOf(item) < dietary.length - 1 ? ', ' : '');
-          doc.text(itemText, reqX, reqY + 0.05);
-          reqX += doc.getTextWidth(itemText);
+          doc.text(itemText, reqX, reqY); // relative to baseline
+          reqX += w;
+          currentLineWidth += w;
         }
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(0, 0, 0);
       }
-      x += colWidths[5];
+      x += colWidths[6];
       
-      // Meals Remaining column
+      // 8. Meals Remaining
       doc.setFontSize(8);
       if (res.LunchCardRemaining !== undefined) {
         const remaining = res.LunchCardRemaining;
         
         // Color-code based on remaining meals
         if (remaining <= 1) {
-          // Red highlight for 1-2 remaining
           doc.setFillColor(255, 200, 200);
-          doc.rect(x - 0.05, y - 0.03, colWidths[6] - 0.1, 0.24, 'F');
+          doc.rect(x - 0.05, y - 0.03, colWidths[7] - 0.1, 0.24, 'F');
           doc.setTextColor(139, 0, 0);
           doc.setFont('helvetica', 'bold');
           doc.text(`${remaining}`, x, y + 0.12);
-          // Warning emoji for 1 remaining
-          if (remaining === 1) {
-            doc.text(' ⚠️', x + 0.15, y + 0.12);
-          }
-        } else if (remaining === 2) {
-          // Red highlight for 2 remaining
-          doc.setFillColor(255, 200, 200);
-          doc.rect(x - 0.05, y - 0.03, colWidths[6] - 0.1, 0.24, 'F');
-          doc.setTextColor(139, 0, 0);
-          doc.setFont('helvetica', 'bold');
-          doc.text(`${remaining}`, x, y + 0.12);
+          if (remaining === 1) doc.text(' (!)', x + 0.15, y + 0.12);
         } else if (remaining === 3) {
-          // Yellow highlight for 3 remaining
           doc.setFillColor(255, 255, 200);
-          doc.rect(x - 0.05, y - 0.03, colWidths[6] - 0.1, 0.24, 'F');
+          doc.rect(x - 0.05, y - 0.03, colWidths[7] - 0.1, 0.24, 'F');
           doc.setTextColor(139, 119, 0);
           doc.setFont('helvetica', 'bold');
           doc.text(`${remaining}`, x, y + 0.12);
         } else {
-          // Normal display for 4+ remaining
           doc.setTextColor(0, 0, 0);
           doc.text(`${remaining}`, x, y + 0.12);
         }
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(0, 0, 0);
       } else {
-        // No lunch card
         doc.setTextColor(150, 150, 150);
         doc.text('N/A', x, y + 0.12);
         doc.setTextColor(0, 0, 0);
       }
       
-      y += 0.25;
+      y += rowHeight; // Advance by calculated height
     });
 
     // ========== FRIDAY FROZEN SECTION (only on Thursdays) ==========

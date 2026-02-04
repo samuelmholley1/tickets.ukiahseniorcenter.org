@@ -334,19 +334,22 @@ export async function GET(request: NextRequest) {
       const words = sanitizedSearch.split(/\s+/).filter(w => w.length > 0);
       
       if (words.length === 1) {
-        // Single word: simple search
+        // Single word: match Name OR Phone
+        // Note: We intentionally DO NOT filter by Remaining Meals > 0 here,
+        // because we want to see users who have run out of meals so we can renew them.
+        // We will filter out "replaced" (old) zero-balance cards in JavaScript.
         filterFormula = `?filterByFormula=${encodeURIComponent(
-          `AND({Remaining Meals}>0, OR(SEARCH("${words[0]}", LOWER({Name})), SEARCH("${words[0]}", {Phone})))`
+          `OR(SEARCH("${words[0]}", LOWER({Name})), SEARCH("${words[0]}", {Phone}))`
         )}`;
       } else {
         // Multiple words: ALL words must appear in Name
         const wordChecks = words.map(w => `SEARCH("${w}", LOWER({Name}))`).join(', ');
         filterFormula = `?filterByFormula=${encodeURIComponent(
-          `AND({Remaining Meals}>0, ${wordChecks})`
+          `AND(${wordChecks})`
         )}`;
       }
     } else {
-      // Just get cards with remaining meals
+      // Just get cards with remaining meals if not searching
       filterFormula = `?filterByFormula=${encodeURIComponent(`{Remaining Meals}>0`)}`;
     }
 
@@ -405,27 +408,71 @@ export async function GET(request: NextRequest) {
       }
     }
     
+    // Process records into standardized objects
+    const allCards = data.records.map((record: { id: string; fields: Record<string, unknown> }) => {
+      const linkedContacts = record.fields['Contact'] as string[] | undefined;
+      const contactId = linkedContacts && linkedContacts.length > 0 ? linkedContacts[0] : null;
+      const contact = contactId ? contactInfo[contactId] : null;
+      
+      return {
+        id: record.id,
+        name: record.fields['Name'] as string,
+        phone: record.fields['Phone'] as string,
+        cardType: record.fields['Card Type'] as string,
+        mealType: record.fields['Meal Type'] as string,
+        totalMeals: record.fields['Total Meals'] as number,
+        remainingMeals: record.fields['Remaining Meals'] as number,
+        memberStatus: record.fields['Member Status'] as string,
+        purchaseDate: record.fields['Purchase Date'] as string,
+        // Contact info from Contacts table
+        contactEmail: contact?.email,
+        contactPhone: contact?.phone,
+      };
+    });
+
+    let filteredCards = allCards;
+
+    // Smart Filtering Logic:
+    // If we are searching (meaning we fetched 0-balance cards), we want to show:
+    // 1. All active cards (Remaining > 0)
+    // 2. OR, if the person has NO active cards, show their most recent 0-balance card.
+    //    (This satisfies "Show zeroed out cards if haven't been replaced yet")
+    if (search) {
+      const groupedMap = new Map<string, typeof allCards>();
+      
+      allCards.forEach(card => {
+        // Group by Name (lowercase for consistency)
+        const key = (card.name || 'unknown').toLowerCase().trim();
+        if (!groupedMap.has(key)) groupedMap.set(key, []);
+        groupedMap.get(key)!.push(card);
+      });
+
+      filteredCards = [];
+      for (const cards of groupedMap.values()) {
+        const activeCards = cards.filter(c => (c.remainingMeals || 0) > 0);
+        
+        if (activeCards.length > 0) {
+          // User has active cards! Show them. Hide the old 0-balance ones.
+          filteredCards.push(...activeCards);
+        } else {
+          // User has NO active cards. Show the most recent zero-balance card so we can renew it.
+          // Sort by Purchase Date descending
+          cards.sort((a, b) => {
+            const dateA = a.purchaseDate ? new Date(a.purchaseDate).getTime() : 0;
+            const dateB = b.purchaseDate ? new Date(b.purchaseDate).getTime() : 0;
+            return dateB - dateA; // Descending
+          });
+          
+          if (cards.length > 0) {
+            filteredCards.push(cards[0]);
+          }
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      cards: data.records.map((record: { id: string; fields: Record<string, unknown> }) => {
-        const linkedContacts = record.fields['Contact'] as string[] | undefined;
-        const contactId = linkedContacts && linkedContacts.length > 0 ? linkedContacts[0] : null;
-        const contact = contactId ? contactInfo[contactId] : null;
-        
-        return {
-          id: record.id,
-          name: record.fields['Name'],
-          phone: record.fields['Phone'],
-          cardType: record.fields['Card Type'],
-          mealType: record.fields['Meal Type'],
-          totalMeals: record.fields['Total Meals'],
-          remainingMeals: record.fields['Remaining Meals'],
-          memberStatus: record.fields['Member Status'],
-          // Contact info from Contacts table
-          contactEmail: contact?.email,
-          contactPhone: contact?.phone,
-        };
-      }),
+      cards: filteredCards,
     });
 
   } catch (error) {

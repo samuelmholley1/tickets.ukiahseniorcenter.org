@@ -13,6 +13,8 @@ interface LunchCard {
   totalMeals: number;
   remainingMeals: number;
   memberStatus: string;
+  contactEmail?: string;   // From linked Contact record
+  contactPhone?: string;   // From linked Contact record
 }
 
 // Aggregated card info for customers with multiple cards (including buffer)
@@ -454,11 +456,28 @@ export default function LunchPage() {
   const [selectedLunchCard, setSelectedLunchCard] = useState<LunchCard | null>(null);
   const [selectedCardInfo, setSelectedCardInfo] = useState<AggregatedCardInfo | null>(null); // Full info including buffer cards
   const [isSearchingCards, setIsSearchingCards] = useState(false);
+  const [cardDeductions, setCardDeductions] = useState<{ date: string; name: string }[]>([]); // Deduction history for selected card
   
   // Auto-detected lunch card from customer name (aggregated with buffer info)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_autoDetectedCard, setAutoDetectedCard] = useState<LunchCard | null>(null);
   const [autoDetectedCardInfo, setAutoDetectedCardInfo] = useState<AggregatedCardInfo | null>(null);
+  
+  // Fetch deduction history when a card is selected
+  useEffect(() => {
+    if (selectedLunchCard?.id) {
+      fetch(`/api/lunch/card?id=${selectedLunchCard.id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.deductions) {
+            setCardDeductions(data.deductions);
+          }
+        })
+        .catch(err => console.error('Failed to fetch card deductions:', err));
+    } else {
+      setCardDeductions([]);
+    }
+  }, [selectedLunchCard?.id]);
   
   // Helper to aggregate cards by base name
   const aggregateCards = (cards: LunchCard[]): AggregatedCardInfo | null => {
@@ -1417,12 +1436,13 @@ export default function LunchPage() {
                                   const nameParts = baseName.split(' ');
                                   const firstName = nameParts[0] || '';
                                   const lastName = nameParts.slice(1).join(' ') || '';
-                                  // Auto-populate everything
+                                  // Auto-populate everything (use contact info if available)
                                   setCustomer(prev => ({
                                     ...prev,
                                     firstName,
                                     lastName,
-                                    phone: primaryCard.phone || prev.phone,
+                                    phone: primaryCard.contactPhone || primaryCard.phone || prev.phone,
+                                    email: primaryCard.contactEmail || prev.email,
                                   }));
                                   setSelectedLunchCard(primaryCard);
                                   // Store full aggregated info for buffer support
@@ -2315,6 +2335,17 @@ export default function LunchPage() {
                             setSelectedLunchCard(card);
                             setLunchCardSearch('');
                             setAvailableLunchCards([]);
+                            // Auto-populate customer info from contact if available
+                            if (card.contactEmail || card.contactPhone) {
+                              const nameParts = card.name.split(' ');
+                              setCustomer(prev => ({
+                                ...prev,
+                                firstName: nameParts[0] || prev.firstName,
+                                lastName: nameParts.slice(1).join(' ') || prev.lastName,
+                                phone: card.contactPhone || card.phone || prev.phone,
+                                email: card.contactEmail || prev.email,
+                              }));
+                            }
                           }}
                           className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
                             selectedLunchCard?.id === card.id
@@ -2356,6 +2387,19 @@ export default function LunchPage() {
                             )}
                             {selectedLunchCard.mealType && <span className="text-blue-600 ml-1">({selectedLunchCard.mealType})</span>}
                           </div>
+                          
+                          {/* Deduction history */}
+                          {cardDeductions.length > 0 && (
+                            <div className="mt-2 text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded">
+                              <span className="font-bold">Deductions:</span>{' '}
+                              {cardDeductions.map((d, i) => (
+                                <span key={i}>
+                                  {d.date}{i < cardDeductions.length - 1 ? ', ' : ''}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          
                           {hasBuffer && (
                             <div className="text-xs text-amber-700 mt-1 bg-amber-50 px-2 py-1 rounded inline-block">
                               ⚡ Weekly buyer - will use buffer meals if needed

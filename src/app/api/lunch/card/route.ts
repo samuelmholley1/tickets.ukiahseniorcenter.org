@@ -267,7 +267,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Server configuration error: Missing lunch cards table ID' }, { status: 500 });
     }
 
-    // If specific ID requested, fetch that record
+    // If specific ID requested, fetch that record with deduction history
     if (id) {
       const response = await fetch(
         `${AIRTABLE_API_BASE}/${baseId}/${tableId}/${id}`,
@@ -283,12 +283,44 @@ export async function GET(request: NextRequest) {
       }
 
       const record = await response.json();
+      
+      // Fetch deduction history (reservations linked to this card)
+      const reservationsTableId = process.env.AIRTABLE_LUNCH_RESERVATIONS_TABLE_ID;
+      let deductions: { date: string; name: string }[] = [];
+      
+      if (reservationsTableId) {
+        try {
+          // Query reservations that link to this card ID
+          const deductionsRes = await fetch(
+            `${AIRTABLE_API_BASE}/${baseId}/${reservationsTableId}?filterByFormula=${encodeURIComponent(
+              `FIND("${id}", ARRAYJOIN({Lunch Card}))`
+            )}&sort%5B0%5D%5Bfield%5D=Date&sort%5B0%5D%5Bdirection%5D=desc`,
+            {
+              headers: {
+                'Authorization': `Bearer ${apiKey}`,
+              },
+            }
+          );
+          
+          if (deductionsRes.ok) {
+            const deductionsData = await deductionsRes.json();
+            deductions = deductionsData.records.map((r: { fields: Record<string, unknown> }) => ({
+              date: r.fields['Date'] as string,
+              name: r.fields['Name'] as string,
+            }));
+          }
+        } catch (err) {
+          console.error('Failed to fetch deduction history:', err);
+        }
+      }
+      
       return NextResponse.json({
         success: true,
         card: {
           id: record.id,
           ...record.fields,
         },
+        deductions,
       });
     }
 
@@ -333,18 +365,67 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
     
+    // Collect linked Contact IDs to fetch email/phone
+    const contactsTableId = process.env.AIRTABLE_CONTACTS_TABLE_ID || 'tbl3PQZzXGpT991dH';
+    const contactIds = new Set<string>();
+    for (const record of data.records) {
+      const linkedContacts = record.fields['Contact'] as string[] | undefined;
+      if (linkedContacts && linkedContacts.length > 0) {
+        contactIds.add(linkedContacts[0]);
+      }
+    }
+    
+    // Fetch contact info for all linked contacts
+    const contactInfo: Record<string, { email?: string; phone?: string }> = {};
+    if (contactIds.size > 0) {
+      try {
+        const contactIdsArray = Array.from(contactIds);
+        // Airtable formula to get records by IDs
+        const contactFormula = `OR(${contactIdsArray.map(id => `RECORD_ID()="${id}"`).join(',')})`;
+        const contactsRes = await fetch(
+          `${AIRTABLE_API_BASE}/${baseId}/${contactsTableId}?filterByFormula=${encodeURIComponent(contactFormula)}&fields%5B%5D=Email&fields%5B%5D=Phone%20Cell&fields%5B%5D=Phone%20Home`,
+          {
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+            },
+          }
+        );
+        
+        if (contactsRes.ok) {
+          const contactsData = await contactsRes.json();
+          for (const contact of contactsData.records) {
+            contactInfo[contact.id] = {
+              email: contact.fields['Email'] as string | undefined,
+              phone: (contact.fields['Phone Cell'] || contact.fields['Phone Home']) as string | undefined,
+            };
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch contact info:', err);
+      }
+    }
+    
     return NextResponse.json({
       success: true,
-      cards: data.records.map((record: { id: string; fields: Record<string, unknown> }) => ({
-        id: record.id,
-        name: record.fields['Name'],
-        phone: record.fields['Phone'],
-        cardType: record.fields['Card Type'],
-        mealType: record.fields['Meal Type'],
-        totalMeals: record.fields['Total Meals'],
-        remainingMeals: record.fields['Remaining Meals'],
-        memberStatus: record.fields['Member Status'],
-      })),
+      cards: data.records.map((record: { id: string; fields: Record<string, unknown> }) => {
+        const linkedContacts = record.fields['Contact'] as string[] | undefined;
+        const contactId = linkedContacts && linkedContacts.length > 0 ? linkedContacts[0] : null;
+        const contact = contactId ? contactInfo[contactId] : null;
+        
+        return {
+          id: record.id,
+          name: record.fields['Name'],
+          phone: record.fields['Phone'],
+          cardType: record.fields['Card Type'],
+          mealType: record.fields['Meal Type'],
+          totalMeals: record.fields['Total Meals'],
+          remainingMeals: record.fields['Remaining Meals'],
+          memberStatus: record.fields['Member Status'],
+          // Contact info from Contacts table
+          contactEmail: contact?.email,
+          contactPhone: contact?.phone,
+        };
+      }),
     });
 
   } catch (error) {

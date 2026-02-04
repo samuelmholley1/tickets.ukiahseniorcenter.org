@@ -430,17 +430,15 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    type CardItem = typeof allCards[0];
+
     let filteredCards = allCards;
 
-    // Smart Filtering Logic:
-    // If we are searching (meaning we fetched 0-balance cards), we want to show:
-    // 1. All active cards (Remaining > 0)
-    // 2. OR, if the person has NO active cards, show their most recent 0-balance card.
-    //    (This satisfies "Show zeroed out cards if haven't been replaced yet")
+    // Smart Filtering Logic
     if (search) {
-      const groupedMap = new Map<string, typeof allCards>();
+      const groupedMap = new Map<string, CardItem[]>();
       
-      allCards.forEach(card => {
+      allCards.forEach((card: CardItem) => {
         // Group by Name (lowercase for consistency)
         const key = (card.name || 'unknown').toLowerCase().trim();
         if (!groupedMap.has(key)) groupedMap.set(key, []);
@@ -449,7 +447,7 @@ export async function GET(request: NextRequest) {
 
       filteredCards = [];
       for (const cards of groupedMap.values()) {
-        const activeCards = cards.filter(c => (c.remainingMeals || 0) > 0);
+        const activeCards = cards.filter((c: CardItem) => (c.remainingMeals || 0) > 0);
         
         if (activeCards.length > 0) {
           // User has active cards! Show them. Hide the old 0-balance ones.
@@ -457,7 +455,7 @@ export async function GET(request: NextRequest) {
         } else {
           // User has NO active cards. Show the most recent zero-balance card so we can renew it.
           // Sort by Purchase Date descending
-          cards.sort((a, b) => {
+          cards.sort((a: CardItem, b: CardItem) => {
             const dateA = a.purchaseDate ? new Date(a.purchaseDate).getTime() : 0;
             const dateB = b.purchaseDate ? new Date(b.purchaseDate).getTime() : 0;
             return dateB - dateA; // Descending

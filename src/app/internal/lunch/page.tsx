@@ -1907,16 +1907,29 @@ export default function LunchPage() {
                                 )}
                               </button>
                               
-                              {/* Today's List pill button - only on today's cell */}
+                              {/* Today's control buttons - only on today's cell */}
                               {isToday && !isSelected && (
-                                <button
-                                  type="button"
-                                  onClick={(e) => { e.stopPropagation(); setShowManualOverrideModal(true); }}
-                                  className="mx-auto mb-1 px-2 py-0.5 bg-amber-200 hover:bg-amber-300 text-amber-900 font-bold rounded-full transition-all border border-amber-400"
-                                  style={{ fontSize: '9px' }}
-                                >
-                                  📋 List
-                                </button>
+                                <div className="flex justify-center gap-1 mb-1">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { 
+                                      e.stopPropagation(); 
+                                      handleDateClick(day.value, false); // Select today for ordering
+                                    }}
+                                    className="px-2 py-0.5 bg-green-200 hover:bg-green-300 text-green-900 font-bold rounded-full transition-all border border-green-400"
+                                    style={{ fontSize: '9px' }}
+                                  >
+                                    + Add
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); setShowManualOverrideModal(true); }}
+                                    className="px-2 py-0.5 bg-amber-200 hover:bg-amber-300 text-amber-900 font-bold rounded-full transition-all border border-amber-400"
+                                    style={{ fontSize: '9px' }}
+                                  >
+                                    📋
+                                  </button>
+                                </div>
                               )}
                               
                               {/* +/- controls when selected */}

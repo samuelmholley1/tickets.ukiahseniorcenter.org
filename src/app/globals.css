@@ -252,7 +252,7 @@ select {
 
 input::placeholder,
 textarea::placeholder {
-  color: #C8D0D8 !important;
+  color: #D5D9DE !important;
   opacity: 1;
   font-weight: 300 !important;
   font-style: italic !important;

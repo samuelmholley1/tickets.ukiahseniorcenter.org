@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, FormEvent } from 'react';
 import Link from 'next/link';
@@ -55,7 +55,7 @@ export default function NYEGalaForm() {
             className="inline-flex items-center text-[#427d78] hover:text-[#5eb3a1] font-['Bitter',serif] mb-4"
             style={{ marginBottom: 'var(--space-3)' }}
           >
-            ← Back to Internal Sales
+            â† Back to Internal Sales
           </Link>
 
           {/* Page Header */}
@@ -75,7 +75,7 @@ export default function NYEGalaForm() {
           {submitted && (
             <div className="bg-green-50 border-2 border-green-400 rounded-lg text-center" style={{ padding: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
               <p className="text-green-900 font-['Jost',sans-serif] font-bold text-lg">
-                ✓ Ticket sale recorded successfully!
+                âœ“ Ticket sale recorded successfully!
               </p>
             </div>
           )}
@@ -186,7 +186,7 @@ export default function NYEGalaForm() {
                       value={formData.amountPaid}
                       onChange={(e) => setFormData({...formData, amountPaid: e.target.value})}
                       className="w-full pl-8 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
-                      placeholder="0.00"
+                      placeholder="Type amount..."
                     />
                   </div>
                 </div>
@@ -209,7 +209,7 @@ export default function NYEGalaForm() {
                     value={formData.staffInitials}
                     onChange={(e) => setFormData({...formData, staffInitials: e.target.value})}
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
-                    placeholder="e.g., JD or John Doe"
+                    placeholder="Type initials or name..."
                   />
                 </div>
               </div>

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Jost:wght@100;200;300;400;500;600;700;800;900&family=Montserrat:wght@100;200;300;400;500;600;700;800;900&family=Bitter:wght@100;200;300;400;500;600;700;800;900&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Jost:wght@100;200;300;400;500;600;700;800;900&family=Montserrat:wght@100;200;300;400;500;600;700;800;900&family=Bitter:wght@100;200;300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
 /* Design system tokens matching ukiahseniorcenter.org */
@@ -252,9 +252,10 @@ select {
 
 input::placeholder,
 textarea::placeholder {
-  color: #9CA3AF !important;
+  color: #C8D0D8 !important;
   opacity: 1;
-  font-weight: 400 !important;
+  font-weight: 300 !important;
+  font-style: italic !important;
 }
 /* Override Tailwind gray text classes on inputs */
 input.text-gray-500,

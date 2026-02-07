@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, FormEvent, useMemo } from 'react';
 import Link from 'next/link';
@@ -202,7 +202,7 @@ export default function UnifiedSalesPage() {
               className="inline-block bg-[#5eb3a1] hover:bg-[#427d78] text-white font-['Jost',sans-serif] font-bold px-6 py-3 rounded-lg transition-colors duration-300 shadow-md hover:shadow-lg"
               style={{ fontSize: 'clamp(0.875rem, 2.5vw, 1rem)' }}
             >
-              💳 Card Payment? Click Here
+              ðŸ’³ Card Payment? Click Here
             </Link>
           </div>
 
@@ -220,7 +220,7 @@ export default function UnifiedSalesPage() {
           {error && (
             <div className="bg-red-50 border-2 border-red-400 rounded-lg text-center" style={{ padding: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
               <p className="text-red-900 font-['Jost',sans-serif] font-bold text-lg">
-                ✗ {error}
+                âœ— {error}
               </p>
             </div>
           )}
@@ -228,7 +228,7 @@ export default function UnifiedSalesPage() {
           {/* Contact Database Lookup */}
           <div className="card" style={{ marginBottom: 'var(--space-4)', background: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)', borderLeft: '4px solid #9333ea' }}>
             <h2 className="font-['Jost',sans-serif] font-bold text-[#7c3aed] text-lg" style={{ marginBottom: 'var(--space-2)' }}>
-              🔍 Contact Database Lookup
+              ðŸ” Contact Database Lookup
             </h2>
             <p className="font-['Bitter',serif] text-gray-700 text-sm" style={{ marginBottom: 'var(--space-2)' }}>
               Search all member and customer records. Select to auto-populate the form.
@@ -259,7 +259,7 @@ export default function UnifiedSalesPage() {
                               color: contact.memberStatus === 'Member' ? '#166534' : '#c2410c',
                             }}
                           >
-                            {contact.memberStatus === 'Member' ? '✓ MEMBER' : 'NON-MEMBER'}
+                            {contact.memberStatus === 'Member' ? 'âœ“ MEMBER' : 'NON-MEMBER'}
                           </span>
                         )}
                       </div>
@@ -270,13 +270,13 @@ export default function UnifiedSalesPage() {
                     {contact.email && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', padding: '4px', background: '#f3f4f6', borderRadius: '4px', fontSize: '0.875rem' }}>
                         <span className="font-['Bitter',serif] text-gray-700 truncate" style={{ maxWidth: '200px' }}>{contact.email}</span>
-                        <button type="button" onClick={() => copyToClipboard(contact.email)} className="text-purple-600 hover:text-purple-800 text-xs px-2 py-1 flex-shrink-0">📋</button>
+                        <button type="button" onClick={() => copyToClipboard(contact.email)} className="text-purple-600 hover:text-purple-800 text-xs px-2 py-1 flex-shrink-0">ðŸ“‹</button>
                       </div>
                     )}
                     {contact.phone && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-1)', padding: '4px', background: '#f3f4f6', borderRadius: '4px', fontSize: '0.875rem' }}>
                         <span className="font-['Bitter',serif] text-gray-700">{contact.phone}</span>
-                        <button type="button" onClick={() => copyToClipboard(contact.phone)} className="text-purple-600 hover:text-purple-800 text-xs px-2 py-1 flex-shrink-0">📋</button>
+                        <button type="button" onClick={() => copyToClipboard(contact.phone)} className="text-purple-600 hover:text-purple-800 text-xs px-2 py-1 flex-shrink-0">ðŸ“‹</button>
                       </div>
                     )}
                     <button
@@ -294,7 +294,7 @@ export default function UnifiedSalesPage() {
                       }}
                       className="w-full mt-2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-3 rounded-lg font-['Jost',sans-serif] text-sm"
                     >
-                      ✓ Use This Contact
+                      âœ“ Use This Contact
                     </button>
                   </div>
                 ))}
@@ -315,13 +315,13 @@ export default function UnifiedSalesPage() {
               {/* Valentine's Day Dance */}
               <div style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-3)', background: 'linear-gradient(135deg, #fff0f5 0%, #ffe4ec 100%)', borderRadius: '8px', border: '2px solid #ffb6c1' }}>
                 <h3 className="font-['Jost',sans-serif] font-bold text-[#c41e3a] text-lg" style={{ marginBottom: 'var(--space-2)' }}>
-                  💕 Valentine&apos;s Day Dance
+                  ðŸ’• Valentine&apos;s Day Dance
                 </h3>
                 <p className="font-['Bitter',serif] text-gray-600 text-sm" style={{ marginBottom: 'var(--space-3)' }}>
                   February 14, 2026
                   {pricing.isValentinesEarlyBird && (
                     <span className="ml-2 inline-block bg-green-500 text-white text-xs font-bold px-2 py-1 rounded">
-                      🎉 EARLY BIRD until Feb 9!
+                      ðŸŽ‰ EARLY BIRD until Feb 9!
                     </span>
                   )}
                 </p>
@@ -367,13 +367,13 @@ export default function UnifiedSalesPage() {
               {/* Speakeasy Gala */}
               <div style={{ marginBottom: 'var(--space-3)', padding: 'var(--space-3)', background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)', borderRadius: '8px', border: '2px solid #d97706' }}>
                 <h3 className="font-['Jost',sans-serif] font-bold text-amber-800 text-lg" style={{ marginBottom: 'var(--space-2)' }}>
-                  🎭 An Affair to Remember: A Night at the Speakeasy
+                  ðŸŽ­ An Affair to Remember: A Night at the Speakeasy
                 </h3>
                 <p className="font-['Bitter',serif] text-amber-700 text-sm" style={{ marginBottom: 'var(--space-3)' }}>
                   April 11, 2026
                   {pricing.isSpeakeasyEarlyBird && (
                     <span className="ml-2 inline-block bg-green-500 text-white text-xs font-bold px-2 py-1 rounded">
-                      🎉 EARLY BIRD until Mar 28!
+                      ðŸŽ‰ EARLY BIRD until Mar 28!
                     </span>
                   )}
                 </p>
@@ -413,7 +413,7 @@ export default function UnifiedSalesPage() {
                   New Year&apos;s Eve Gala Dance
                 </h3>
                 <p className="font-['Bitter',serif] text-gray-600 text-sm" style={{ marginBottom: 'var(--space-3)' }}>
-                  December 31, 2025 • 6:00 PM - 10:00 PM
+                  December 31, 2025 â€¢ 6:00 PM - 10:00 PM
                 </p>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
@@ -455,7 +455,7 @@ export default function UnifiedSalesPage() {
                   borderRadius: '12px'
                 }}>
                   <label className="block font-['Jost',sans-serif] font-bold text-gray-800 text-xl mb-3">
-                    💝 Would the customer like to make a donation today? *
+                    ðŸ’ Would the customer like to make a donation today? *
                   </label>
                   <div style={{ display: 'flex', gap: 'var(--space-4)', marginBottom: 'var(--space-3)' }}>
                     <label className="flex items-center cursor-pointer px-4 py-2 rounded-lg hover:bg-white/50 transition-colors">
@@ -497,7 +497,7 @@ export default function UnifiedSalesPage() {
                         step="0.01"
                         value={donationAmount}
                         onChange={(e) => setDonationAmount(e.target.value)}
-                        placeholder="0.00"
+                        placeholder="Type amount..."
                         className="w-full px-4 py-3 border-2 border-[#dc3545] rounded-lg focus:border-[#c82333] focus:outline-none font-['Bitter',serif] text-lg"
                         required
                       />
@@ -638,7 +638,7 @@ export default function UnifiedSalesPage() {
                     value={formData.staffInitials}
                     onChange={(e) => setFormData({...formData, staffInitials: e.target.value})}
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
-                    placeholder="e.g., JD or Jane"
+                    placeholder="Type initials or name..."
                   />
                 </div>
               </div>
@@ -671,7 +671,7 @@ export default function UnifiedSalesPage() {
                     required
                     value={formData.otherPaymentDetails}
                     onChange={(e) => setFormData({...formData, otherPaymentDetails: e.target.value})}
-                    placeholder="e.g., Venmo, Zelle, Gift Certificate"
+                    placeholder="Type payment method..."
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
                   />
                 </div>
@@ -691,7 +691,7 @@ export default function UnifiedSalesPage() {
                         required
                         value={formData.cashAmount}
                         onChange={(e) => setFormData({...formData, cashAmount: e.target.value})}
-                        placeholder="0.00"
+                        placeholder="Type amount..."
                         className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
                       />
                     </div>
@@ -706,7 +706,7 @@ export default function UnifiedSalesPage() {
                         required
                         value={formData.checkAmount}
                         onChange={(e) => setFormData({...formData, checkAmount: e.target.value})}
-                        placeholder="0.00"
+                        placeholder="Type amount..."
                         className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
                       />
                     </div>
@@ -741,12 +741,12 @@ export default function UnifiedSalesPage() {
                         <div style={{ paddingTop: 'var(--space-2)', borderTop: '2px solid rgba(0,0,0,0.1)' }}>
                           {isReconciled ? (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#28a745' }}>
-                              <span style={{ fontSize: '1.5rem' }}>✅</span>
+                              <span style={{ fontSize: '1.5rem' }}>âœ…</span>
                               <span className="font-['Jost',sans-serif] font-bold">Payment Reconciled</span>
                             </div>
                           ) : (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#856404' }}>
-                              <span style={{ fontSize: '1.5rem' }}>⚠️</span>
+                              <span style={{ fontSize: '1.5rem' }}>âš ï¸</span>
                               <span className="font-['Bitter',serif] font-bold">
                                 {difference > 0 ? `Over by $${difference.toFixed(2)}` : `Short by $${Math.abs(difference).toFixed(2)}`}
                               </span>

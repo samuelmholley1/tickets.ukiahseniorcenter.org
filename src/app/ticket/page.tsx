@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useRef } from 'react';
 import Image from 'next/image';
@@ -141,7 +141,7 @@ export default function TicketGenerator() {
                       {event.name}
                     </div>
                     <div className="text-sm md:text-base text-[#666] group-hover:text-white transition-colors font-['Bitter',serif]" style={{ lineHeight: '1.4' }}>
-                      📅 {event.date}
+                      ðŸ“… {event.date}
                     </div>
                   </button>
                 ))}
@@ -168,7 +168,7 @@ export default function TicketGenerator() {
                   }}
                   className="text-sm text-[#427d78] hover:text-[#5eb3a1] font-['Bitter',serif] underline"
                 >
-                  ← Change Event
+                  â† Change Event
                 </button>
               </div>
 
@@ -227,7 +227,7 @@ export default function TicketGenerator() {
                           type="text"
                           value={ticketData.customerName}
                           onChange={(e) => setTicketData({...ticketData, customerName: e.target.value})}
-                          placeholder="Enter name"
+                          placeholder="Type your name here..."
                           style={{ 
                             border: 'none', 
                             borderBottom: '1px dotted #ccc',
@@ -247,7 +247,7 @@ export default function TicketGenerator() {
                           type="tel"
                           value={ticketData.customerPhone}
                           onChange={(e) => setTicketData({...ticketData, customerPhone: e.target.value})}
-                          placeholder="Enter phone"
+                          placeholder="Type your phone here..."
                           style={{ 
                             border: 'none', 
                             borderBottom: '1px dotted #ccc',
@@ -267,7 +267,7 @@ export default function TicketGenerator() {
                           type="email"
                           value={ticketData.customerEmail}
                           onChange={(e) => setTicketData({...ticketData, customerEmail: e.target.value})}
-                          placeholder="Enter email"
+                          placeholder="Type your email here..."
                           style={{ 
                             border: 'none', 
                             borderBottom: '1px dotted #ccc',
@@ -287,7 +287,7 @@ export default function TicketGenerator() {
                   {/* Footer */}
                   <div style={{ textAlign: 'center', borderTop: '2px solid #427d78', paddingTop: '4px' }}>
                     <p className="font-['Bitter',serif] text-gray-600" style={{ fontSize: '8px', lineHeight: '1.2', fontWeight: '600' }}>
-                      Bartlett Event Center • 495 Leslie St, Ukiah, CA 95482 • (707) 462-4343
+                      Bartlett Event Center â€¢ 495 Leslie St, Ukiah, CA 95482 â€¢ (707) 462-4343
                     </p>
                   </div>
                 </div>

@@ -11,7 +11,8 @@
     "precheck": "yarn typecheck && yarn build",
     "test": "playwright test",
     "test:headed": "playwright test --headed",
-    "test:ui": "playwright test --ui"
+    "test:ui": "playwright test --ui",
+    "sync-airtable": "node scripts/sync-airtable-schema.mjs"
   },
   "dependencies": {
     "airtable": "^0.12.2",

@@ -4,8 +4,8 @@ const AIRTABLE_API_BASE = 'https://api.airtable.com/v0';
 
 /* ========== 2026 EVENTS ==========
  * Valentine's Day Dance - February 14, 2026
- *   - Member: $30 until Feb 9, then $35
- *   - Non-Member: $45 (always)
+ *   - Member: $35
+ *   - Non-Member: $45
  * 
  * Speakeasy Gala - April 11, 2026
  *   - All tickets: $100 until Mar 28, then $110
@@ -49,11 +49,9 @@ function generateTransactionId(): string {
   return `TXN-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
 }
 
-// Dynamic pricing based on current date
+// Valentine's early bird ($30) ended Feb 9 — now $35
 function getValentinesMemberPrice(): number {
-  const today = new Date();
-  const priceChangeDate = new Date('2026-02-10T00:00:00');
-  return today < priceChangeDate ? 30 : 35;
+  return 35;
 }
 
 function getSpeakeasyPrice(): number {

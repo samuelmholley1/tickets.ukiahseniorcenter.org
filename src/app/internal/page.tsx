@@ -103,17 +103,17 @@ export default function UnifiedSalesPage() {
     }, 300);
     return () => clearTimeout(timer);
   }, [contactSearch]);
-  // Dynamic pricing based on current date
+  // Pricing for 2026 events
+  // Valentine's early bird ($30) ended Feb 9 — now $35
   const pricing = useMemo(() => {
     const today = new Date();
-    const valentinesPriceChangeDate = new Date('2026-02-10T00:00:00');
     const speakeasyPriceChangeDate = new Date('2026-03-29T00:00:00');
     
     return {
-      valentinesMember: today < valentinesPriceChangeDate ? 30 : 35,
+      valentinesMember: 35,
       valentinesNonMember: 45,
       speakeasy: today < speakeasyPriceChangeDate ? 100 : 110,
-      isValentinesEarlyBird: today < valentinesPriceChangeDate,
+      isValentinesEarlyBird: false,
       isSpeakeasyEarlyBird: today < speakeasyPriceChangeDate,
     };
   }, []);
@@ -319,20 +319,14 @@ export default function UnifiedSalesPage() {
                 </h3>
                 <p className="font-['Bitter',serif] text-gray-600 text-sm" style={{ marginBottom: 'var(--space-3)' }}>
                   February 14, 2026
-                  {pricing.isValentinesEarlyBird && (
-                    <span className="ml-2 inline-block bg-green-500 text-white text-xs font-bold px-2 py-1 rounded">
-                      ðŸŽ‰ EARLY BIRD until Feb 9!
-                    </span>
-                  )}
+
                 </p>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
                   <div>
                     <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">
                       Member Tickets (${pricing.valentinesMember} each)
-                      {pricing.isValentinesEarlyBird && (
-                        <span className="block text-xs text-green-600 mt-1">Regular price: $35 after Feb 9</span>
-                      )}
+
                     </label>
                     <input
                       type="number"

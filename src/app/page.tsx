@@ -45,7 +45,7 @@ export default function Tickets() {
               <div className="text-4xl" style={{ marginBottom: 'var(--space-2)' }}>💕</div>
               <div className="text-lg md:text-xl font-['Jost',sans-serif] font-bold text-gray-900 group-hover:text-white transition-colors" style={{ marginBottom: 'var(--space-1)', lineHeight: '1.2' }}>Valentine&apos;s Day Dance</div>
               <div className="text-sm text-[#666] group-hover:text-white transition-colors font-['Bitter',serif]" style={{ lineHeight: '1.4' }}>February 14, 2026</div>
-              <div className="text-base md:text-lg font-bold text-pink-500 group-hover:text-white transition-colors font-['Jost',sans-serif]" style={{ marginTop: 'var(--space-1)' }}>Members $30 • Non-Members $45</div>
+              <div className="text-base md:text-lg font-bold text-pink-500 group-hover:text-white transition-colors font-['Jost',sans-serif]" style={{ marginTop: 'var(--space-1)' }}>Members $35 • Non-Members $45</div>
             </button>
             <button
               onClick={() => scrollToForm('speakeasy-section')}
@@ -87,7 +87,7 @@ export default function Tickets() {
               <div className="card">
                 <div className="text-center" style={{ marginBottom: 'var(--space-3)' }}>
                   <h2 className="text-xl md:text-2xl lg:text-3xl font-['Jost',sans-serif] font-bold text-pink-600" style={{ marginBottom: 'var(--space-2)', lineHeight: '1.2' }}>💕 Valentine&apos;s Day Dance</h2>
-                  <p className="text-base md:text-lg text-[#666] font-['Bitter',serif]" style={{ marginBottom: 0, maxWidth: '600px', marginInline: 'auto', lineHeight: '1.5' }}>February 14, 2026 • Members $30 • Non-Members $45</p>
+                  <p className="text-base md:text-lg text-[#666] font-['Bitter',serif]" style={{ marginBottom: 0, maxWidth: '600px', marginInline: 'auto', lineHeight: '1.5' }}>February 14, 2026 • Members $35 • Non-Members $45</p>
                 </div>
                 <div className="bg-pink-50 rounded-lg border-4 border-pink-500 relative" style={{ padding: 'var(--space-3)' }}>
                   {isValentinesLoading && (

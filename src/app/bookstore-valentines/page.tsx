@@ -76,7 +76,7 @@ export default function BookstoreValentinesPage() {
                 <strong>Event:</strong> Valentine&apos;s Day Dance<br />
                 <strong>Date:</strong> Saturday, February 14, 2026<br />
                 <strong>Time:</strong> Doors 6pm, Dance 7-10pm<br />
-                <strong>Price:</strong> Members $30 / Non-Members $45
+                <strong>Price:</strong> Members $35 / Non-Members $45
               </p>
             </div>
 

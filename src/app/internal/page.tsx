@@ -8,7 +8,7 @@ import { TicketList } from '@/components/TicketList';
 
 /* ========== 2026 EVENTS ==========
  * Valentine's Day Dance - February 14, 2026
- *   - Member: $30 until Feb 9, then $35
+ *   - Member: $35
  *   - Non-Member: $45 (always)
  * 
  * Speakeasy Gala - April 11, 2026
@@ -202,7 +202,7 @@ export default function UnifiedSalesPage() {
               className="inline-block bg-[#5eb3a1] hover:bg-[#427d78] text-white font-['Jost',sans-serif] font-bold px-6 py-3 rounded-lg transition-colors duration-300 shadow-md hover:shadow-lg"
               style={{ fontSize: 'clamp(0.875rem, 2.5vw, 1rem)' }}
             >
-              ðŸ’³ Card Payment? Click Here
+              💳 Card Payment? Click Here
             </Link>
           </div>
 
@@ -228,7 +228,7 @@ export default function UnifiedSalesPage() {
           {/* Contact Database Lookup */}
           <div className="card" style={{ marginBottom: 'var(--space-4)', background: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)', borderLeft: '4px solid #9333ea' }}>
             <h2 className="font-['Jost',sans-serif] font-bold text-[#7c3aed] text-lg" style={{ marginBottom: 'var(--space-2)' }}>
-              ðŸ” Contact Database Lookup
+              🔍 Contact Database Lookup
             </h2>
             <p className="font-['Bitter',serif] text-gray-700 text-sm" style={{ marginBottom: 'var(--space-2)' }}>
               Search all member and customer records. Select to auto-populate the form.
@@ -270,13 +270,13 @@ export default function UnifiedSalesPage() {
                     {contact.email && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', padding: '4px', background: '#f3f4f6', borderRadius: '4px', fontSize: '0.875rem' }}>
                         <span className="font-['Bitter',serif] text-gray-700 truncate" style={{ maxWidth: '200px' }}>{contact.email}</span>
-                        <button type="button" onClick={() => copyToClipboard(contact.email)} className="text-purple-600 hover:text-purple-800 text-xs px-2 py-1 flex-shrink-0">ðŸ“‹</button>
+                        <button type="button" onClick={() => copyToClipboard(contact.email)} className="text-purple-600 hover:text-purple-800 text-xs px-2 py-1 flex-shrink-0">📋</button>
                       </div>
                     )}
                     {contact.phone && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-1)', padding: '4px', background: '#f3f4f6', borderRadius: '4px', fontSize: '0.875rem' }}>
                         <span className="font-['Bitter',serif] text-gray-700">{contact.phone}</span>
-                        <button type="button" onClick={() => copyToClipboard(contact.phone)} className="text-purple-600 hover:text-purple-800 text-xs px-2 py-1 flex-shrink-0">ðŸ“‹</button>
+                        <button type="button" onClick={() => copyToClipboard(contact.phone)} className="text-purple-600 hover:text-purple-800 text-xs px-2 py-1 flex-shrink-0">📋</button>
                       </div>
                     )}
                     <button
@@ -315,7 +315,7 @@ export default function UnifiedSalesPage() {
               {/* Valentine's Day Dance */}
               <div style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-3)', background: 'linear-gradient(135deg, #fff0f5 0%, #ffe4ec 100%)', borderRadius: '8px', border: '2px solid #ffb6c1' }}>
                 <h3 className="font-['Jost',sans-serif] font-bold text-[#c41e3a] text-lg" style={{ marginBottom: 'var(--space-2)' }}>
-                  ðŸ’• Valentine&apos;s Day Dance
+                  💕 Valentine&apos;s Day Dance
                 </h3>
                 <p className="font-['Bitter',serif] text-gray-600 text-sm" style={{ marginBottom: 'var(--space-3)' }}>
                   February 14, 2026
@@ -361,13 +361,13 @@ export default function UnifiedSalesPage() {
               {/* Speakeasy Gala */}
               <div style={{ marginBottom: 'var(--space-3)', padding: 'var(--space-3)', background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)', borderRadius: '8px', border: '2px solid #d97706' }}>
                 <h3 className="font-['Jost',sans-serif] font-bold text-amber-800 text-lg" style={{ marginBottom: 'var(--space-2)' }}>
-                  ðŸŽ­ An Affair to Remember: A Night at the Speakeasy
+                  🎭 An Affair to Remember: A Night at the Speakeasy
                 </h3>
                 <p className="font-['Bitter',serif] text-amber-700 text-sm" style={{ marginBottom: 'var(--space-3)' }}>
                   April 11, 2026
                   {pricing.isSpeakeasyEarlyBird && (
                     <span className="ml-2 inline-block bg-green-500 text-white text-xs font-bold px-2 py-1 rounded">
-                      ðŸŽ‰ EARLY BIRD until Mar 28!
+                      🎉 EARLY BIRD until Mar 28!
                     </span>
                   )}
                 </p>
@@ -449,7 +449,7 @@ export default function UnifiedSalesPage() {
                   borderRadius: '12px'
                 }}>
                   <label className="block font-['Jost',sans-serif] font-bold text-gray-800 text-xl mb-3">
-                    ðŸ’ Would the customer like to make a donation today? *
+                    👍 Would the customer like to make a donation today? *
                   </label>
                   <div style={{ display: 'flex', gap: 'var(--space-4)', marginBottom: 'var(--space-3)' }}>
                     <label className="flex items-center cursor-pointer px-4 py-2 rounded-lg hover:bg-white/50 transition-colors">

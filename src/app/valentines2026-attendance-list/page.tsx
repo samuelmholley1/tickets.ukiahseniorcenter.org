@@ -51,8 +51,6 @@ export default function ValentinesAttendanceList() {
 
   // Calculate totals
   const totalTickets = records.reduce((sum, record) => sum + (record.fields['Ticket Quantity'] || 0), 0);
-  const totalMember = records.reduce((sum, record) => sum + (record.fields['Member Tickets'] || 0), 0);
-  const totalNonMember = records.reduce((sum, record) => sum + (record.fields['Non-Member Tickets'] || 0), 0);
 
   const handlePrint = () => {
     window.print();
@@ -245,7 +243,7 @@ export default function ValentinesAttendanceList() {
       {!loading && !error && (
         <div className="summary-box">
           <h2>TOTAL GUESTS</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginTop: '10px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', marginTop: '10px' }}>
             <div>
               <div style={{ fontSize: '0.875rem', fontWeight: '600', marginBottom: '5px' }}>
                 Reservations
@@ -257,18 +255,6 @@ export default function ValentinesAttendanceList() {
                 Total Guests
               </div>
               <div className="stat">{totalTickets}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: '0.875rem', fontWeight: '600', marginBottom: '5px' }}>
-                Member
-              </div>
-              <div className="stat">{totalMember}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: '0.875rem', fontWeight: '600', marginBottom: '5px' }}>
-                Non-Member
-              </div>
-              <div className="stat">{totalNonMember}</div>
             </div>
           </div>
         </div>
@@ -302,24 +288,29 @@ export default function ValentinesAttendanceList() {
               <th style={{ width: '18%' }}>Email</th>
               <th style={{ width: '12%' }}>Phone</th>
               <th style={{ width: '5%', textAlign: 'center' }}>Guests</th>
-              <th style={{ width: '5%', textAlign: 'center' }}>Mbr</th>
-              <th style={{ width: '5%', textAlign: 'center' }}>Non</th>
+              <th style={{ width: '8%', textAlign: 'center' }}>Running Total</th>
               <th style={{ width: '22%' }}>Notes</th>
             </tr>
           </thead>
           <tbody>
             {sortedRecords.length === 0 ? (
               <tr>
-                <td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+                <td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
                   No attendees found
                 </td>
               </tr>
             ) : (
-              sortedRecords.map((record) => {
+              sortedRecords.map((record, index) => {
                 const ticketCount = record.fields['Ticket Quantity'] || 0;
                 const checkboxes = Array.from({ length: ticketCount }, (_, i) => i);
                 const email = record.fields['Email'] || '—';
                 const phone = record.fields['Phone'] || '—';
+                
+                // Calculate cumulative total up to this row
+                let cumulativeTotal = 0;
+                for (let i = 0; i <= index; i++) {
+                  cumulativeTotal += sortedRecords[i].fields['Ticket Quantity'] || 0;
+                }
 
                 return (
                   <tr key={record.id}>
@@ -335,8 +326,7 @@ export default function ValentinesAttendanceList() {
                     <td style={{ fontSize: '0.75rem' }}>{email}</td>
                     <td>{phone}</td>
                     <td style={{ textAlign: 'center' }}>{ticketCount || 0}</td>
-                    <td style={{ textAlign: 'center' }}>{record.fields['Member Tickets'] || 0}</td>
-                    <td style={{ textAlign: 'center' }}>{record.fields['Non-Member Tickets'] || 0}</td>
+                    <td style={{ textAlign: 'center', fontWeight: '700' }}>{cumulativeTotal} / 74</td>
                     <td>—</td>
                   </tr>
                 );

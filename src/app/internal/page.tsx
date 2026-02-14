@@ -314,9 +314,19 @@ export default function UnifiedSalesPage() {
 
               {/* Valentine's Day Dance */}
               <div style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-3)', background: 'linear-gradient(135deg, #fff0f5 0%, #ffe4ec 100%)', borderRadius: '8px', border: '2px solid #ffb6c1' }}>
-                <h3 className="font-['Jost',sans-serif] font-bold text-[#c41e3a] text-lg" style={{ marginBottom: 'var(--space-2)' }}>
-                  💕 Valentine&apos;s Day Dance
-                </h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-2)' }}>
+                  <h3 className="font-['Jost',sans-serif] font-bold text-[#c41e3a] text-lg" style={{ margin: 0 }}>
+                    💕 Valentine&apos;s Day Dance
+                  </h3>
+                  <a
+                    href="https://www.zeffy.com/en-US/ticketing/valentines-day-dance--2026-2"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ background: '#c41e3a', color: 'white', padding: '6px 14px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700, textDecoration: 'none', fontFamily: 'Jost, sans-serif', whiteSpace: 'nowrap' }}
+                  >
+                    💳 Valentine&apos;s Zeffy Form
+                  </a>
+                </div>
                 <p className="font-['Bitter',serif] text-gray-600 text-sm" style={{ marginBottom: 'var(--space-3)' }}>
                   February 14, 2026
 

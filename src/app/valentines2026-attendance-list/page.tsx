@@ -326,7 +326,7 @@ export default function ValentinesAttendanceList() {
                     <td style={{ fontSize: '0.75rem' }}>{email}</td>
                     <td>{phone}</td>
                     <td style={{ textAlign: 'center' }}>{ticketCount || 0}</td>
-                    <td style={{ textAlign: 'center', fontWeight: '700' }}>{cumulativeTotal} / 74</td>
+                    <td style={{ textAlign: 'center', fontWeight: '700' }}>{cumulativeTotal}</td>
                     <td>—</td>
                   </tr>
                 );

@@ -220,7 +220,7 @@ export default function UnifiedSalesPage() {
           {error && (
             <div className="bg-red-50 border-2 border-red-400 rounded-lg text-center" style={{ padding: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
               <p className="text-red-900 font-['Jost',sans-serif] font-bold text-lg">
-                âœ— {error}
+                ✗ {error}
               </p>
             </div>
           )}
@@ -259,7 +259,7 @@ export default function UnifiedSalesPage() {
                               color: contact.memberStatus === 'Member' ? '#166534' : '#c2410c',
                             }}
                           >
-                            {contact.memberStatus === 'Member' ? 'âœ“ MEMBER' : 'NON-MEMBER'}
+                            {contact.memberStatus === 'Member' ? '✓ MEMBER' : 'NON-MEMBER'}
                           </span>
                         )}
                       </div>
@@ -294,7 +294,7 @@ export default function UnifiedSalesPage() {
                       }}
                       className="w-full mt-2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-3 rounded-lg font-['Jost',sans-serif] text-sm"
                     >
-                      âœ“ Use This Contact
+                      ✓ Use This Contact
                     </button>
                   </div>
                 ))}
@@ -407,7 +407,7 @@ export default function UnifiedSalesPage() {
                   New Year&apos;s Eve Gala Dance
                 </h3>
                 <p className="font-['Bitter',serif] text-gray-600 text-sm" style={{ marginBottom: 'var(--space-3)' }}>
-                  December 31, 2025 â€¢ 6:00 PM - 10:00 PM
+                  December 31, 2025 • 6:00 PM - 10:00 PM
                 </p>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
@@ -735,12 +735,12 @@ export default function UnifiedSalesPage() {
                         <div style={{ paddingTop: 'var(--space-2)', borderTop: '2px solid rgba(0,0,0,0.1)' }}>
                           {isReconciled ? (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#28a745' }}>
-                              <span style={{ fontSize: '1.5rem' }}>âœ…</span>
+                              <span style={{ fontSize: '1.5rem' }}>✅</span>
                               <span className="font-['Jost',sans-serif] font-bold">Payment Reconciled</span>
                             </div>
                           ) : (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#856404' }}>
-                              <span style={{ fontSize: '1.5rem' }}>âš ï¸</span>
+                              <span style={{ fontSize: '1.5rem' }}>⚠️</span>
                               <span className="font-['Bitter',serif] font-bold">
                                 {difference > 0 ? `Over by $${difference.toFixed(2)}` : `Short by $${Math.abs(difference).toFixed(2)}`}
                               </span>

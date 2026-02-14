@@ -118,15 +118,15 @@ const getNextAvailableLunch = (): string => {
   console.log(`[getNextAvailableLunch] Today: ${currentDay} (${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][currentDay]}), Hour: ${currentHour}, Before 2pm: ${isBefore2pm}`);
   
   // Logic:
-  // - Mon before 2pm â†’ Tuesday
-  // - Mon after 2pm â†’ Wednesday  
-  // - Tue before 2pm â†’ Wednesday
-  // - Tue after 2pm â†’ Thursday
-  // - Wed before 2pm â†’ Thursday
-  // - Wed after 2pm â†’ Monday (skip Fri/Sat/Sun)
-  // - Thu before 2pm â†’ Monday (Thu 2pm is Monday deadline)
-  // - Thu after 2pm â†’ Tuesday
-  // - Fri/Sat/Sun â†’ Tuesday (Monday deadline was Thu 2pm)
+  // - Mon before 2pm → Tuesday
+  // - Mon after 2pm → Wednesday  
+  // - Tue before 2pm → Wednesday
+  // - Tue after 2pm → Thursday
+  // - Wed before 2pm → Thursday
+  // - Wed after 2pm → Monday (skip Fri/Sat/Sun)
+  // - Thu before 2pm → Monday (Thu 2pm is Monday deadline)
+  // - Thu after 2pm → Tuesday
+  // - Fri/Sat/Sun → Tuesday (Monday deadline was Thu 2pm)
   
   let daysToAdd = 1; // Default: tomorrow
   
@@ -818,7 +818,7 @@ export default function LunchPage() {
     // Lunch card and comp card are free (already prepaid or complimentary)
     if (paymentMethod === 'lunchCard' || paymentMethod === 'compCard') return 0;
     if (transactionType === 'individual') {
-      // Price per meal Ã— total meals
+      // Price per meal × total meals
       return calculateSingleMealPrice() * getTotalMealsFromDateMeals();
     }
     return calculateCardPrice();
@@ -979,7 +979,7 @@ export default function LunchPage() {
             const mealName = meal.name.trim() || `${customer.firstName} ${customer.lastName}`.trim();
             
             const mealNotes = [
-              meal.isFrozenFriday ? 'ðŸ§Š FROZEN FRIDAY' : '',
+              meal.isFrozenFriday ? '🧊 FROZEN FRIDAY' : '',
               meal.specialRequest.trim(),
               checkNumber ? `Check #${checkNumber}` : '',
               compCardNumber ? `Comp #${compCardNumber}` : '',
@@ -1019,10 +1019,10 @@ export default function LunchPage() {
             
             if (response.ok && result.success) {
               successCount++;
-              log.push(`âœ“ ${date}: ${mealName}`);
+              log.push(`✓ ${date}: ${mealName}`);
             } else {
               errorMessage = result.error || 'Failed to create reservation';
-              log.push(`âœ— ${date}: ${mealName} - ${errorMessage}`);
+              log.push(`✗ ${date}: ${mealName} - ${errorMessage}`);
               break;
             }
             
@@ -1075,7 +1075,7 @@ export default function LunchPage() {
         setTransactionLog(log);
         
         if (response.ok && result.success) {
-          log.push(`âœ“ Card created successfully`);
+          log.push(`✓ Card created successfully`);
           setSubmitResult({
             success: true,
             message: result.message,
@@ -1084,7 +1084,7 @@ export default function LunchPage() {
           // Refresh transaction list
           fetchRecentTransactions();
         } else {
-          log.push(`âœ— Failed: ${result.error}`);
+          log.push(`✗ Failed: ${result.error}`);
           setSubmitResult({
             success: false,
             message: result.error || 'Failed to create lunch card',
@@ -1093,7 +1093,7 @@ export default function LunchPage() {
       }
     } catch (error) {
       console.error('Submission error:', error);
-      setTransactionLog([...log, `âœ— Network error`]);
+      setTransactionLog([...log, `✗ Network error`]);
       setSubmitResult({
         success: false,
         message: 'Network error. Please try again.',
@@ -1118,18 +1118,18 @@ export default function LunchPage() {
                 onClick={() => setShowNavWidget(false)}
                 className="w-6 h-6 flex items-center justify-center rounded hover:bg-white/20 text-white font-bold"
               >
-                Ã—
+                ×
               </button>
             </div>
             <div className="p-2 space-y-1">
               {[
-                { ref: exportSectionRef, label: 'ðŸ“¤ Export Reports', id: 'export' },
-                { ref: transactionSectionRef, label: 'ðŸ´ Transaction Type', id: 'transaction' },
-                { ref: lunchCardLookupRef, label: 'ðŸ” Card Lookup', id: 'lookup' },
-                { ref: customerInfoRef, label: 'ðŸ‘¤ Customer Info', id: 'customer' },
-                { ref: paymentRef, label: 'ðŸ’µ Payment', id: 'payment' },
-                { ref: recentTransactionsRef, label: 'ðŸ“œ Recent Transactions', id: 'recent' },
-                { ref: pricingRef, label: 'ðŸ“‹ Pricing Reference', id: 'pricing' },
+                { ref: exportSectionRef, label: '📤 Export Reports', id: 'export' },
+                { ref: transactionSectionRef, label: '🍴 Transaction Type', id: 'transaction' },
+                { ref: lunchCardLookupRef, label: '🔍 Card Lookup', id: 'lookup' },
+                { ref: customerInfoRef, label: '👤 Customer Info', id: 'customer' },
+                { ref: paymentRef, label: '💵 Payment', id: 'payment' },
+                { ref: recentTransactionsRef, label: '📜 Recent Transactions', id: 'recent' },
+                { ref: pricingRef, label: '📋 Pricing Reference', id: 'pricing' },
               ].map(item => (
                 <button
                   key={item.id}
@@ -1152,7 +1152,7 @@ export default function LunchPage() {
           className="w-12 h-12 rounded-full bg-[#427d78] hover:bg-[#5eb3a1] text-white shadow-lg flex items-center justify-center text-xl transition-all"
           title="Navigation Menu"
         >
-          {showNavWidget ? 'Ã—' : 'â˜°'}
+          {showNavWidget ? '×' : '☰'}
         </button>
       </div>
       
@@ -1174,7 +1174,7 @@ export default function LunchPage() {
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
               >
-                ðŸ´ Meal
+                🍴 Meal
               </button>
               <button
                 type="button"
@@ -1185,7 +1185,7 @@ export default function LunchPage() {
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
               >
-                ðŸ’³ Card
+                💳 Card
               </button>
             </div>
             
@@ -1193,7 +1193,7 @@ export default function LunchPage() {
             {autoDetectedCardInfo && transactionType === 'individual' && (
               <div className={`px-3 py-1 rounded-full ${autoDetectedCardInfo.totalMeals > 0 ? 'bg-green-100' : 'bg-yellow-100'}`}>
                 <span className={`font-['Jost',sans-serif] text-sm font-bold ${autoDetectedCardInfo.totalMeals > 0 ? 'text-green-700' : 'text-yellow-700'}`}>
-                  ðŸŽ« {autoDetectedCardInfo.baseName}: {autoDetectedCardInfo.totalMeals} meals
+                  🎫 {autoDetectedCardInfo.baseName}: {autoDetectedCardInfo.totalMeals} meals
                   {autoDetectedCardInfo.hasBuffer && (
                     <span className="text-amber-600 ml-1">
                       ({autoDetectedCardInfo.regularMeals}+{autoDetectedCardInfo.bufferMeals}buf)
@@ -1220,7 +1220,7 @@ export default function LunchPage() {
           {/* Page Header */}
           <div ref={headerRef} style={{ textAlign: 'center', marginBottom: 'var(--space-4)' }}>
             <h1 className="font-['Jost',sans-serif] font-bold text-[#427d78]" style={{ marginBottom: 'var(--space-2)', lineHeight: '1.2', fontSize: 'clamp(1.5rem, 5vw, 2.5rem)' }}>
-              ðŸ½ï¸ Lunch Sales
+              🍽️ Lunch Sales
             </h1>
             <p className="font-['Bitter',serif] text-[#666]" style={{ lineHeight: '1.6', fontSize: 'clamp(0.875rem, 2.5vw, 1.125rem)' }}>
               Staff use only - Record lunch purchases and lunch card sales
@@ -1231,7 +1231,7 @@ export default function LunchPage() {
                 target="_blank"
                 className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-800 font-['Jost',sans-serif] font-bold rounded-lg transition-colors text-sm"
               >
-                ðŸ“… View Daily Reservations List
+                📅 View Daily Reservations List
               </a>
             </div>
           </div>
@@ -1239,7 +1239,7 @@ export default function LunchPage() {
           {/* Export Section */}
           <div ref={exportSectionRef} className="card" style={{ marginBottom: 'var(--space-4)', background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)' }}>
             <h2 className="font-['Jost',sans-serif] font-bold text-[#427d78] text-lg" style={{ marginBottom: 'var(--space-3)' }}>
-              ðŸ“¤ Export Daily Reports
+              📤 Export Daily Reports
             </h2>
             <div className="flex flex-wrap items-end gap-4">
               <div>
@@ -1266,7 +1266,7 @@ export default function LunchPage() {
                 }}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-[#427d78] hover:bg-[#5eb3a1] text-white font-['Jost',sans-serif] font-bold rounded-lg transition-colors"
               >
-                ðŸ“‹ Download List PDF
+                📋 Download List PDF
               </button>
               <button
                 type="button"
@@ -1283,7 +1283,7 @@ export default function LunchPage() {
                 }}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-['Jost',sans-serif] font-bold rounded-lg transition-colors"
               >
-                ðŸ·ï¸ Download Avery 5160 Labels
+                🏷️ Download Avery 5160 Labels
               </button>
             </div>
             <p className="text-xs text-gray-500 mt-2 font-['Bitter',serif]">
@@ -1298,7 +1298,7 @@ export default function LunchPage() {
                 <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
                   <div className="bg-[#427d78] text-white px-6 py-4">
                     <h3 className="font-['Jost',sans-serif] font-bold text-xl">
-                      ðŸ“‹ Today&apos;s Reservations
+                      📋 Today&apos;s Reservations
                     </h3>
                     <p className="text-[#a8d5d0] text-sm mt-1">
                       Select a person to process their payment or deduct from their lunch card
@@ -1333,7 +1333,7 @@ export default function LunchPage() {
                                   {reservation.Name}
                                 </div>
                                 <div className="font-['Bitter',serif] text-sm text-gray-600 mt-1">
-                                  {reservation['Meal Type']} â€¢ {reservation['Member Status']}
+                                  {reservation['Meal Type']} • {reservation['Member Status']}
                                 </div>
                                 {reservation.Notes && (
                                   <div className="font-['Bitter',serif] text-sm text-gray-500 italic mt-1">
@@ -1390,7 +1390,7 @@ export default function LunchPage() {
                       : 'bg-white text-gray-700 border-gray-300 hover:border-[#427d78]'
                   }`}
                 >
-                  ðŸ´ Individual Meal
+                  🍴 Individual Meal
                   <span className="block text-sm font-normal mt-1">Single meal purchase</span>
                 </button>
                 <button
@@ -1402,7 +1402,7 @@ export default function LunchPage() {
                       : 'bg-white text-gray-700 border-gray-300 hover:border-[#427d78]'
                   }`}
                 >
-                  ðŸ’³ Lunch Card
+                  💳 Lunch Card
                   <span className="block text-sm font-normal mt-1">Prepaid meal package</span>
                 </button>
               </div>
@@ -1412,14 +1412,14 @@ export default function LunchPage() {
             <div ref={lunchCardLookupRef} className="card" style={{ marginBottom: 'var(--space-4)', background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)', border: '2px solid #f59e0b' }}>
               <div className="flex items-center justify-between flex-wrap gap-2" style={{ marginBottom: 'var(--space-3)' }}>
                 <h2 className="font-['Jost',sans-serif] font-bold text-amber-700 text-xl">
-                  ðŸ” Quick Lunch Card Lookup
+                  🔍 Quick Lunch Card Lookup
                 </h2>
                 <button
                   type="button"
                   onClick={() => setShowAddCardModal(true)}
                   className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-['Jost',sans-serif] font-bold rounded-lg transition-all text-sm"
                 >
-                  âž• Add Un-entered Card
+                  ➕ Add Un-entered Card
                 </button>
               </div>
               <p className="font-['Bitter',serif] text-amber-800 text-sm mb-3">
@@ -1483,8 +1483,8 @@ export default function LunchPage() {
                             <div>
                               <div className="font-['Jost',sans-serif] font-bold text-gray-800">{baseName}</div>
                               <div className="font-['Bitter',serif] text-sm text-gray-600">
-                                ðŸ“ž {primaryCard.phone} â€¢ {primaryCard.cardType} â€¢ {primaryCard.memberStatus}
-                                {primaryCard.mealType && <span className="ml-1 font-semibold text-blue-600">â€¢ {primaryCard.mealType}</span>}
+                                📞 {primaryCard.phone} • {primaryCard.cardType} • {primaryCard.memberStatus}
+                                {primaryCard.mealType && <span className="ml-1 font-semibold text-blue-600">• {primaryCard.mealType}</span>}
                               </div>
                               <div className="font-['Jost',sans-serif] font-bold text-lg mt-1">
                                 <span className={totalMeals > 0 ? 'text-green-600' : 'text-red-600'}>
@@ -1498,7 +1498,7 @@ export default function LunchPage() {
                               </div>
                               {hasBuffer && (
                                 <div className="text-xs text-amber-700 mt-1 bg-amber-50 px-2 py-1 rounded inline-block">
-                                  âš¡ Weekly buyer - buffer refreshes on card purchase
+                                  ⚡ Weekly buyer - buffer refreshes on card purchase
                                 </div>
                               )}
                             </div>
@@ -1557,7 +1557,7 @@ export default function LunchPage() {
               <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                 <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
                   <h3 className="font-['Jost',sans-serif] font-bold text-xl text-[#427d78] mb-4">
-                    âž• Add Un-entered Paper Card
+                    ➕ Add Un-entered Paper Card
                   </h3>
                   <p className="font-['Bitter',serif] text-sm text-gray-600 mb-4">
                     Enter details from a paper lunch card that isn&apos;t in the system yet
@@ -1566,7 +1566,7 @@ export default function LunchPage() {
                   <div className="space-y-4">
                     <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
                       <label className="block font-['Bitter',serif] text-purple-900 font-bold mb-1">
-                        ðŸ” Search Contact
+                        🔍 Search Contact
                       </label>
                       <input
                         type="text"
@@ -1701,7 +1701,7 @@ export default function LunchPage() {
                   }}
                   className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-['Jost',sans-serif] font-bold rounded-lg transition-all text-sm"
                 >
-                  ðŸ—‘ï¸ Clear All
+                  🗑️ Clear All
                 </button>
               </div>
               
@@ -1711,7 +1711,7 @@ export default function LunchPage() {
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div>
                       <div className={`font-['Jost',sans-serif] font-bold ${autoDetectedCardInfo.totalMeals > 0 ? 'text-green-800' : 'text-yellow-800'}`}>
-                        ðŸŽ« Lunch Card Found: {autoDetectedCardInfo.baseName}
+                        🎫 Lunch Card Found: {autoDetectedCardInfo.baseName}
                       </div>
                       <div className={`font-['Bitter',serif] ${autoDetectedCardInfo.totalMeals > 0 ? 'text-green-700' : 'text-yellow-700'}`}>
                         <span className="font-bold text-lg">{autoDetectedCardInfo.totalMeals}</span> meals remaining
@@ -1724,7 +1724,7 @@ export default function LunchPage() {
                       </div>
                       {autoDetectedCardInfo.hasBuffer && (
                         <div className="text-xs text-amber-700 mt-1 bg-amber-50 px-2 py-1 rounded inline-block">
-                          âš¡ Weekly buyer - buffer refreshes on card purchase
+                          ⚡ Weekly buyer - buffer refreshes on card purchase
                         </div>
                       )}
                     </div>
@@ -1760,7 +1760,7 @@ export default function LunchPage() {
                     onClick={() => navigator.clipboard.writeText(customer.firstName)}
                     className="mt-1 px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-['Jost',sans-serif] rounded text-xs transition-all"
                   >
-                    ðŸ“‹ Copy
+                    📋 Copy
                   </button>
                 </div>
                 <div>
@@ -1777,7 +1777,7 @@ export default function LunchPage() {
                     onClick={() => navigator.clipboard.writeText(customer.lastName)}
                     className="mt-1 px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-['Jost',sans-serif] rounded text-xs transition-all"
                   >
-                    ðŸ“‹ Copy
+                    📋 Copy
                   </button>
                 </div>
                 <div>
@@ -1794,7 +1794,7 @@ export default function LunchPage() {
                     onClick={() => navigator.clipboard.writeText(customer.email)}
                     className="mt-1 px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-['Jost',sans-serif] rounded text-xs transition-all"
                   >
-                    ðŸ“‹ Copy
+                    📋 Copy
                   </button>
                 </div>
                 <div>
@@ -1811,12 +1811,12 @@ export default function LunchPage() {
                     onClick={() => navigator.clipboard.writeText(customer.phone)}
                     className="mt-1 px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-['Jost',sans-serif] rounded text-xs transition-all"
                   >
-                    ðŸ“‹ Copy
+                    📋 Copy
                   </button>
                 </div>
               </div>
               <p className="text-xs text-gray-500 mt-3 font-['Bitter',serif]">
-                ðŸ’¡ To copy/paste: Right-click â†’ Copy/Paste, or use <strong>Ctrl+C</strong> (copy) / <strong>Ctrl+V</strong> (paste)
+                💡 To copy/paste: Right-click → Copy/Paste, or use <strong>Ctrl+C</strong> (copy) / <strong>Ctrl+V</strong> (paste)
               </p>
             </div>
 
@@ -1927,7 +1927,7 @@ export default function LunchPage() {
                                     className="px-2 py-0.5 bg-amber-200 hover:bg-amber-300 text-amber-900 font-bold rounded-full transition-all border border-amber-400"
                                     style={{ fontSize: '9px' }}
                                   >
-                                    ðŸ“‹
+                                    📋
                                   </button>
                                 </div>
                               )}
@@ -1940,7 +1940,7 @@ export default function LunchPage() {
                                     onClick={(e) => { e.stopPropagation(); removeMealFromDate(day.value); }}
                                     className="w-4 h-4 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center font-bold text-xs"
                                   >
-                                    âˆ’
+                                    −
                                   </button>
                                   <span className="font-bold text-xs min-w-[12px] text-center">{mealCount}</span>
                                   <button
@@ -1960,7 +1960,7 @@ export default function LunchPage() {
                   ))}
                   
                   <p className="text-sm text-gray-500 mt-2 font-['Bitter',serif]">
-                    ðŸ’¡ Click date to select. Use +/âˆ’ to add more meals per day. <span className="text-blue-600">Blue Friday = frozen meal picked up Thursday.</span> <span className="text-amber-600">Amber = TODAY (click List to see reservations).</span>
+                    💡 Click date to select. Use +/− to add more meals per day. <span className="text-blue-600">Blue Friday = frozen meal picked up Thursday.</span> <span className="text-amber-600">Amber = TODAY (click List to see reservations).</span>
                   </p>
                 </div>
                 
@@ -1975,7 +1975,7 @@ export default function LunchPage() {
                         isMember === 'member' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
-                      âœ“ Member
+                      ✓ Member
                     </button>
                     <button
                       type="button"
@@ -2000,7 +2000,7 @@ export default function LunchPage() {
                         mealType === 'dineIn' ? 'bg-[#427d78] text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
-                      ðŸ½ï¸ Dine In (${isMember === 'member' ? PRICING.individual.memberDineIn : PRICING.individual.nonMemberDineIn})
+                      🍽️ Dine In (${isMember === 'member' ? PRICING.individual.memberDineIn : PRICING.individual.nonMemberDineIn})
                     </button>
                     <button
                       type="button"
@@ -2009,7 +2009,7 @@ export default function LunchPage() {
                         mealType === 'pickup' ? 'bg-[#427d78] text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
-                      ðŸ“¦ To Go (${isMember === 'member' ? PRICING.individual.memberToGo : PRICING.individual.nonMemberToGo})
+                      📦 To Go (${isMember === 'member' ? PRICING.individual.memberToGo : PRICING.individual.nonMemberToGo})
                     </button>
                     <button
                       type="button"
@@ -2018,7 +2018,7 @@ export default function LunchPage() {
                         mealType === 'delivery' ? 'bg-[#427d78] text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
-                      ðŸš— Delivery (+${PRICING.individual.deliveryCharge})
+                      🚗 Delivery (+${PRICING.individual.deliveryCharge})
                     </button>
                   </div>
                 </div>
@@ -2027,7 +2027,7 @@ export default function LunchPage() {
                 {getTotalMealsFromDateMeals() > 0 && (
                   <div className="mt-4 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg">
                     <h3 className="font-['Jost',sans-serif] font-bold text-blue-800 mb-3">
-                      ðŸ“ Meal Details ({getTotalMealsFromDateMeals()} meal{getTotalMealsFromDateMeals() !== 1 ? 's' : ''})
+                      📝 Meal Details ({getTotalMealsFromDateMeals()} meal{getTotalMealsFromDateMeals() !== 1 ? 's' : ''})
                     </h3>
                     <p className="font-['Bitter',serif] text-sm text-blue-700 mb-4">
                       Each meal gets its own line in the system. Edit names and special requests below.
@@ -2043,7 +2043,7 @@ export default function LunchPage() {
                       return (
                         <div key={date} className="mb-4">
                           <div className="font-['Jost',sans-serif] font-bold text-gray-800 mb-2 bg-white px-3 py-2 rounded-t-lg border-2 border-b-0 border-blue-200">
-                            ðŸ“… {dateLabel}
+                            📅 {dateLabel}
                           </div>
                           {meals.map((meal, idx) => (
                             <div key={idx} className="p-3 bg-white border-2 border-blue-200 border-t-0 last:rounded-b-lg">
@@ -2108,7 +2108,7 @@ export default function LunchPage() {
                         cardMemberType === 'member' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
-                      âœ“ Member
+                      ✓ Member
                     </button>
                     <button
                       type="button"
@@ -2133,7 +2133,7 @@ export default function LunchPage() {
                         cardMealType === 'dineIn' ? 'bg-[#427d78] text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
-                      ðŸ½ï¸ Dine In
+                      🍽️ Dine In
                     </button>
                     <button
                       type="button"
@@ -2142,7 +2142,7 @@ export default function LunchPage() {
                         cardMealType === 'pickup' ? 'bg-[#427d78] text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
-                      ðŸ“¦ Pickup
+                      📦 Pickup
                     </button>
                     <button
                       type="button"
@@ -2151,7 +2151,7 @@ export default function LunchPage() {
                         cardMealType === 'delivery' ? 'bg-[#427d78] text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
-                      ðŸš— Delivery
+                      🚗 Delivery
                     </button>
                   </div>
                 </div>
@@ -2198,7 +2198,7 @@ export default function LunchPage() {
                       paymentMethod === 'cash' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
                   >
-                    ðŸ’µ Cash
+                    💵 Cash
                   </button>
                   <button
                     type="button"
@@ -2207,7 +2207,7 @@ export default function LunchPage() {
                       paymentMethod === 'check' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
                   >
-                    ðŸ“ Check
+                    📝 Check
                   </button>
                   <button
                     type="button"
@@ -2216,7 +2216,7 @@ export default function LunchPage() {
                       paymentMethod === 'cashCheckSplit' ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
                   >
-                    ðŸ’µðŸ“ Cash & Check
+                    💵📝 Cash & Check
                   </button>
                   <button
                     type="button"
@@ -2225,7 +2225,7 @@ export default function LunchPage() {
                       paymentMethod === 'card' ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
                   >
-                    ðŸ’³ Card
+                    💳 Card
                   </button>
                   {transactionType === 'individual' && (
                     <button
@@ -2235,7 +2235,7 @@ export default function LunchPage() {
                         paymentMethod === 'compCard' ? 'bg-pink-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
-                      ðŸŽ Comp Card
+                      🎁 Comp Card
                     </button>
                   )}
                   {transactionType === 'individual' && (
@@ -2246,7 +2246,7 @@ export default function LunchPage() {
                         paymentMethod === 'lunchCard' ? 'bg-amber-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
-                      ðŸŽ« Use Lunch Card
+                      🎫 Use Lunch Card
                     </button>
                   )}
                 </div>
@@ -2260,10 +2260,10 @@ export default function LunchPage() {
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-['Jost',sans-serif] font-bold rounded-lg transition-colors text-lg"
                   >
-                    ðŸ’³ Open Zeffy to Process Card Payment â†’
+                    💳 Open Zeffy to Process Card Payment →
                   </a>
                   <p className="text-sm text-purple-600 mt-2 font-['Bitter',serif]">
-                    ðŸ’¡ Process the card payment in Zeffy, then return here to complete the reservation.
+                    💡 Process the card payment in Zeffy, then return here to complete the reservation.
                   </p>
                 </div>
               )}
@@ -2294,7 +2294,7 @@ export default function LunchPage() {
                     style={{ maxWidth: '300px' }}
                   />
                   <p className="text-sm text-pink-600 mt-1 font-['Bitter',serif]">
-                    ðŸ’¡ Enter the complimentary meal card number for tracking.
+                    💡 Enter the complimentary meal card number for tracking.
                   </p>
                 </div>
               )}
@@ -2364,12 +2364,12 @@ export default function LunchPage() {
                         <div style={{ paddingTop: 'var(--space-2)', borderTop: '2px solid rgba(0,0,0,0.1)' }}>
                           {isReconciled ? (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#28a745' }}>
-                              <span style={{ fontSize: '1.5rem' }}>âœ…</span>
+                              <span style={{ fontSize: '1.5rem' }}>✅</span>
                               <span className="font-['Jost',sans-serif] font-bold">Payment Reconciled</span>
                             </div>
                           ) : (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#856404' }}>
-                              <span style={{ fontSize: '1.5rem' }}>âš ï¸</span>
+                              <span style={{ fontSize: '1.5rem' }}>⚠️</span>
                               <span className="font-['Bitter',serif] font-bold">
                                 {difference > 0 ? `Over by $${difference.toFixed(2)}` : `Short by $${Math.abs(difference).toFixed(2)}`}
                               </span>
@@ -2442,9 +2442,9 @@ export default function LunchPage() {
                         >
                           <div className="font-['Jost',sans-serif] font-bold">{card.name}</div>
                           <div className="font-['Bitter',serif] text-sm text-gray-600">
-                            {card.phone} â€¢ {card.cardType}
-                            {card.mealType && <span className="text-blue-600"> â€¢ {card.mealType}</span>}
-                            {' '} â€¢ <span className="text-green-600 font-bold">{card.remainingMeals} meals left</span>
+                            {card.phone} • {card.cardType}
+                            {card.mealType && <span className="text-blue-600"> • {card.mealType}</span>}
+                            {' '} • <span className="text-green-600 font-bold">{card.remainingMeals} meals left</span>
                           </div>
                         </button>
                       ))}
@@ -2489,12 +2489,12 @@ export default function LunchPage() {
                           
                           {hasBuffer && (
                             <div className="text-xs text-amber-700 mt-1 bg-amber-50 px-2 py-1 rounded inline-block">
-                              âš¡ Weekly buyer - will use buffer meals if needed
+                              ⚡ Weekly buyer - will use buffer meals if needed
                             </div>
                           )}
                           {!hasEnough && (
                             <div className="mt-2 p-2 bg-red-200 rounded text-red-800 font-['Jost',sans-serif] font-bold text-sm">
-                              âš ï¸ Not enough meals! Need {getTotalMeals()}, has {totalAvailable}.
+                              ⚠️ Not enough meals! Need {getTotalMeals()}, has {totalAvailable}.
                               Reduce dates or quantity.
                             </div>
                           )}
@@ -2503,7 +2503,7 @@ export default function LunchPage() {
                             onClick={() => { setSelectedLunchCard(null); setSelectedCardInfo(null); }}
                             className="mt-2 text-sm text-red-600 hover:text-red-800 font-['Jost',sans-serif]"
                           >
-                            âœ• Remove selection
+                            ✕ Remove selection
                           </button>
                         </div>
                       );
@@ -2581,7 +2581,7 @@ export default function LunchPage() {
             {showConfirmation && !submitResult && (
               <div className="card bg-amber-50 border-4 border-amber-400" style={{ marginBottom: 'var(--space-4)' }}>
                 <h2 className="font-['Jost',sans-serif] font-bold text-amber-800 text-xl" style={{ marginBottom: 'var(--space-3)' }}>
-                  âš ï¸ Confirm Transaction
+                  ⚠️ Confirm Transaction
                 </h2>
                 <div className="font-['Bitter',serif] text-amber-900 space-y-2">
                   <p><strong>Customer:</strong> {customer.firstName} {customer.lastName}</p>
@@ -2604,11 +2604,11 @@ export default function LunchPage() {
                   {paymentMethod === 'lunchCard' && selectedLunchCard && (
                     selectedLunchCard.remainingMeals >= getTotalMeals() ? (
                       <p className="text-green-700 font-bold">
-                        Will deduct {getTotalMeals()} meal(s) from card ({selectedLunchCard.remainingMeals} remaining â†’ {selectedLunchCard.remainingMeals - getTotalMeals()} after)
+                        Will deduct {getTotalMeals()} meal(s) from card ({selectedLunchCard.remainingMeals} remaining → {selectedLunchCard.remainingMeals - getTotalMeals()} after)
                       </p>
                     ) : (
                       <p className="text-red-700 font-bold">
-                        âŒ Insufficient meals! Card has {selectedLunchCard.remainingMeals} meals but needs {getTotalMeals()}.
+                        ❌ Insufficient meals! Card has {selectedLunchCard.remainingMeals} meals but needs {getTotalMeals()}.
                       </p>
                     )
                   )}
@@ -2623,14 +2623,14 @@ export default function LunchPage() {
                     }}
                     className="flex-1 px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-['Jost',sans-serif] font-bold rounded-lg"
                   >
-                    â† Cancel & Refresh
+                    ← Cancel & Refresh
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmitting || (paymentMethod === 'lunchCard' && !!selectedLunchCard && selectedLunchCard.remainingMeals < getTotalMeals())}
                     className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-['Jost',sans-serif] font-bold rounded-lg"
                   >
-                    {isSubmitting ? 'â³ Processing...' : 'âœ“ Confirm & Submit'}
+                    {isSubmitting ? '⏳ Processing...' : '✓ Confirm & Submit'}
                   </button>
                 </div>
               </div>
@@ -2657,7 +2657,7 @@ export default function LunchPage() {
                 className="w-full bg-[#427d78] hover:bg-[#5eb3a1] disabled:bg-gray-400 text-white font-['Jost',sans-serif] font-bold text-xl py-4 rounded-lg transition-colors shadow-lg"
               >
                 {isSubmitting 
-                  ? 'â³ Processing...' 
+                  ? '⏳ Processing...' 
                   : paymentMethod === 'lunchCard' 
                     ? `Review: Deduct ${getTotalMeals()} Meal(s) from Lunch Card` 
                     : `Review Transaction - ${getTotalMeals()} meal(s) - $${getTotal().toFixed(2)}`
@@ -2669,7 +2669,7 @@ export default function LunchPage() {
           {/* Recent Transactions Log - filtered by transaction type */}
           <div ref={recentTransactionsRef} className="card" style={{ marginTop: 'var(--space-6)' }}>
             <h2 className="font-['Jost',sans-serif] font-bold text-[#427d78] text-xl" style={{ marginBottom: 'var(--space-3)' }}>
-              ðŸ“œ Recent {transactionType === 'individual' ? 'Meal Reservations' : 'Lunch Card Purchases'}
+              📜 Recent {transactionType === 'individual' ? 'Meal Reservations' : 'Lunch Card Purchases'}
             </h2>
             
             {(() => {
@@ -2722,8 +2722,8 @@ export default function LunchPage() {
                       
                       // Details column content
                       const details = isCard
-                        ? `${tx.cardType} â€¢ ${tx.mealType} â€¢ ${tx.memberStatus}`
-                        : `${tx.date || ''}${tx.isFrozenFriday ? ' ðŸ§Š' : ''} â€¢ ${tx.mealType} â€¢ ${tx.memberStatus}`;
+                        ? `${tx.cardType} • ${tx.mealType} • ${tx.memberStatus}`
+                        : `${tx.date || ''}${tx.isFrozenFriday ? ' 🧊' : ''} • ${tx.mealType} • ${tx.memberStatus}`;
                       
                       return (
                         <tr key={tx.id} className={`border-b ${typeBg}`}>
@@ -2750,7 +2750,7 @@ export default function LunchPage() {
                 onClick={() => fetchRecentTransactions()}
                 className="text-sm text-[#427d78] hover:underline font-['Jost',sans-serif]"
               >
-                ðŸ”„ Refresh
+                🔄 Refresh
               </button>
             </div>
           </div>
@@ -2758,7 +2758,7 @@ export default function LunchPage() {
           {/* Pricing Reference */}
           <div ref={pricingRef} className="card" style={{ marginTop: 'var(--space-6)' }}>
             <h2 className="font-['Jost',sans-serif] font-bold text-[#427d78] text-xl" style={{ marginBottom: 'var(--space-3)' }}>
-              ðŸ“‹ Pricing Reference
+              📋 Pricing Reference
             </h2>
             
             {/* Individual Meals */}
@@ -2817,17 +2817,17 @@ export default function LunchPage() {
                           <td className="p-2 font-semibold" colSpan={3}>{count} Meals</td>
                         </tr>
                         <tr className="border-b">
-                          <td className="p-2 pl-4">â†³ Dine In</td>
+                          <td className="p-2 pl-4">↳ Dine In</td>
                           <td className="text-right p-2">${PRICING.cards[count].member.dineIn}</td>
                           <td className="text-right p-2">${PRICING.cards[count].nonMember.dineIn}</td>
                         </tr>
                         <tr className="border-b">
-                          <td className="p-2 pl-4">â†³ Pickup</td>
+                          <td className="p-2 pl-4">↳ Pickup</td>
                           <td className="text-right p-2">${PRICING.cards[count].member.pickup}</td>
                           <td className="text-right p-2">${PRICING.cards[count].nonMember.pickup}</td>
                         </tr>
                         <tr className="border-b">
-                          <td className="p-2 pl-4">â†³ Delivery</td>
+                          <td className="p-2 pl-4">↳ Delivery</td>
                           <td className="text-right p-2">${PRICING.cards[count].member.delivery}</td>
                           <td className="text-right p-2">${PRICING.cards[count].nonMember.delivery}</td>
                         </tr>
@@ -2878,7 +2878,7 @@ export default function LunchPage() {
               }}
               className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600 text-xl font-bold"
             >
-              Ã—
+              ×
             </button>
 
             {/* Icon */}
@@ -2887,7 +2887,7 @@ export default function LunchPage() {
                 submitResult.success ? 'bg-green-500' : 'bg-red-500'
               }`}>
                 <span className="text-5xl text-white">
-                  {submitResult.success ? 'âœ“' : 'âœ—'}
+                  {submitResult.success ? '✓' : '✗'}
                 </span>
               </div>
             </div>
@@ -2936,7 +2936,7 @@ export default function LunchPage() {
                   onClick={resetForm}
                   className="flex-1 py-3 px-4 bg-green-600 hover:bg-green-700 text-white font-['Jost',sans-serif] font-bold text-lg rounded-xl transition-colors shadow-lg"
                 >
-                  âœ“ Start New Transaction
+                  ✓ Start New Transaction
                 </button>
               ) : (
                 <>
@@ -2948,7 +2948,7 @@ export default function LunchPage() {
                     }}
                     className="flex-1 py-3 px-4 bg-gray-500 hover:bg-gray-600 text-white font-['Jost',sans-serif] font-bold rounded-xl transition-colors"
                   >
-                    â† Back to Edit
+                    ← Back to Edit
                   </button>
                   <button
                     type="button"
@@ -2958,7 +2958,7 @@ export default function LunchPage() {
                     }}
                     className="flex-1 py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-['Jost',sans-serif] font-bold rounded-xl transition-colors"
                   >
-                    ðŸ”„ Retry
+                    🔄 Retry
                   </button>
                 </>
               )}

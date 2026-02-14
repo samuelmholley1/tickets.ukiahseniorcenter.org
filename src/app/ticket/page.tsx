@@ -141,7 +141,7 @@ export default function TicketGenerator() {
                       {event.name}
                     </div>
                     <div className="text-sm md:text-base text-[#666] group-hover:text-white transition-colors font-['Bitter',serif]" style={{ lineHeight: '1.4' }}>
-                      ðŸ“… {event.date}
+                      📅 {event.date}
                     </div>
                   </button>
                 ))}
@@ -168,7 +168,7 @@ export default function TicketGenerator() {
                   }}
                   className="text-sm text-[#427d78] hover:text-[#5eb3a1] font-['Bitter',serif] underline"
                 >
-                  â† Change Event
+                  ← Change Event
                 </button>
               </div>
 
@@ -287,7 +287,7 @@ export default function TicketGenerator() {
                   {/* Footer */}
                   <div style={{ textAlign: 'center', borderTop: '2px solid #427d78', paddingTop: '4px' }}>
                     <p className="font-['Bitter',serif] text-gray-600" style={{ fontSize: '8px', lineHeight: '1.2', fontWeight: '600' }}>
-                      Bartlett Event Center â€¢ 495 Leslie St, Ukiah, CA 95482 â€¢ (707) 462-4343
+                      Bartlett Event Center • 495 Leslie St, Ukiah, CA 95482 • (707) 462-4343
                     </p>
                   </div>
                 </div>

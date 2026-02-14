@@ -91,6 +91,17 @@ export default function ValentinesAttendanceList() {
             border-color: #000 !important;
             color: #000 !important;
           }
+          .attendance-table th {
+            background: #db2777 !important;
+            color: white !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          .attendance-table tbody tr:nth-child(even) {
+            background: #fdf2f8 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
           .attendance-table td {
             font-weight: 500;
           }

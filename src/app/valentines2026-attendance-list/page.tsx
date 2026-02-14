@@ -88,6 +88,14 @@ export default function ValentinesAttendanceList() {
           .attendance-table th,
           .attendance-table td {
             page-break-inside: avoid;
+            border-color: #000 !important;
+            color: #000 !important;
+          }
+          .attendance-table td {
+            font-weight: 500;
+          }
+          .subtitle, .attendance-header div {
+            color: #000 !important;
           }
         }
 

@@ -6,7 +6,6 @@ import { SiteFooterContent } from '@/components/SiteFooterContent';
 import LoadingStates from '@/components/LoadingStates';
 
 export default function Tickets() {
-  const [isValentinesLoading, setIsValentinesLoading] = useState(true);
   const [isSpeakeasyLoading, setIsSpeakeasyLoading] = useState(true);
 
   const scrollToForm = (formId: string) => {
@@ -65,52 +64,22 @@ export default function Tickets() {
           <div style={{ display: 'grid', gap: 'var(--space-7)' }}>
             {/* Valentine's Day Dance Section */}
             <div id="valentines-section" className="scroll-mt-8">
-              {/* Tip Notice */}
-              <div className="bg-red-50 border-2 border-red-400 rounded-lg" style={{ padding: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
-                <h3 className="text-base md:text-lg font-['Jost',sans-serif] font-bold text-red-900 text-center" style={{ marginBottom: 'var(--space-2)', lineHeight: '1.3' }}>
-                  ⚠️ Set Zeffy Tip to $0
-                </h3>
-                <p className="text-xs md:text-sm text-red-900 font-['Bitter',serif] text-center" style={{ marginBottom: 'var(--space-2)', maxWidth: '700px', marginInline: 'auto', lineHeight: '1.6' }}>
-                  When filling out the form below, <strong>set the tip to $0</strong> so you don&apos;t pay any fees.
-                </p>
-                <div className="bg-white rounded border border-red-300" style={{ padding: 'var(--space-2)', maxWidth: '600px', marginInline: 'auto', overflow: 'hidden' }}>
-                  <img
-                    src="/zero_tip.png"
-                    alt="Set Zeffy tip to zero"
-                    className="rounded"
-                    style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
-                  />
-                </div>
-              </div>
-
-              {/* Valentine's Form */}
               <div className="card">
                 <div className="text-center" style={{ marginBottom: 'var(--space-3)' }}>
                   <h2 className="text-xl md:text-2xl lg:text-3xl font-['Jost',sans-serif] font-bold text-pink-600" style={{ marginBottom: 'var(--space-2)', lineHeight: '1.2' }}>💕 Valentine&apos;s Day Dance</h2>
                   <p className="text-base md:text-lg text-[#666] font-['Bitter',serif]" style={{ marginBottom: 0, maxWidth: '600px', marginInline: 'auto', lineHeight: '1.5' }}>February 14, 2026 • Members $35 • Non-Members $45</p>
                 </div>
-                <div className="bg-pink-50 rounded-lg border-4 border-pink-500 relative" style={{ padding: 'var(--space-3)' }}>
-                  {isValentinesLoading && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-pink-50 rounded-lg z-10">
-                      <LoadingStates size="lg" />
-                      <p className="text-lg text-gray-600 font-['Bitter',serif] font-medium" style={{ marginTop: 'var(--space-3)' }}>Loading ticket form...</p>
-                      <div className="w-full max-w-md space-y-3" style={{ marginTop: 'var(--space-4)', paddingInline: 'var(--space-4)' }}>
-                        <div className="h-12 bg-pink-200 rounded-lg animate-pulse"></div>
-                        <div className="h-12 bg-pink-200 rounded-lg animate-pulse"></div>
-                        <div className="h-12 bg-pink-200 rounded-lg animate-pulse"></div>
-                        <div className="h-24 bg-pink-200 rounded-lg animate-pulse"></div>
-                      </div>
-                    </div>
-                  )}
-                  <div style={{ position: 'relative', overflow: 'hidden', height: '1400px', width: '100%' }}>
-                    <iframe
-                      title="Valentine's Day Dance tickets powered by Zeffy"
-                      style={{ position: 'absolute', border: 0, top: 0, left: 0, bottom: 0, right: 0, width: '100%', height: '100%' }}
-                      src="https://www.zeffy.com/embed/ticketing/valentines-day-dance--2026-2"
-                      allow="payment"
-                      onLoad={() => setIsValentinesLoading(false)}
-                    />
-                  </div>
+                <div className="bg-pink-50 rounded-lg border-4 border-pink-500" style={{ padding: 'var(--space-4)', textAlign: 'center' }}>
+                  <div className="text-4xl" style={{ marginBottom: 'var(--space-3)' }}>🎟️</div>
+                  <h3 className="text-lg md:text-xl font-['Jost',sans-serif] font-bold text-pink-700" style={{ marginBottom: 'var(--space-2)' }}>
+                    Online Sales Have Closed
+                  </h3>
+                  <p className="text-base md:text-lg text-gray-700 font-['Bitter',serif]" style={{ maxWidth: '500px', marginInline: 'auto', lineHeight: '1.6', marginBottom: 'var(--space-2)' }}>
+                    Tickets are available at the door tonight!
+                  </p>
+                  <p className="text-sm md:text-base text-gray-600 font-['Bitter',serif]" style={{ maxWidth: '500px', marginInline: 'auto', lineHeight: '1.6' }}>
+                    We accept <strong>cash</strong>, <strong>card</strong>, and <strong>check</strong>.
+                  </p>
                 </div>
               </div>
             </div>

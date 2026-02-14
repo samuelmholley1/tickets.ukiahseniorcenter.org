@@ -45,6 +45,7 @@ const DIRECTORY_SECTIONS = [
     title: '📊 Attendance Lists',
     description: 'Event attendance tracking',
     links: [
+      { name: 'Valentine\'s 2026 Attendance', url: '/valentines2026-attendance-list', description: 'Valentine\'s Day Dance guest list' },
       { name: 'NYE 2025 Attendance', url: '/nye2025-attendance-list', description: 'New Year\'s Eve Gala guest list' },
       { name: 'Christmas 2025 Attendance', url: '/xmas2025-attendance-list', description: 'Christmas Drive-Thru pickup list' },
     ]

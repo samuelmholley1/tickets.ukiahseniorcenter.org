@@ -83,59 +83,23 @@ export async function GET(request: NextRequest) {
       offset = data.offset;
     } while (offset);
 
-    // Filter out refunded records
-    const activeRecords = allRecords.filter((record: AirtableRecord) => !record.fields.Refunded);
-    
-    // Group by email to merge multiple transactions from the same person
-    const groupedByEmail = new Map<string, {
-      firstName: string;
-      lastName: string;
-      email: string;
-      phone: string;
-      totalTickets: number;
-      memberTickets: number;
-      nonMemberTickets: number;
-    }>();
-    
-    activeRecords.forEach((record: AirtableRecord) => {
-      const email = (record.fields['Email'] || '').toLowerCase().trim();
-      const key = email || `no-email-${record.id}`;
-      const existing = groupedByEmail.get(key);
-      
-      const ticketQty = record.fields['Ticket Quantity'] || 0;
-      const memberQty = record.fields['Member Tickets'] || 0;
-      const nonMemberQty = record.fields['Non-Member Tickets'] || 0;
-      
-      if (existing) {
-        existing.totalTickets += ticketQty;
-        existing.memberTickets += memberQty;
-        existing.nonMemberTickets += nonMemberQty;
-      } else {
-        groupedByEmail.set(key, {
-          firstName: record.fields['First Name'] || '',
-          lastName: record.fields['Last Name'] || '',
-          email: record.fields['Email'] || '',
-          phone: record.fields['Phone'] || '',
-          totalTickets: ticketQty,
-          memberTickets: memberQty,
-          nonMemberTickets: nonMemberQty,
-        });
-      }
-    });
-    
-    // Convert back to array format
-    const records = Array.from(groupedByEmail.values()).map((person, index) => ({
-      id: `merged-${index}`,
-      fields: {
-        'First Name': person.firstName,
-        'Last Name': person.lastName,
-        'Email': person.email,
-        'Phone': person.phone,
-        'Ticket Quantity': person.totalTickets,
-        'Member Tickets': person.memberTickets,
-        'Non-Member Tickets': person.nonMemberTickets,
-      }
-    }));
+    // Filter out refunded records and keep one row per Airtable reservation.
+    // Do not merge by email, because different attendees can share an email
+    // and should still appear as separate rows on the attendance list.
+    const records = allRecords
+      .filter((record: AirtableRecord) => !record.fields.Refunded)
+      .map((record: AirtableRecord) => ({
+        id: record.id,
+        fields: {
+          'First Name': record.fields['First Name'] || '',
+          'Last Name': record.fields['Last Name'] || '',
+          'Email': record.fields['Email'] || '',
+          'Phone': record.fields['Phone'] || '',
+          'Ticket Quantity': record.fields['Ticket Quantity'] || 0,
+          'Member Tickets': record.fields['Member Tickets'] || 0,
+          'Non-Member Tickets': record.fields['Non-Member Tickets'] || 0,
+        },
+      }));
 
     return NextResponse.json({ records });
 

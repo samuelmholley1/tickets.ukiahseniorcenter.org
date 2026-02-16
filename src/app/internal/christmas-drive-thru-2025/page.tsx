@@ -55,7 +55,7 @@ export default function ChristmasDriveThruForm() {
             className="inline-flex items-center text-[#427d78] hover:text-[#5eb3a1] font-['Bitter',serif] mb-4"
             style={{ marginBottom: 'var(--space-3)' }}
           >
-            â† Back to Internal Sales
+            ← Back to Internal Sales
           </Link>
 
           {/* Page Header */}
@@ -75,7 +75,7 @@ export default function ChristmasDriveThruForm() {
           {submitted && (
             <div className="bg-green-50 border-2 border-green-400 rounded-lg text-center" style={{ padding: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
               <p className="text-green-900 font-['Jost',sans-serif] font-bold text-lg">
-                âœ“ Ticket sale recorded successfully!
+                ✔ Ticket sale recorded successfully!
               </p>
             </div>
           )}

@@ -5,7 +5,8 @@ const AIRTABLE_API_BASE = 'https://api.airtable.com/v0';
 
 /* ========== LUNCH CARD PRICING ==========
  * See AIRTABLE_SCHEMA.md for full pricing table
- * Cards come in 5, 10, 15, 20 meal variants
+ * Cards come in 5, 10, 15, 20 preset variants
+ * OR custom quantity using per-meal rates
  * With Dine In, Pickup, or Delivery options
  * Member vs Non-Member pricing
  * ======================================== */
@@ -29,6 +30,12 @@ const CARD_PRICING = {
   },
 } as const;
 
+// Per-meal rates for custom quantities (derived from the pricing table)
+const PER_MEAL_RATE = {
+  member:    { dineIn: 8, pickup: 9, delivery: 12 },
+  nonMember: { dineIn: 10, pickup: 11, delivery: 14 },
+} as const;
+
 type MealCount = 5 | 10 | 15 | 20;
 type CardMealType = 'dineIn' | 'pickup' | 'delivery';
 type MemberStatus = 'member' | 'nonMember';
@@ -37,7 +44,7 @@ type PaymentMethod = 'cash' | 'check' | 'cashCheckSplit' | 'card' | 'staffOverri
 interface LunchCardRequest {
   name: string;
   phone: string;
-  cardType: MealCount;
+  cardType: number; // 5, 10, 15, 20, or any custom positive integer
   mealType: CardMealType;
   memberStatus: MemberStatus;
   paymentMethod: PaymentMethod;
@@ -138,8 +145,8 @@ export async function POST(request: NextRequest) {
     if (!phone?.trim()) {
       return NextResponse.json({ error: 'Phone number is required' }, { status: 400 });
     }
-    if (![5, 10, 15, 20].includes(cardType)) {
-      return NextResponse.json({ error: 'Invalid card type' }, { status: 400 });
+    if (!cardType || !Number.isInteger(cardType) || cardType < 1 || cardType > 100) {
+      return NextResponse.json({ error: 'Card type must be between 1 and 100 meals' }, { status: 400 });
     }
     if (!['dineIn', 'pickup', 'delivery'].includes(mealType)) {
       return NextResponse.json({ error: 'Invalid meal type' }, { status: 400 });
@@ -160,8 +167,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Payment comment is required for Staff Override' }, { status: 400 });
     }
 
-    // Calculate price (Staff Override = $0 collected)
-    const price = paymentMethod === 'staffOverride' ? 0 : CARD_PRICING[cardType][memberStatus][mealType];
+    // Calculate price: use preset pricing for standard counts, per-meal rate for custom
+    const isPreset = [5, 10, 15, 20].includes(cardType);
+    const fullPrice = isPreset
+      ? CARD_PRICING[cardType as MealCount][memberStatus][mealType]
+      : cardType * PER_MEAL_RATE[memberStatus][mealType];
+    const price = paymentMethod === 'staffOverride' ? 0 : fullPrice;
 
     // Build the Airtable record
     const payload = {

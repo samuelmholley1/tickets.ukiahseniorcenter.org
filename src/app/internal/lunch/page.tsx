@@ -93,9 +93,14 @@ const PRICING = {
       nonMember: { dineIn: 200, pickup: 220, delivery: 280 },
     },
   },
+  // Per-meal rates for custom quantities
+  perMeal: {
+    member:    { dineIn: 8, pickup: 9, delivery: 12 },
+    nonMember: { dineIn: 10, pickup: 11, delivery: 14 },
+  },
 } as const;
 
-type MealCount = 5 | 10 | 15 | 20;
+type MealCount = 5 | 10 | 15 | 20 | 'custom';
 type MealType = 'dineIn' | 'pickup' | 'delivery';
 type MembershipType = 'member' | 'nonMember';
 type TransactionType = 'individual' | 'lunchCard';
@@ -279,6 +284,7 @@ export default function LunchPage() {
 
   // Lunch card options
   const [cardMealCount, setCardMealCount] = useState<MealCount>(5);
+  const [customMealCount, setCustomMealCount] = useState<number>(1);
   const [cardMealType, setCardMealType] = useState<MealType>('dineIn');
   const [cardMemberType, setCardMemberType] = useState<MembershipType>('member');
 
@@ -736,7 +742,7 @@ export default function LunchPage() {
   // Reset confirmation when important values change (prevents stale data submission)
   useEffect(() => {
     setShowConfirmation(false);
-  }, [transactionType, paymentMethod, dateMeals, selectedLunchCard, cardMealCount]);
+  }, [transactionType, paymentMethod, dateMeals, selectedLunchCard, cardMealCount, customMealCount]);
   
   // Auto-fill customer name in meals when customer name changes
   useEffect(() => {
@@ -847,13 +853,16 @@ export default function LunchPage() {
 
   // Calculate lunch card price
   const calculateCardPrice = () => {
+    if (cardMealCount === 'custom') {
+      return customMealCount * PRICING.perMeal[cardMemberType][cardMealType];
+    }
     return PRICING.cards[cardMealCount][cardMemberType][cardMealType];
   };
 
   // Get total meals being ordered
   const getTotalMeals = () => {
     if (transactionType === 'lunchCard') {
-      return cardMealCount; // For lunch card purchases, it's the card size
+      return cardMealCount === 'custom' ? customMealCount : cardMealCount;
     }
     return getTotalMealsFromDateMeals();
   };
@@ -1116,7 +1125,7 @@ export default function LunchPage() {
           body: JSON.stringify({
             name: `${customer.firstName} ${customer.lastName}`.trim(),
             phone: customer.phone,
-            cardType: cardMealCount,
+            cardType: cardMealCount === 'custom' ? customMealCount : cardMealCount,
             mealType: cardMealType,
             memberStatus: cardMemberType,
             paymentMethod: paymentMethod === 'lunchCard' ? 'cash' : paymentMethod,
@@ -1129,7 +1138,7 @@ export default function LunchPage() {
 
         const result = await response.json();
         
-        log.push(`Creating ${cardMealCount}-meal ${cardMealType === 'dineIn' ? 'Dine In' : cardMealType === 'pickup' ? 'Pick Up' : 'Delivery'} lunch card for ${customer.firstName} ${customer.lastName}`);
+        log.push(`Creating ${cardMealCount === 'custom' ? customMealCount : cardMealCount}-meal ${cardMealType === 'dineIn' ? 'Dine In' : cardMealType === 'pickup' ? 'Pick Up' : 'Delivery'} lunch card for ${customer.firstName} ${customer.lastName}`);
         setTransactionLog(log);
         
         if (response.ok && result.success) {
@@ -2220,7 +2229,7 @@ export default function LunchPage() {
                 <div style={{ marginBottom: 'var(--space-3)' }}>
                   <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">Number of Meals</label>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 'var(--space-2)' }}>
-                    {([5, 10, 15, 20] as MealCount[]).map((count) => (
+                    {([5, 10, 15, 20] as const).map((count) => (
                       <button
                         key={count}
                         type="button"
@@ -2237,7 +2246,40 @@ export default function LunchPage() {
                         </span>
                       </button>
                     ))}
+                    <button
+                      type="button"
+                      onClick={() => setCardMealCount('custom')}
+                      className={`p-4 rounded-lg font-['Jost',sans-serif] font-bold transition-all ${
+                        cardMealCount === 'custom'
+                          ? 'bg-[#427d78] text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      Custom
+                      <span className="block text-sm mt-1">
+                        ${PRICING.perMeal[cardMemberType][cardMealType]}/meal
+                      </span>
+                    </button>
                   </div>
+                  {cardMealCount === 'custom' && (
+                    <div className="mt-3 flex items-center gap-3">
+                      <label className="font-['Jost',sans-serif] font-medium text-gray-700">Meals:</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="100"
+                        value={customMealCount}
+                        onChange={(e) => setCustomMealCount(Math.max(1, Math.min(100, parseInt(e.target.value) || 1)))}
+                        className="w-24 px-3 py-2 border-2 border-[#427d78] rounded-lg text-center font-['Jost',sans-serif] font-bold text-lg"
+                      />
+                      <span className="font-['Jost',sans-serif] text-lg font-bold text-[#427d78]">
+                        = ${customMealCount * PRICING.perMeal[cardMemberType][cardMealType]}
+                      </span>
+                      <span className="text-gray-500 text-sm">
+                        ({customMealCount} × ${PRICING.perMeal[cardMemberType][cardMealType]}/meal)
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -2632,7 +2674,7 @@ export default function LunchPage() {
                 <div>
                   <div className="text-white/80 font-['Bitter',serif] text-sm" style={{ marginBottom: '4px' }}>Type</div>
                   <div className="text-white font-['Jost',sans-serif] font-bold text-lg">
-                    {transactionType === 'individual' ? 'Individual Meal' : `${cardMealCount}-Meal Lunch Card (${cardMealType === 'dineIn' ? 'Dine In' : cardMealType === 'pickup' ? 'Pick Up' : 'Delivery'})`}
+                    {transactionType === 'individual' ? 'Individual Meal' : `${cardMealCount === 'custom' ? customMealCount : cardMealCount}-Meal Lunch Card (${cardMealType === 'dineIn' ? 'Dine In' : cardMealType === 'pickup' ? 'Pick Up' : 'Delivery'})`}
                   </div>
                 </div>
                 <div>
@@ -2679,7 +2721,7 @@ export default function LunchPage() {
                   <p><strong>Customer:</strong> {customer.firstName} {customer.lastName}</p>
                   <p><strong>Type:</strong> {transactionType === 'individual' ? `${getTotalMeals()} Individual Meal(s)` : `${cardMealType === 'dineIn' ? 'Dine In' : cardMealType === 'pickup' ? 'Pick Up' : 'Delivery'}`}</p>
                   <p><strong>Status:</strong> {transactionType === 'lunchCard' ? (cardMemberType === 'member' ? 'Member' : 'Non-Member') : (isMember === 'member' ? 'Member' : 'Non-Member')}</p>
-                  <p><strong>Total Meals:</strong> {transactionType === 'lunchCard' ? cardMealCount : getTotalMeals()}</p>
+                  <p><strong>Total Meals:</strong> {transactionType === 'lunchCard' ? (cardMealCount === 'custom' ? customMealCount : cardMealCount) : getTotalMeals()}</p>
                   {transactionType === 'individual' && (
                     <>
                       <p><strong>Dates:</strong> {selectedDates.join(', ')}</p>
@@ -2911,7 +2953,7 @@ export default function LunchPage() {
                     </tr>
                   </thead>
                   <tbody className="font-['Bitter',serif]">
-                    {([5, 10, 15, 20] as MealCount[]).map((count) => (
+                    {([5, 10, 15, 20] as const).map((count) => (
                       <>
                         <tr key={`${count}-dineIn`} className="border-b bg-gray-50">
                           <td className="p-2 font-semibold" colSpan={3}>{count} Meals</td>

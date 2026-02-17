@@ -1291,6 +1291,93 @@ export default function LunchPage() {
             </p>
           </div>
 
+          {/* Coyote Valley Auto-Reservations */}
+          <div className="card" style={{ marginBottom: 'var(--space-4)', background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)' }}>
+            <h2 className="font-['Jost',sans-serif] font-bold text-[#92400e] text-lg" style={{ marginBottom: 'var(--space-3)' }}>
+              🏘️ Coyote Valley Tribal Deliveries
+            </h2>
+            <p className="text-xs text-gray-600 mb-3 font-['Bitter',serif]">
+              Generates reservation records for all 9 Coyote Valley customers. B2B — tribe pays directly, no lunch card needed. 
+              Thursdays auto-include Frozen Friday. Safe to click multiple times (skips duplicates).
+            </p>
+            <div className="flex flex-wrap items-end gap-4">
+              <div>
+                <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-1 text-sm">Date (or start of range)</label>
+                <input
+                  type="date"
+                  defaultValue={getNextAvailableLunch()}
+                  id="cv-start-date"
+                  className="px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-[#92400e] focus:outline-none font-['Bitter',serif]"
+                />
+              </div>
+              <div>
+                <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-1 text-sm">End date (optional, for catch-up)</label>
+                <input
+                  type="date"
+                  id="cv-end-date"
+                  className="px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-[#92400e] focus:outline-none font-['Bitter',serif]"
+                />
+              </div>
+              <button
+                type="button"
+                id="cv-generate-btn"
+                onClick={async () => {
+                  const startInput = document.getElementById('cv-start-date') as HTMLInputElement;
+                  const endInput = document.getElementById('cv-end-date') as HTMLInputElement;
+                  const btn = document.getElementById('cv-generate-btn') as HTMLButtonElement;
+                  const resultDiv = document.getElementById('cv-result') as HTMLDivElement;
+                  
+                  if (!startInput?.value) { alert('Select a date'); return; }
+                  
+                  btn.disabled = true;
+                  btn.textContent = '⏳ Generating...';
+                  resultDiv.textContent = '';
+                  
+                  try {
+                    const body: Record<string, string> = {};
+                    if (endInput?.value) {
+                      body.startDate = startInput.value;
+                      body.endDate = endInput.value;
+                    } else {
+                      body.date = startInput.value;
+                    }
+                    
+                    const res = await fetch('/api/lunch/coyote-valley', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(body),
+                    });
+                    
+                    const data = await res.json();
+                    
+                    if (!res.ok) {
+                      resultDiv.textContent = `❌ ${data.error}`;
+                      resultDiv.className = 'text-sm text-red-600 mt-2 font-[\'Bitter\',serif]';
+                    } else {
+                      const dateDetails = data.dates.map((d: { date: string; created: number; skipped: number; frozenFriday?: { date: string; created: number; skipped: number } }) => {
+                        let line = `${d.date}: ${d.created} created, ${d.skipped} skipped`;
+                        if (d.frozenFriday) line += ` | Frozen Fri (${d.frozenFriday.date}): ${d.frozenFriday.created} created, ${d.frozenFriday.skipped} skipped`;
+                        return line;
+                      }).join('\n');
+                      resultDiv.textContent = `✅ Total: ${data.totalCreated} created, ${data.totalSkipped} skipped\n${dateDetails}`;
+                      resultDiv.className = 'text-sm text-green-700 mt-2 font-[\'Bitter\',serif] whitespace-pre-line';
+                    }
+                  } catch {
+                    resultDiv.textContent = `❌ Network error`;
+                    resultDiv.className = 'text-sm text-red-600 mt-2 font-[\'Bitter\',serif]';
+                  } finally {
+                    btn.disabled = false;
+                    btn.textContent = '🏘️ Generate CV Reservations';
+                  }
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#92400e] hover:bg-[#78350f] text-white font-['Jost',sans-serif] font-bold rounded-lg transition-colors"
+              >
+                🏘️ Generate CV Reservations
+              </button>
+            </div>
+            <div id="cv-result" className="text-sm mt-2 font-['Bitter',serif]"></div>
+          </div>
+
           <form onSubmit={handleSubmit}>
             {/* Manual Override Modal */}
             {showManualOverrideModal && (

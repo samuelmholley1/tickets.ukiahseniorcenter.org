@@ -21,7 +21,7 @@ const entries = [
   { name: "Jean Woodward", mealType: "To Go", payment: "Lunch Card", quantity: 1, delivery: false, notes: "", cardName: "Jean Woodward" },
   { name: "Jan Pohl", mealType: "To Go", payment: "Lunch Card", quantity: 1, delivery: false, notes: "", cardName: null }, // Need to find card
   { name: "MacDonalds", mealType: "To Go", payment: "Lunch Card", quantity: 1, delivery: false, notes: "First name unknown", cardName: null },
-  { name: "Tom DesRoches", mealType: "Delivery", payment: "Lunch Card", quantity: 2, delivery: true, notes: "", cardName: "John DesRoches" }, // Note: John not Tom
+  { name: "Tom DesRoches", mealType: "Delivery", payment: "Lunch Card", quantity: 2, delivery: true, notes: "", cardName: "Tom DesRoches" }, // Fixed: was "John" - corrected to Tom
   { name: "Katherine McElwee", mealType: "To Go", payment: "Lunch Card", quantity: 1, delivery: false, notes: "", cardName: "Katherine McElwee" }, // Already has reservations
   { name: "Val Parker", mealType: "To Go", payment: "Lunch Card", quantity: 2, delivery: false, notes: "NO DESSERT. #2: White meat or veg", cardName: "Val Parker" },
   { name: "Liz MacMillan", mealType: "To Go", payment: "Lunch Card", quantity: 1, delivery: false, notes: "Put in fridge", cardName: "Liz MacMillan" },

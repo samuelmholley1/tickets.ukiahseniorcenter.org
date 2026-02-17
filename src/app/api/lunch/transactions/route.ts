@@ -41,9 +41,13 @@ export async function GET() {
       throw new Error('Lunch tables not configured');
     }
 
-    // Fetch recent lunch cards (last 20)
+    // Only show records from 2/17/2026 onwards (fresh start after 2-week gap)
+    const CUTOFF_DATE = '2026-02-17';
+
+    // Fetch recent lunch cards (purchased on or after cutoff)
+    const cardsFilter = encodeURIComponent(`IS_AFTER({Purchase Date}, '${CUTOFF_DATE}')`);
     const cardsResponse = await fetch(
-      `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${lunchCardsTableId}?maxRecords=20&sort%5B0%5D%5Bfield%5D=Purchase%20Date&sort%5B0%5D%5Bdirection%5D=desc`,
+      `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${lunchCardsTableId}?maxRecords=50&filterByFormula=${cardsFilter}&sort%5B0%5D%5Bfield%5D=Purchase%20Date&sort%5B0%5D%5Bdirection%5D=desc`,
       {
         headers: {
           'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
@@ -51,9 +55,10 @@ export async function GET() {
       }
     );
 
-    // Fetch recent reservations (last 30)
+    // Fetch recent reservations (date on or after cutoff)
+    const reservationsFilter = encodeURIComponent(`IS_AFTER({Date}, '${CUTOFF_DATE}')`);
     const reservationsResponse = await fetch(
-      `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${reservationsTableId}?maxRecords=30&sort%5B0%5D%5Bfield%5D=Date&sort%5B0%5D%5Bdirection%5D=desc`,
+      `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${reservationsTableId}?maxRecords=50&filterByFormula=${reservationsFilter}&sort%5B0%5D%5Bfield%5D=Date&sort%5B0%5D%5Bdirection%5D=desc`,
       {
         headers: {
           'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
@@ -109,10 +114,10 @@ export async function GET() {
     // Sort by createdAt descending (most recent first)
     transactions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-    // Return top 30 transactions
+    // Return top 50 transactions
     return NextResponse.json({
       success: true,
-      transactions: transactions.slice(0, 30),
+      transactions: transactions.slice(0, 50),
     });
 
   } catch (error) {

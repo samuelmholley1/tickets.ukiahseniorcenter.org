@@ -1038,7 +1038,7 @@ export default function LunchPage() {
               meal.specialRequest.trim(),
               checkNumber ? `Check #${checkNumber}` : '',
               compCardNumber ? `Comp #${compCardNumber}` : '',
-              paymentComment ? `Override: ${paymentComment.trim()}` : '',
+              (paymentMethod === 'staffOverride' && paymentComment) ? `Override: ${paymentComment.trim()}` : '',
             ].filter(Boolean).join(' | ');
             
             // Get buffer card ID if available (for weekly buyers)
@@ -1056,7 +1056,7 @@ export default function LunchPage() {
                 lunchCardId: selectedLunchCard?.id,
                 bufferCardId: bufferCard?.id, // Pass buffer card for multi-card deduction
                 notes: mealNotes,
-                paymentComment: paymentComment.trim() || undefined,
+                paymentComment: paymentMethod === 'staffOverride' ? (paymentComment.trim() || undefined) : undefined,
                 staff: staffInitials,
                 quantity: isFirstMeal ? totalMeals : 1, // Deduct total on first call
                 deductMeal: isFirstMeal, // Only deduct from card on first meal
@@ -1122,7 +1122,7 @@ export default function LunchPage() {
             paymentMethod: paymentMethod === 'lunchCard' ? 'cash' : paymentMethod,
             checkNumber: checkNumber || undefined,
             compCardNumber: compCardNumber || undefined,
-            paymentComment: paymentComment.trim() || undefined,
+            paymentComment: paymentMethod === 'staffOverride' ? (paymentComment.trim() || undefined) : undefined,
             staff: staffInitials,
           }),
         });
@@ -2750,6 +2750,7 @@ export default function LunchPage() {
                   (paymentMethod === 'lunchCard' && !!selectedLunchCard && !isCardTypeCompatible(selectedLunchCard.cardType, mealType)) ||
                   (paymentMethod === 'compCard' && !compCardNumber) ||
                   (paymentMethod === 'check' && !checkNumber) ||
+                  (paymentMethod === 'staffOverride' && !paymentComment.trim()) ||
                   (paymentMethod === 'cashCheckSplit' && Math.abs((parseFloat(cashAmount || '0') + parseFloat(checkAmount || '0')) - getTotal()) >= 0.01) ||
                   (paymentMethod === 'cashCheckSplit' && !checkNumber)
                 }

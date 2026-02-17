@@ -173,6 +173,9 @@ export async function POST(request: NextRequest) {
     if (!staff?.trim()) {
       return NextResponse.json({ error: 'Staff initials are required' }, { status: 400 });
     }
+    if (paymentMethod === 'staffOverride' && !paymentComment?.trim()) {
+      return NextResponse.json({ error: 'Payment comment is required for Staff Override' }, { status: 400 });
+    }
     if (quantity < 1 || quantity > 20) {
       return NextResponse.json({ error: 'Quantity must be between 1 and 20' }, { status: 400 });
     }

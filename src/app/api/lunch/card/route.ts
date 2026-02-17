@@ -156,9 +156,12 @@ export async function POST(request: NextRequest) {
     if (!staff?.trim()) {
       return NextResponse.json({ error: 'Staff initials are required' }, { status: 400 });
     }
+    if (paymentMethod === 'staffOverride' && !paymentComment?.trim()) {
+      return NextResponse.json({ error: 'Payment comment is required for Staff Override' }, { status: 400 });
+    }
 
-    // Calculate price
-    const price = CARD_PRICING[cardType][memberStatus][mealType];
+    // Calculate price (Staff Override = $0 collected)
+    const price = paymentMethod === 'staffOverride' ? 0 : CARD_PRICING[cardType][memberStatus][mealType];
 
     // Build the Airtable record
     const payload = {

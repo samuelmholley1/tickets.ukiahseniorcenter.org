@@ -415,8 +415,6 @@ export async function GET(request: NextRequest) {
 
     // Separate Coyote Valley reservations — they don't get individual rows
     // Remove any CV reservations from the data (they're always hardcoded as 9 delivery meals)
-    const displayReservations = reservations.filter(r => !isCoyoteValley(r.Name));
-    // Remove CV from the main reservations array to avoid double-counting in dietary etc.
     const nonCvReservations = reservations.filter(r => !isCoyoteValley(r.Name));
     const CV_HARDCODED_COUNT = 9; // Always 9 Coyote Valley delivery meals
 
@@ -617,7 +615,7 @@ export async function GET(request: NextRequest) {
     // Table rows (CV excluded — they're in the totals but not individual rows)
     let x = margin; // row x position
     
-    displayReservations.forEach((res, index) => {
+    nonCvReservations.forEach((res, index) => {
       // 1. Prepare Content & Calculate Height
       // Name wrapping
       const nameLines = doc.splitTextToSize(res.Name, colWidths[1] - 0.1);
@@ -827,6 +825,20 @@ export async function GET(request: NextRequest) {
           doc.setFont('helvetica', 'bold');
           doc.text('Staff Override — Payments Outstanding (continued)', margin, y + 0.15);
           y += 0.3;
+          // Reprint column headers
+          doc.setFillColor(220, 200, 200);
+          doc.rect(margin, y, contentWidth, 0.25, 'F');
+          doc.setFontSize(9);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(80, 0, 0);
+          doc.text('#', margin + 0.05, y + 0.17);
+          doc.text('Name', margin + 0.35, y + 0.17);
+          doc.text('Type', margin + 2.0, y + 0.17);
+          doc.text('Status', margin + 2.7, y + 0.17);
+          doc.text('Comment', margin + 3.5, y + 0.17);
+          y += 0.3;
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(0, 0, 0);
         }
         
         // Alternating red-tinted rows
@@ -847,9 +859,10 @@ export async function GET(request: NextRequest) {
         // Row number
         doc.text(String(index + 1), margin + 0.1, y + 0.12);
         
-        // Name
+        // Name (truncate to prevent column overflow)
+        const overrideName = res.Name.length > 26 ? res.Name.substring(0, 24) + '...' : res.Name;
         doc.setFont('helvetica', 'bold');
-        doc.text(res.Name, margin + 0.35, y + 0.12);
+        doc.text(overrideName, margin + 0.35, y + 0.12);
         doc.setFont('helvetica', 'normal');
         
         // Meal Type

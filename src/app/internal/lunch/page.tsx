@@ -575,6 +575,15 @@ export default function LunchPage() {
   const [recentTransactions, setRecentTransactions] = useState<LunchTransaction[]>([]);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
 
+  // $1 Container charge
+  const [isProcessingContainer, setIsProcessingContainer] = useState(false);
+  const [containerMessage, setContainerMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Balance Cash Box
+  const [showCashBoxModal, setShowCashBoxModal] = useState(false);
+  const [cashBoxSelections, setCashBoxSelections] = useState<Record<string, boolean>>({});
+  const [changeFundAmount, setChangeFundAmount] = useState('100');
+
   // Fetch recent transactions
   const fetchRecentTransactions = useCallback(async () => {
     try {
@@ -589,6 +598,62 @@ export default function LunchPage() {
       setIsLoadingTransactions(false);
     }
   }, []);
+
+  // Handle $1 container charge
+  const handleContainerCharge = useCallback(async () => {
+    if (!staffInitials.trim()) {
+      setContainerMessage({ type: 'error', text: 'Enter staff initials first ↓' });
+      paymentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => setContainerMessage(null), 4000);
+      return;
+    }
+    if (!confirm('Process $1 cash To Go container charge?')) return;
+    setIsProcessingContainer(true);
+    setContainerMessage(null);
+    try {
+      const response = await fetch('/api/lunch/container', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ staff: staffInitials.trim() }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed');
+      setContainerMessage({ type: 'success', text: '✅ $1 container charge recorded' });
+      fetchRecentTransactions();
+      setTimeout(() => setContainerMessage(null), 4000);
+    } catch (error) {
+      setContainerMessage({ type: 'error', text: `❌ ${error instanceof Error ? error.message : 'Failed'}` });
+      setTimeout(() => setContainerMessage(null), 6000);
+    } finally {
+      setIsProcessingContainer(false);
+    }
+  }, [staffInitials, fetchRecentTransactions]);
+
+  // Open Balance Cash Box modal — pre-select today's cash/check transactions between 10am-1pm
+  const openCashBoxModal = useCallback(() => {
+    const nowPacific = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+    const todayStr = `${nowPacific.getFullYear()}-${String(nowPacific.getMonth() + 1).padStart(2, '0')}-${String(nowPacific.getDate()).padStart(2, '0')}`;
+
+    // Filter for today's cash/check/cashCheckSplit from both reservation and card transactions
+    const cashCheckMethods = ['Cash', 'Check', 'Cash & Check'];
+    const todaysCashCheck = recentTransactions.filter(tx => {
+      const txDate = new Date(tx.createdAt);
+      const txPacific = new Date(txDate.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+      const txDateStr = `${txPacific.getFullYear()}-${String(txPacific.getMonth() + 1).padStart(2, '0')}-${String(txPacific.getDate()).padStart(2, '0')}`;
+      return txDateStr === todayStr && cashCheckMethods.includes(tx.paymentMethod);
+    });
+
+    // Pre-select transactions created between 10am-1pm Pacific
+    const selections: Record<string, boolean> = {};
+    todaysCashCheck.forEach(tx => {
+      const txDate = new Date(tx.createdAt);
+      const txPacific = new Date(txDate.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+      const hour = txPacific.getHours();
+      selections[tx.id] = hour >= 10 && hour < 13; // 10am to 12:59pm
+    });
+    setCashBoxSelections(selections);
+    setShowCashBoxModal(true);
+  }, [recentTransactions]);
 
   // Load transactions on mount
   useEffect(() => {
@@ -1755,6 +1820,29 @@ export default function LunchPage() {
               </div>
             )}
 
+            {/* Quick $1 To Go Container Charge */}
+            <div className="mb-4 p-3 bg-orange-50 border-2 border-orange-300 rounded-lg flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">🥡</span>
+                <span className="font-['Jost',sans-serif] font-bold text-orange-800">Quick Container Charge</span>
+              </div>
+              <div className="flex items-center gap-3">
+                {containerMessage && (
+                  <span className={`text-sm font-['Bitter',serif] font-bold ${containerMessage.type === 'success' ? 'text-green-700' : 'text-red-700'}`}>
+                    {containerMessage.text}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={handleContainerCharge}
+                  disabled={isProcessingContainer}
+                  className="px-5 py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white font-['Jost',sans-serif] font-bold rounded-lg transition-all shadow"
+                >
+                  {isProcessingContainer ? '⏳ Processing...' : 'Process $1 cash To Go container charge'}
+                </button>
+              </div>
+            </div>
+
             {/* Customer Information */}
             <div ref={customerInfoRef} className="card" style={{ marginBottom: 'var(--space-4)' }}>
               <div className="flex items-center justify-between flex-wrap gap-2" style={{ marginBottom: 'var(--space-3)' }}>
@@ -2810,9 +2898,18 @@ export default function LunchPage() {
 
           {/* Recent Transactions Log - filtered by transaction type */}
           <div ref={recentTransactionsRef} className="card" style={{ marginTop: 'var(--space-6)' }}>
-            <h2 className="font-['Jost',sans-serif] font-bold text-[#427d78] text-xl" style={{ marginBottom: 'var(--space-3)' }}>
-              📜 Recent {transactionType === 'individual' ? 'Meal Reservations' : 'Lunch Card Purchases'}
-            </h2>
+            <div className="flex items-center justify-between flex-wrap gap-2" style={{ marginBottom: 'var(--space-3)' }}>
+              <h2 className="font-['Jost',sans-serif] font-bold text-[#427d78] text-xl">
+                📜 Recent {transactionType === 'individual' ? 'Meal Reservations' : 'Lunch Card Purchases'}
+              </h2>
+              <button
+                type="button"
+                onClick={openCashBoxModal}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-['Jost',sans-serif] font-bold rounded-lg transition-all shadow text-sm"
+              >
+                💰 Balance Cash Box
+              </button>
+            </div>
             
             {(() => {
               // Filter transactions based on current mode
@@ -3115,6 +3212,209 @@ export default function LunchPage() {
           </div>
         </div>
       )}
+
+      {/* Balance Cash Box Modal */}
+      {showCashBoxModal && (() => {
+        // Get today's date in Pacific Time
+        const nowPacific = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+        const todayStr = `${nowPacific.getFullYear()}-${String(nowPacific.getMonth() + 1).padStart(2, '0')}-${String(nowPacific.getDate()).padStart(2, '0')}`;
+
+        // Filter all of today's cash/check/cashCheckSplit transactions
+        const cashCheckMethods = ['Cash', 'Check', 'Cash & Check'];
+        const todaysCashCheck = recentTransactions.filter(tx => {
+          const txDate = new Date(tx.createdAt);
+          const txPacific = new Date(txDate.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+          const txDateStr = `${txPacific.getFullYear()}-${String(txPacific.getMonth() + 1).padStart(2, '0')}-${String(txPacific.getDate()).padStart(2, '0')}`;
+          return txDateStr === todayStr && cashCheckMethods.includes(tx.paymentMethod);
+        });
+
+        // Calculate totals from selected transactions
+        const selectedTxs = todaysCashCheck.filter(tx => cashBoxSelections[tx.id]);
+        const totalCash = selectedTxs.filter(tx => tx.paymentMethod === 'Cash').reduce((s, tx) => s + tx.amount, 0);
+        const totalCheck = selectedTxs.filter(tx => tx.paymentMethod === 'Check').reduce((s, tx) => s + tx.amount, 0);
+        const totalCashCheck = selectedTxs.filter(tx => tx.paymentMethod === 'Cash & Check').reduce((s, tx) => s + tx.amount, 0);
+        const changeFund = parseFloat(changeFundAmount) || 0;
+        // Cash in box = change fund + pure cash + cash portion of splits (full split amount included since we can't separate)
+        const expectedCashInBox = changeFund + totalCash + totalCashCheck;
+
+        return (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-['Jost',sans-serif] font-bold text-[#427d78] text-2xl">💰 Balance Cash Box</h2>
+                  <button
+                    type="button"
+                    onClick={() => setShowCashBoxModal(false)}
+                    className="text-gray-400 hover:text-gray-700 text-2xl font-bold"
+                  >✕</button>
+                </div>
+
+                <p className="text-sm text-gray-600 font-['Bitter',serif] mb-4">
+                  Today&apos;s cash &amp; check transactions ({todayStr}). Transactions from 10am–1pm are pre-selected.
+                </p>
+
+                {todaysCashCheck.length === 0 ? (
+                  <div className="text-center py-6 text-gray-500 font-['Bitter',serif]">
+                    No cash or check transactions found today.
+                  </div>
+                ) : (
+                  <>
+                    {/* Select / Deselect All */}
+                    <div className="flex gap-2 mb-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const all: Record<string, boolean> = {};
+                          todaysCashCheck.forEach(tx => { all[tx.id] = true; });
+                          setCashBoxSelections(all);
+                        }}
+                        className="px-3 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded font-['Jost',sans-serif] font-bold"
+                      >Select All</button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const none: Record<string, boolean> = {};
+                          todaysCashCheck.forEach(tx => { none[tx.id] = false; });
+                          setCashBoxSelections(none);
+                        }}
+                        className="px-3 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded font-['Jost',sans-serif] font-bold"
+                      >Deselect All</button>
+                    </div>
+
+                    {/* Transaction list with checkboxes */}
+                    <div className="border rounded-lg overflow-hidden mb-4">
+                      <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
+                        <thead>
+                          <tr className="bg-gray-100">
+                            <th className="p-2 w-8"></th>
+                            <th className="text-left p-2 font-['Jost',sans-serif]">Time</th>
+                            <th className="text-left p-2 font-['Jost',sans-serif]">Name</th>
+                            <th className="text-right p-2 font-['Jost',sans-serif]">Amount</th>
+                            <th className="text-left p-2 font-['Jost',sans-serif]">Method</th>
+                            <th className="text-center p-2 font-['Jost',sans-serif]">Staff</th>
+                          </tr>
+                        </thead>
+                        <tbody className="font-['Bitter',serif]">
+                          {todaysCashCheck.map(tx => {
+                            const txDate = new Date(tx.createdAt);
+                            const timeStr = txDate.toLocaleString('en-US', {
+                              timeZone: 'America/Los_Angeles',
+                              hour: 'numeric',
+                              minute: '2-digit',
+                              hour12: true,
+                            });
+                            const isSelected = !!cashBoxSelections[tx.id];
+                            const methodColor = tx.paymentMethod === 'Cash' ? 'text-green-700' : tx.paymentMethod === 'Check' ? 'text-blue-700' : 'text-purple-700';
+                            return (
+                              <tr
+                                key={tx.id}
+                                className={`border-b cursor-pointer ${isSelected ? 'bg-emerald-50' : 'bg-white hover:bg-gray-50'}`}
+                                onClick={() => setCashBoxSelections(prev => ({ ...prev, [tx.id]: !prev[tx.id] }))}
+                              >
+                                <td className="p-2 text-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() => setCashBoxSelections(prev => ({ ...prev, [tx.id]: !prev[tx.id] }))}
+                                    className="w-4 h-4 accent-emerald-600"
+                                    onClick={(e) => e.stopPropagation()}
+                                  />
+                                </td>
+                                <td className="p-2 text-xs text-gray-600 whitespace-nowrap">{timeStr}</td>
+                                <td className="p-2 font-semibold">{tx.name}</td>
+                                <td className="p-2 text-right font-bold">${tx.amount.toFixed(2)}</td>
+                                <td className={`p-2 text-xs font-bold ${methodColor}`}>{tx.paymentMethod}</td>
+                                <td className="p-2 text-center text-xs font-bold text-gray-600">{tx.staff}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Change Fund Input */}
+                    <div className="mb-4 flex items-center gap-3">
+                      <label className="font-['Jost',sans-serif] font-bold text-gray-700 whitespace-nowrap">Change Fund: $</label>
+                      <input
+                        type="number"
+                        value={changeFundAmount}
+                        onChange={(e) => setChangeFundAmount(e.target.value)}
+                        className="w-24 px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif] text-right"
+                        min="0"
+                        step="1"
+                      />
+                    </div>
+
+                    {/* Summary */}
+                    <div className="bg-gray-50 border-2 border-gray-200 rounded-xl p-4 space-y-2">
+                      <h3 className="font-['Jost',sans-serif] font-bold text-gray-800 text-lg mb-3">
+                        📊 Cash Box Summary ({selectedTxs.length} of {todaysCashCheck.length} transactions selected)
+                      </h3>
+
+                      <div className="grid grid-cols-2 gap-2 text-sm font-['Bitter',serif]">
+                        <div className="text-gray-600">Change Fund:</div>
+                        <div className="text-right font-bold">${changeFund.toFixed(2)}</div>
+
+                        <div className="text-green-700 font-bold">Cash Received:</div>
+                        <div className="text-right font-bold text-green-700">${totalCash.toFixed(2)}</div>
+
+                        {totalCheck > 0 && (
+                          <>
+                            <div className="text-blue-700 font-bold">Checks Received:</div>
+                            <div className="text-right font-bold text-blue-700">${totalCheck.toFixed(2)}</div>
+                          </>
+                        )}
+
+                        {totalCashCheck > 0 && (
+                          <>
+                            <div className="text-purple-700 font-bold">Cash &amp; Check (mixed):</div>
+                            <div className="text-right font-bold text-purple-700">${totalCashCheck.toFixed(2)}</div>
+                          </>
+                        )}
+
+                        <div className="col-span-2 border-t border-gray-300 pt-2 mt-1"></div>
+
+                        <div className="text-gray-800 font-bold text-base">Expected Cash in Box:</div>
+                        <div className="text-right font-bold text-xl text-emerald-700">
+                          ${expectedCashInBox.toFixed(2)}
+                        </div>
+
+                        {totalCheck > 0 && (
+                          <>
+                            <div className="text-gray-800 font-bold text-base">Checks in Box:</div>
+                            <div className="text-right font-bold text-xl text-blue-700">
+                              ${totalCheck.toFixed(2)}
+                            </div>
+                          </>
+                        )}
+
+                        {totalCashCheck > 0 && (
+                          <>
+                            <div className="col-span-2 text-xs text-purple-600 italic mt-1">
+                              * Cash &amp; Check split total (${totalCashCheck.toFixed(2)}) is included in Expected Cash above. Actual cash portion may differ — check amounts will also be in the box.
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                <div className="mt-6 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setShowCashBoxModal(false)}
+                    className="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-['Jost',sans-serif] font-bold rounded-lg"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       <SiteFooterContent />
     </>

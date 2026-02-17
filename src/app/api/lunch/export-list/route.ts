@@ -413,9 +413,13 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Filter out container charges — $1 To Go container charge records are NOT real meals
+    const isContainerCharge = (r: Reservation) => r.Name === 'Container Charge' && (r.Notes || '').includes('$1 To Go container');
+    const nonContainerReservations = reservations.filter(r => !isContainerCharge(r));
+
     // Separate Coyote Valley reservations — they don't get individual rows
     // Remove any CV reservations from the data (they're always hardcoded as 9 delivery meals)
-    const nonCvReservations = reservations.filter(r => !isCoyoteValley(r.Name));
+    const nonCvReservations = nonContainerReservations.filter(r => !isCoyoteValley(r.Name));
     const CV_HARDCODED_COUNT = 9; // Always 9 Coyote Valley delivery meals
 
     // Format date for display

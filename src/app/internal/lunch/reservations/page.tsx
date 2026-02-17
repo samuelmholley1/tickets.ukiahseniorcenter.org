@@ -51,14 +51,6 @@ export default function LunchList() {
   }, [currentDate]);
 
   const changeDate = (days: number) => {
-    const newDate = new Date(currentDate);
-    // Add timezone offset to prevent UTC conversion weirdness when date crosses boundary
-    // Actually, simply manipulating the day part of the string or using local date is safer
-    // But since input type="date" uses YYYY-MM-DD, let's stick to string maniupulation or careful Date obj
-    newDate.setDate(newDate.getDate() + (days + 1)); // Fix: UTC conversion swallows a day if not careful? 
-    // Wait, "2026-02-02" parsed as UTC is midnight. setDate(+1) -> "2026-02-03T00:00:00.000Z". split('T')[0] works.
-    // BUT new Date("2026-02-02") is treated as UTC usually.
-    // Let's use a simpler approach.
     const dateObj = new Date(currentDate + 'T12:00:00'); // Force noon to avoid DST/timezone shift issues
     dateObj.setDate(dateObj.getDate() + days);
     
@@ -109,7 +101,7 @@ export default function LunchList() {
                  className="text-2xl font-bold text-[#427d78] border-b-2 border-[#427d78] focus:outline-none text-center bg-transparent"
                />
                <p className="text-gray-500 text-sm mt-0.5">
-                 {new Date(currentDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                 {new Date(currentDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
                </p>
             </div>
             <button 

@@ -422,7 +422,8 @@ export async function GET(request: NextRequest) {
 
     let filterFormula = '';
     if (date) {
-      filterFormula = `?filterByFormula=${encodeURIComponent(`{Date}='${date}'`)}`;
+      // Use IS_SAME for date comparison - Airtable date fields need proper date comparison, not string equality
+      filterFormula = `?filterByFormula=${encodeURIComponent(`IS_SAME({Date}, '${date}', 'day')`)}`;
     }
 
     const response = await fetch(

@@ -1,6 +1,6 @@
 # Airtable API Guide - Ukiah Senior Center Tickets
 
-**Last Updated:** January 13, 2026
+**Last Updated:** February 17, 2026
 
 > ⚠️ **AI CRITICAL - PATH VERIFICATION REQUIRED:**
 > When user specifies a route (e.g., "/internal" vs "/internal/lunch"), **STOP and VERIFY the exact file path** before editing:
@@ -126,6 +126,41 @@ curl "https://api.airtable.com/v0/${AIRTABLE_BASE}/${CHRISTMAS_TABLE}?filterByFo
 curl "https://api.airtable.com/v0/${AIRTABLE_BASE}/${CHRISTMAS_TABLE}" \
   -H "Authorization: Bearer ${AIRTABLE_TOKEN}" \
   | jq '[.records[].fields["Amount Paid"] // 0] | add'
+```
+
+## ⚠️ CRITICAL: `typecast: true` for singleSelect Fields
+
+When creating or updating records that write to **singleSelect** fields, Airtable will **reject** any value that isn't already a configured option — UNLESS you include `typecast: true` in the request body.
+
+**Without typecast (FAILS if option doesn't exist):**
+```json
+{ "fields": { "Card Type": "Dine In" } }
+```
+→ Error: `INVALID_MULTIPLE_CHOICE_OPTIONS`
+
+**With typecast (auto-creates new options):**
+```json
+{ "fields": { "Card Type": "Dine In" }, "typecast": true }
+```
+→ Succeeds AND creates "Dine In" as a new option in the field
+
+For batch creates:
+```json
+{ "records": [...], "typecast": true }
+```
+
+**Rule:** Always include `typecast: true` in one-off scripts (`.mjs` files). For the Next.js API routes, the options should already exist in Airtable before deploying new code.
+
+## Reading `.env.local` in Scripts
+
+Node.js `.mjs` scripts cannot use `dotenv` reliably. Read `.env.local` directly:
+```javascript
+import fs from 'fs';
+const envContent = fs.readFileSync('.env.local', 'utf8');
+const apiKeyMatch = envContent.match(/AIRTABLE_API_KEY=([^\s\r\n]+)/);
+const baseIdMatch = envContent.match(/AIRTABLE_BASE_ID=([^\s\r\n]+)/);
+const API_KEY = apiKeyMatch?.[1];
+const BASE_ID = baseIdMatch?.[1];
 ```
 
 ## Testing Connection

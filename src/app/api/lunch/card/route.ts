@@ -48,11 +48,10 @@ interface LunchCardRequest {
 }
 
 // Map our field names to Airtable field names
-const CARD_TYPE_MAP: Record<MealCount, string> = {
-  5: '5 Meals',
-  10: '10 Meals',
-  15: '15 Meals',
-  20: '20 Meals',
+const CARD_TYPE_MAP: Record<CardMealType, string> = {
+  dineIn: 'Dine In',
+  pickup: 'Pick Up',
+  delivery: 'Delivery',
 };
 
 const MEMBER_STATUS_MAP: Record<MemberStatus, string> = {
@@ -166,7 +165,7 @@ export async function POST(request: NextRequest) {
       fields: {
         'Name': name.trim().substring(0, 100),
         'Phone': phone.trim().substring(0, 50),
-        'Card Type': CARD_TYPE_MAP[cardType],
+        'Card Type': CARD_TYPE_MAP[mealType],
         'Meal Type': MEAL_TYPE_MAP[mealType],
         'Member Status': MEMBER_STATUS_MAP[memberStatus],
         'Total Meals': cardType,
@@ -207,7 +206,7 @@ export async function POST(request: NextRequest) {
         type: 'lunch_card',
         name: name.trim(),
         phone: phone.trim(),
-        cardType: CARD_TYPE_MAP[cardType],
+        cardType: CARD_TYPE_MAP[mealType],
         mealType: MEAL_TYPE_MAP[mealType],
         memberStatus: MEMBER_STATUS_MAP[memberStatus],
         amount: price,
@@ -226,11 +225,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       recordId: result.id,
-      cardType: `${cardType} Meals`,
+      cardType: CARD_TYPE_MAP[mealType],
       mealType,
       memberStatus,
       amount: price,
-      message: `Lunch card created! ${cardType} meals for $${price}`,
+      message: `Lunch card created! ${cardType} ${CARD_TYPE_MAP[mealType]} meals for $${price}`,
     });
 
   } catch (error) {

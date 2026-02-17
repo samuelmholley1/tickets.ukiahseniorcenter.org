@@ -1,7 +1,7 @@
 # Airtable Schema Documentation
 
-**Last Updated:** February 8, 2026  
-**Verified Against Live API:** February 8, 2026  
+**Last Updated:** February 17, 2026  
+**Verified Against Live API:** February 17, 2026  
 **Base:** Ukiah Senior Center `appZ6HE5luAFV0Ot2`  
 **Total Tables:** 18
 
@@ -126,7 +126,7 @@
 | Meal Type | singleSelect | `fldzecVd4frivHpmH` | Options: Dine In, To Go, Delivery |
 | Member Status | singleSelect | `fldATOzjeLVG9GPJb` | Options: Member, Non-Member |
 | Amount | currency | `fldKYeUtZSYqVm4e7` | Precision: 2, Symbol: $ |
-| Payment Method | singleSelect | `fldWpJr7qNTNHWOjA` | Options: Cash, Check, Card (Zeffy), Lunch Card |
+| Payment Method | singleSelect | `fldWpJr7qNTNHWOjA` | Options: Cash, Check, Card (Zeffy), Lunch Card, Comp Card, Cash & Check, Tribe Prepaid |
 | Notes | multilineText | `fldx3XxP8B2ntgkaF` |  |
 | Staff | singleLineText | `fld6ZwzViB6JkH3t4` |  |
 | Status | singleSelect | `fldPnM2BmRVtBqGFt` | Options: Reserved, Picked Up, No Show |
@@ -145,12 +145,12 @@
 |-------|------|----------|-------|
 | Name | singleLineText | `fldWRjDjKxfiLCrgO` | Primary field |
 | Phone | phoneNumber | `fldHLWpmwl1WWQ2Bk` |  |
-| Card Type | singleSelect | `fldB9eGNWBFzAGOQY` | Options: 5 Meals, 10 Meals, 15 Meals, 20 Meals, 25 Meals |
+| Card Type | singleSelect | `fldB9eGNWBFzAGOQY` | Options: 5 Meals, 10 Meals, 15 Meals, 20 Meals, 25 Meals, Dine In, Pick Up, Delivery. **New cards use service type (Dine In/Pick Up/Delivery). Old quantity labels are legacy.** |
 | Member Status | singleSelect | `fldgQsh8qisnZQH9w` | Options: Member, Non-Member |
 | Total Meals | number | `fld6KG8tUilL4kK7R` | Integer |
 | Remaining Meals | number | `fldGORkkcsuks2p7r` | Integer |
 | Amount Paid | currency | `fldrUUtMVVUJ4dgvZ` | Precision: 2, Symbol: $ |
-| Payment Method | singleSelect | `fldglSQb9N5g6DcT4` | Options: Cash, Check, Card (Zeffy) |
+| Payment Method | singleSelect | `fldglSQb9N5g6DcT4` | Options: Cash, Check, Card (Zeffy), Cash & Check, Comp Card |
 | Purchase Date | date | `fldSP4yFOHvXdXlB0` | Format: local date |
 | Staff | singleLineText | `fldl4gMfEJzfIOfEV` |  |
 | Lunch Reservations | multipleRecordLinks | `fldwIDDsgWFqsqomj` | → tblF83nL5KPuPUDqx |
@@ -585,6 +585,13 @@ filterByFormula=AND({Category}='Transportation',{Fiscal Year}='2024-2025',{Month
 ### Rate Limits
 - 5 requests per second per base
 - Batch operations when possible (up to 10 records per request)
+
+### `typecast: true` — Auto-Create singleSelect Options
+When creating/updating records with new singleSelect values, include `typecast: true` in the request body. Without it, Airtable rejects values that aren't already configured as options.
+```json
+{ "records": [...], "typecast": true }
+```
+Use this in one-off scripts. For production API routes, ensure options exist in Airtable beforehand.
 
 ---
 

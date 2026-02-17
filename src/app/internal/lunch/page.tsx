@@ -1570,8 +1570,7 @@ export default function LunchPage() {
                             <div>
                               <div className="font-['Jost',sans-serif] font-bold text-gray-800">{baseName}</div>
                               <div className="font-['Bitter',serif] text-sm text-gray-600">
-                                📞 {primaryCard.phone} • {primaryCard.cardType} • {primaryCard.memberStatus}
-                                {primaryCard.mealType && <span className="ml-1 font-semibold text-blue-600">• {primaryCard.mealType}</span>}
+                                📞 {primaryCard.phone} • {primaryCard.totalMeals}-meal {primaryCard.cardType} • {primaryCard.memberStatus}
                               </div>
                               <div className="font-['Jost',sans-serif] font-bold text-lg mt-1">
                                 <span className={totalMeals > 0 ? 'text-green-600' : 'text-red-600'}>
@@ -2529,8 +2528,7 @@ export default function LunchPage() {
                         >
                           <div className="font-['Jost',sans-serif] font-bold">{card.name}</div>
                           <div className="font-['Bitter',serif] text-sm text-gray-600">
-                            {card.phone} • {card.cardType}
-                            {card.mealType && <span className="text-blue-600"> • {card.mealType}</span>}
+                            {card.phone} • {card.totalMeals}-meal {card.cardType}
                             {' '} • <span className="text-green-600 font-bold">{card.remainingMeals} meals left</span>
                           </div>
                         </button>
@@ -2809,7 +2807,7 @@ export default function LunchPage() {
                       
                       // Details column content
                       const details = isCard
-                        ? `${tx.cardType} • ${tx.mealType} • ${tx.memberStatus}`
+                        ? `${tx.cardType} • ${tx.memberStatus}`
                         : `${tx.date || ''}${tx.isFrozenFriday ? ' 🧊' : ''} • ${tx.mealType} • ${tx.memberStatus}`;
                       
                       return (

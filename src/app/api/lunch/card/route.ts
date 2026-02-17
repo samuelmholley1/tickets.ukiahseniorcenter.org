@@ -164,7 +164,6 @@ export async function POST(request: NextRequest) {
         'Name': name.trim().substring(0, 100),
         'Phone': phone.trim().substring(0, 50),
         'Card Type': CARD_TYPE_MAP[mealType],
-        'Meal Type': MEAL_TYPE_MAP[mealType],
         'Member Status': MEMBER_STATUS_MAP[memberStatus],
         'Total Meals': cardType,
         'Remaining Meals': cardType, // Start with full balance
@@ -415,7 +414,6 @@ export async function GET(request: NextRequest) {
         name: record.fields['Name'] as string,
         phone: record.fields['Phone'] as string,
         cardType: record.fields['Card Type'] as string,
-        mealType: record.fields['Meal Type'] as string,
         totalMeals: record.fields['Total Meals'] as number,
         remainingMeals: record.fields['Remaining Meals'] as number,
         memberStatus: record.fields['Member Status'] as string,

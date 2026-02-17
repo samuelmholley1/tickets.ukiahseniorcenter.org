@@ -202,6 +202,27 @@ export async function POST(request: NextRequest) {
 
       const cardData = await cardResponse.json();
       const primaryMeals = cardData.fields['Remaining Meals'] || 0;
+
+      // Validate Card Type alignment with meal type
+      // If Card Type is empty or a legacy quantity label (e.g. "5 Meals"), allow any meal type
+      // If Card Type is a service type (Dine In / Pick Up / Delivery), it must match
+      const cardTypeValue = (cardData.fields['Card Type'] as string) || '';
+      const isServiceType = ['Dine In', 'Pick Up', 'Delivery'].includes(cardTypeValue);
+      if (isServiceType) {
+        // Map card service type to the reservation meal type codes
+        const cardToMealMap: Record<string, string> = {
+          'Dine In': 'dineIn',
+          'Pick Up': 'toGo',
+          'Delivery': 'delivery',
+        };
+        const expectedMealType = cardToMealMap[cardTypeValue];
+        if (expectedMealType && expectedMealType !== mealType) {
+          const mealLabel = MEAL_TYPE_MAP[mealType];
+          return NextResponse.json({
+            error: `This lunch card is designated for ${cardTypeValue} only. Cannot use for ${mealLabel} meals.`
+          }, { status: 400 });
+        }
+      }
       
       // If buffer card exists, fetch its balance too
       let bufferMeals = 0;

@@ -101,6 +101,26 @@ type MembershipType = 'member' | 'nonMember';
 type TransactionType = 'individual' | 'lunchCard';
 type PaymentMethodType = 'cash' | 'check' | 'cashCheckSplit' | 'card' | 'lunchCard' | 'compCard';
 
+// Check if a lunch card's Card Type is compatible with the selected meal type
+// Empty or legacy quantity labels ("5 Meals" etc) = any meal type allowed
+// Service-type labels must match: "Dine In"→dineIn, "Pick Up"→toGo, "Delivery"→delivery
+function isCardTypeCompatible(cardType: string | undefined, mealType: MealType): boolean {
+  if (!cardType) return true; // empty = any
+  const serviceTypeMap: Record<string, MealType> = {
+    'Dine In': 'dineIn',
+    'Pick Up': 'pickup',
+    'Delivery': 'delivery',
+  };
+  const expectedMealType = serviceTypeMap[cardType];
+  if (!expectedMealType) return true; // legacy label like "5 Meals" = any
+  return expectedMealType === mealType;
+}
+
+function getCardTypeMismatchMessage(cardType: string, mealType: MealType): string {
+  const mealLabels: Record<MealType, string> = { dineIn: 'Dine In', pickup: 'Pick Up', delivery: 'Delivery' };
+  return `This card is designated for ${cardType} only. Cannot use for ${mealLabels[mealType]}.`;
+}
+
 /* ========== RESERVATION DEADLINE LOGIC ==========
  * All meals must be reserved by 2pm the BUSINESS DAY before
  * Closed on Fridays
@@ -2542,15 +2562,16 @@ export default function LunchPage() {
                       const totalAvailable = selectedCardInfo?.totalMeals ?? selectedLunchCard.remainingMeals;
                       const hasEnough = totalAvailable >= getTotalMeals();
                       const hasBuffer = selectedCardInfo?.hasBuffer ?? false;
+                      const cardOk = hasEnough && isCardTypeCompatible(selectedLunchCard.cardType, mealType);
                       
                       return (
                         <div className={`mt-3 border-2 rounded-lg p-3 ${
-                          hasEnough ? 'bg-green-100 border-green-400' : 'bg-red-100 border-red-400'
+                          cardOk ? 'bg-green-100 border-green-400' : 'bg-red-100 border-red-400'
                         }`}>
-                          <div className={`font-['Jost',sans-serif] font-bold ${hasEnough ? 'text-green-800' : 'text-red-800'}`}>
+                          <div className={`font-['Jost',sans-serif] font-bold ${cardOk ? 'text-green-800' : 'text-red-800'}`}>
                             Selected Card:
                           </div>
-                          <div className={`font-['Bitter',serif] ${hasEnough ? 'text-green-700' : 'text-red-700'}`}>
+                          <div className={`font-['Bitter',serif] ${cardOk ? 'text-green-700' : 'text-red-700'}`}>
                             {selectedCardInfo?.baseName ?? selectedLunchCard.name} - {totalAvailable} meals remaining
                             {hasBuffer && (
                               <span className="text-amber-600 ml-1">
@@ -2581,6 +2602,11 @@ export default function LunchPage() {
                             <div className="mt-2 p-2 bg-red-200 rounded text-red-800 font-['Jost',sans-serif] font-bold text-sm">
                               ⚠️ Not enough meals! Need {getTotalMeals()}, has {totalAvailable}.
                               Reduce dates or quantity.
+                            </div>
+                          )}
+                          {hasEnough && !isCardTypeCompatible(selectedLunchCard.cardType, mealType) && (
+                            <div className="mt-2 p-2 bg-red-200 rounded text-red-800 font-['Jost',sans-serif] font-bold text-sm">
+                              ⚠️ {getCardTypeMismatchMessage(selectedLunchCard.cardType, mealType)}
                             </div>
                           )}
                           <button
@@ -2734,6 +2760,7 @@ export default function LunchPage() {
                   (transactionType === 'lunchCard' && !customer.phone) ||
                   (paymentMethod === 'lunchCard' && !selectedLunchCard) ||
                   (paymentMethod === 'lunchCard' && !!selectedLunchCard && selectedLunchCard.remainingMeals < getTotalMeals()) ||
+                  (paymentMethod === 'lunchCard' && !!selectedLunchCard && !isCardTypeCompatible(selectedLunchCard.cardType, mealType)) ||
                   (paymentMethod === 'compCard' && !compCardNumber) ||
                   (paymentMethod === 'check' && !checkNumber) ||
                   (paymentMethod === 'cashCheckSplit' && Math.abs((parseFloat(cashAmount || '0') + parseFloat(checkAmount || '0')) - getTotal()) >= 0.01) ||

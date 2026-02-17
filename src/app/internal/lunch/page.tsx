@@ -696,7 +696,7 @@ export default function LunchPage() {
 
       setIsSearchingContacts(true);
       try {
-        const response = await fetch(`/api/contacts/search?q=${encodeURIComponent(contactSearch)}`);
+        const response = await fetch(`/api/contacts/search?search=${encodeURIComponent(contactSearch)}`);
         if (response.ok) {
           const data = await response.json();
           setAvailableContacts(data.contacts || []);
@@ -768,8 +768,14 @@ export default function LunchPage() {
     }
     
     try {
-      const response = await fetch(`/api/lunch/card?search=${encodeURIComponent(fullName)}`);
-      const data = await response.json();
+      // Search lunch cards and contacts in parallel
+      const [cardResponse, contactResponse] = await Promise.all([
+        fetch(`/api/lunch/card?search=${encodeURIComponent(fullName)}`),
+        fetch(`/api/contacts/search?search=${encodeURIComponent(fullName)}`),
+      ]);
+
+      // Handle lunch card results
+      const data = await cardResponse.json();
       if (data.success && data.cards && data.cards.length > 0) {
         // Get all cards that match this person (including buffer cards)
         const getBaseName = (name: string) => name.replace(/\s*\[BUFFER\]\s*/gi, '').trim().toLowerCase();
@@ -789,6 +795,24 @@ export default function LunchPage() {
       } else {
         setAutoDetectedCard(null);
         setAutoDetectedCardInfo(null);
+      }
+
+      // Handle contact results - autofill email/phone if found
+      if (contactResponse.ok) {
+        const contactData = await contactResponse.json();
+        const contacts = contactData.contacts || [];
+        // Find exact or best match
+        const exactMatch = contacts.find((c: { firstName: string; lastName: string }) => 
+          `${c.firstName} ${c.lastName}`.toLowerCase() === fullName.toLowerCase()
+        );
+        const contact = exactMatch || contacts[0];
+        if (contact) {
+          setCustomer(prev => ({
+            ...prev,
+            email: contact.email || prev.email,
+            phone: contact.phone || prev.phone,
+          }));
+        }
       }
     } catch {
       setAutoDetectedCard(null);
@@ -893,6 +917,10 @@ export default function LunchPage() {
     setSubmitResult(null);
     setShowConfirmation(false);
     setTransactionLog([]);
+    // Scroll to lunch card lookup section
+    setTimeout(() => {
+      lunchCardLookupRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
   
   // Add un-entered card to database

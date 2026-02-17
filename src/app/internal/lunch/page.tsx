@@ -99,7 +99,7 @@ type MealCount = 5 | 10 | 15 | 20;
 type MealType = 'dineIn' | 'pickup' | 'delivery';
 type MembershipType = 'member' | 'nonMember';
 type TransactionType = 'individual' | 'lunchCard';
-type PaymentMethodType = 'cash' | 'check' | 'cashCheckSplit' | 'card' | 'lunchCard' | 'compCard';
+type PaymentMethodType = 'cash' | 'check' | 'cashCheckSplit' | 'card' | 'lunchCard' | 'compCard' | 'staffOverride';
 
 // Check if a lunch card's Card Type is compatible with the selected meal type
 // Empty or legacy quantity labels ("5 Meals" etc) = any meal type allowed
@@ -288,6 +288,7 @@ export default function LunchPage() {
   const [compCardNumber, setCompCardNumber] = useState('');
   const [cashAmount, setCashAmount] = useState('');
   const [checkAmount, setCheckAmount] = useState('');
+  const [paymentComment, setPaymentComment] = useState('');
   const [staffInitials, setStaffInitials] = useState('');
   
   // Helper to get selected dates from dateMeals
@@ -860,7 +861,7 @@ export default function LunchPage() {
   // Get total price
   const getTotal = () => {
     // Lunch card and comp card are free (already prepaid or complimentary)
-    if (paymentMethod === 'lunchCard' || paymentMethod === 'compCard') return 0;
+    if (paymentMethod === 'lunchCard' || paymentMethod === 'compCard' || paymentMethod === 'staffOverride') return 0;
     if (transactionType === 'individual') {
       // Price per meal × total meals
       return calculateSingleMealPrice() * getTotalMealsFromDateMeals();
@@ -908,6 +909,7 @@ export default function LunchPage() {
     setCompCardNumber('');
     setCashAmount('');
     setCheckAmount('');
+    setPaymentComment('');
     setSelectedLunchCard(null);
     setSelectedCardInfo(null); // Also clear aggregated card info
     setLunchCardSearch('');
@@ -984,6 +986,11 @@ export default function LunchPage() {
     
     // Show confirmation before submitting
     if (!showConfirmation) {
+      // Validate staffOverride requires comment
+      if (paymentMethod === 'staffOverride' && !paymentComment.trim()) {
+        alert('Payment comment is required for Staff Override');
+        return;
+      }
       setShowConfirmation(true);
       return;
     }
@@ -1031,6 +1038,7 @@ export default function LunchPage() {
               meal.specialRequest.trim(),
               checkNumber ? `Check #${checkNumber}` : '',
               compCardNumber ? `Comp #${compCardNumber}` : '',
+              paymentComment ? `Override: ${paymentComment.trim()}` : '',
             ].filter(Boolean).join(' | ');
             
             // Get buffer card ID if available (for weekly buyers)
@@ -1048,6 +1056,7 @@ export default function LunchPage() {
                 lunchCardId: selectedLunchCard?.id,
                 bufferCardId: bufferCard?.id, // Pass buffer card for multi-card deduction
                 notes: mealNotes,
+                paymentComment: paymentComment.trim() || undefined,
                 staff: staffInitials,
                 quantity: isFirstMeal ? totalMeals : 1, // Deduct total on first call
                 deductMeal: isFirstMeal, // Only deduct from card on first meal
@@ -1113,6 +1122,7 @@ export default function LunchPage() {
             paymentMethod: paymentMethod === 'lunchCard' ? 'cash' : paymentMethod,
             checkNumber: checkNumber || undefined,
             compCardNumber: compCardNumber || undefined,
+            paymentComment: paymentComment.trim() || undefined,
             staff: staffInitials,
           }),
         });
@@ -2296,6 +2306,15 @@ export default function LunchPage() {
                       🎫 Use Lunch Card
                     </button>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('staffOverride')}
+                    className={`px-6 py-3 rounded-lg font-['Jost',sans-serif] font-bold transition-all ${
+                      paymentMethod === 'staffOverride' ? 'bg-red-600 text-white' : 'bg-red-100 text-red-700 hover:bg-red-200'
+                    }`}
+                  >
+                    🔓 Staff Override
+                  </button>
                 </div>
               </div>
 
@@ -2343,6 +2362,24 @@ export default function LunchPage() {
                   <p className="text-sm text-pink-600 mt-1 font-['Bitter',serif]">
                     💡 Enter the complimentary meal card number for tracking.
                   </p>
+                </div>
+              )}
+
+              {paymentMethod === 'staffOverride' && (
+                <div style={{ marginBottom: 'var(--space-3)' }}>
+                  <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4 mb-3">
+                    <p className="font-['Jost',sans-serif] font-bold text-red-800 mb-1">⚠️ Staff Override — No Payment Collected</p>
+                    <p className="text-sm text-red-700 font-['Bitter',serif]">This transaction will be recorded at $0. A payment comment is required for audit purposes.</p>
+                  </div>
+                  <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">Payment Comment *</label>
+                  <textarea
+                    required
+                    value={paymentComment}
+                    onChange={(e) => setPaymentComment(e.target.value)}
+                    placeholder="Explain reason for override (e.g., manager approved, billing error, etc.)..."
+                    className="w-full px-4 py-3 border-2 border-red-300 rounded-lg focus:border-red-500 focus:outline-none font-['Bitter',serif]"
+                    rows={3}
+                  />
                 </div>
               )}
 
@@ -2649,11 +2686,15 @@ export default function LunchPage() {
                   <p><strong>Payment:</strong> {
                     paymentMethod === 'lunchCard' ? `Lunch Card (${selectedLunchCard?.name})` 
                     : paymentMethod === 'compCard' ? `Comp Card #${compCardNumber}` 
+                    : paymentMethod === 'staffOverride' ? `Staff Override`
                     : paymentMethod === 'cashCheckSplit' ? `Cash $${cashAmount} + Check #${checkNumber} $${checkAmount}`
                     : paymentMethod === 'check' ? `Check #${checkNumber}`
                     : paymentMethod === 'card' ? 'Card (Zeffy)'
                     : 'Cash'
                   }</p>
+                  {paymentMethod === 'staffOverride' && paymentComment && (
+                    <p className="text-red-700"><strong>Comment:</strong> {paymentComment}</p>
+                  )}
                   <p><strong>Total:</strong> ${getTotal().toFixed(2)}</p>
                   {paymentMethod === 'lunchCard' && selectedLunchCard && (
                     selectedLunchCard.remainingMeals >= getTotalMeals() ? (

@@ -32,7 +32,7 @@ const CARD_PRICING = {
 type MealCount = 5 | 10 | 15 | 20;
 type CardMealType = 'dineIn' | 'pickup' | 'delivery';
 type MemberStatus = 'member' | 'nonMember';
-type PaymentMethod = 'cash' | 'check' | 'cashCheckSplit' | 'card';
+type PaymentMethod = 'cash' | 'check' | 'cashCheckSplit' | 'card' | 'staffOverride';
 
 interface LunchCardRequest {
   name: string;
@@ -42,6 +42,7 @@ interface LunchCardRequest {
   memberStatus: MemberStatus;
   paymentMethod: PaymentMethod;
   checkNumber?: string;
+  paymentComment?: string;
   staff: string;
   contactId?: string;
 }
@@ -69,6 +70,7 @@ const PAYMENT_METHOD_MAP: Record<PaymentMethod, string> = {
   check: 'Check',
   cashCheckSplit: 'Cash & Check',
   card: 'Card (Zeffy)',
+  staffOverride: 'Staff Override',
 };
 
 export async function POST(request: NextRequest) {
@@ -85,7 +87,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body: LunchCardRequest = await request.json();
-    const { name, phone, cardType, mealType, memberStatus, paymentMethod, checkNumber, staff, contactId: providedContactId } = body;
+    const { name, phone, cardType, mealType, memberStatus, paymentMethod, checkNumber, paymentComment, staff, contactId: providedContactId } = body;
     let contactId = providedContactId;
 
     // Contact Sync Logic
@@ -145,7 +147,7 @@ export async function POST(request: NextRequest) {
     if (!['member', 'nonMember'].includes(memberStatus)) {
       return NextResponse.json({ error: 'Invalid member status' }, { status: 400 });
     }
-    if (!['cash', 'check', 'cashCheckSplit', 'card'].includes(paymentMethod)) {
+    if (!['cash', 'check', 'cashCheckSplit', 'card', 'staffOverride'].includes(paymentMethod)) {
       return NextResponse.json({ error: 'Invalid payment method' }, { status: 400 });
     }
     if ((paymentMethod === 'check' || paymentMethod === 'cashCheckSplit') && !checkNumber?.trim()) {
@@ -171,6 +173,7 @@ export async function POST(request: NextRequest) {
         'Payment Method': PAYMENT_METHOD_MAP[paymentMethod],
         'Purchase Date': new Date().toISOString().split('T')[0], // Just the date
         'Staff': staff.trim().substring(0, 50),
+        ...(paymentComment ? { 'Payment Comment': paymentComment.trim().substring(0, 1000) } : {}),
         ...(contactId ? { 'Contact': [contactId] } : {}),
       },
     };
@@ -185,7 +188,7 @@ export async function POST(request: NextRequest) {
           'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ ...payload, typecast: true }),
       }
     );
 

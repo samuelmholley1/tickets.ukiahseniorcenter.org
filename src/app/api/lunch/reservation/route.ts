@@ -17,7 +17,7 @@ const PRICING = {
 
 type MealType = 'dineIn' | 'toGo' | 'delivery';
 type MemberStatus = 'member' | 'nonMember';
-type PaymentMethod = 'cash' | 'check' | 'cashCheckSplit' | 'card' | 'lunchCard' | 'compCard';
+type PaymentMethod = 'cash' | 'check' | 'cashCheckSplit' | 'card' | 'lunchCard' | 'compCard' | 'staffOverride';
 
 interface MealDateInfo {
   date: string;
@@ -34,6 +34,7 @@ interface ReservationRequest {
   lunchCardId?: string; // Airtable record ID if paying with lunch card (primary card)
   bufferCardId?: string; // Optional buffer card ID for weekly buyers
   notes?: string;
+  paymentComment?: string;
   staff: string;
   quantity?: number; // defaults to 1
   deductMeal?: boolean; // Only deduct from lunch card if true (for first meal in batch)
@@ -67,6 +68,7 @@ const PAYMENT_METHOD_MAP: Record<PaymentMethod, string> = {
   card: 'Card (Zeffy)',
   lunchCard: 'Lunch Card',
   compCard: 'Comp Card',
+  staffOverride: 'Staff Override',
 };
 
 export async function POST(request: NextRequest) {
@@ -83,7 +85,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body: ReservationRequest = await request.json();
-    const { name, date, mealType, memberStatus, paymentMethod, lunchCardId, notes, staff, quantity = 1, isFrozenFriday = false } = body;
+    const { name, date, mealType, memberStatus, paymentMethod, lunchCardId, notes, paymentComment, staff, quantity = 1, isFrozenFriday = false } = body;
 
     // Contact Sync Logic
     const CONTACTS_TABLE_ID = process.env.AIRTABLE_CONTACTS_TABLE_ID || 'tbl3PQZzXGpT991dH';
@@ -165,7 +167,7 @@ export async function POST(request: NextRequest) {
     if (!['member', 'nonMember'].includes(memberStatus)) {
       return NextResponse.json({ error: 'Invalid member status' }, { status: 400 });
     }
-    if (!['cash', 'check', 'cashCheckSplit', 'card', 'lunchCard', 'compCard'].includes(paymentMethod)) {
+    if (!['cash', 'check', 'cashCheckSplit', 'card', 'lunchCard', 'compCard', 'staffOverride'].includes(paymentMethod)) {
       return NextResponse.json({ error: 'Invalid payment method' }, { status: 400 });
     }
     if (!staff?.trim()) {
@@ -301,7 +303,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate price (0 if paying with lunch card or comp card)
-    const pricePerMeal = (paymentMethod === 'lunchCard' || paymentMethod === 'compCard') ? 0 : PRICING[mealType][memberStatus];
+    const pricePerMeal = (paymentMethod === 'lunchCard' || paymentMethod === 'compCard' || paymentMethod === 'staffOverride') ? 0 : PRICING[mealType][memberStatus];
     // For multi-meal transactions, only the first record should show the total amount
     // Subsequent records show $0 to avoid double-counting in reports
     const totalAmount = shouldDeduct ? (pricePerMeal * quantity) : 0;
@@ -319,6 +321,7 @@ export async function POST(request: NextRequest) {
         'Staff': staff.trim().substring(0, 50),
         'Status': 'Reserved',
         'Frozen Friday': isFrozenFriday,
+        ...(paymentComment ? { 'Payment Comment': paymentComment.trim().substring(0, 1000) } : {}),
         ...(contactId ? { 'Contact': [contactId] } : {}),
       },
     };
@@ -338,7 +341,7 @@ export async function POST(request: NextRequest) {
           'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ ...payload, typecast: true }),
       }
     );
 

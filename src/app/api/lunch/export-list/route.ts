@@ -24,6 +24,16 @@ interface Reservation {
   ContactId?: string; // Linked Contact record ID
 }
 
+// Coyote Valley customers — included in totals but not shown as individual rows
+const COYOTE_VALLEY_NAMES = new Set([
+  'iris martinez', 'margaret olea', 'victor olea', 'michael brown',
+  'guadalupe munoz', 'ronald hoel sr.', 'sherry knight', 'trudy ramos', 'john feliz sr.',
+]);
+
+function isCoyoteValley(name: string): boolean {
+  return COYOTE_VALLEY_NAMES.has(name.toLowerCase().trim());
+}
+
 // Dietary/special request keywords to detect
 const DIETARY_KEYWORDS = {
   vegetarian: ['vegetarian', 'veggie', 'veg', 'vegetable'],
@@ -401,6 +411,11 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Separate Coyote Valley reservations (counted in totals, not shown as rows)
+    const cvReservations = reservations.filter(r => isCoyoteValley(r.Name));
+    const displayReservations = reservations.filter(r => !isCoyoteValley(r.Name));
+    const cvCount = cvReservations.length;
+
     // Format date for display
     const dateObj = new Date(date + 'T12:00:00');
     const formattedDate = dateObj.toLocaleDateString('en-US', { 
@@ -410,7 +425,7 @@ export async function GET(request: NextRequest) {
       day: 'numeric' 
     });
 
-    // Calculate meal type counts
+    // Calculate meal type counts from ALL reservations (including CV)
     const dineInCount = reservations.filter(r => r['Meal Type'] === 'Dine In').length;
     const toGoCount = reservations.filter(r => r['Meal Type'] === 'To Go').length;
     const deliveryCount = reservations.filter(r => r['Meal Type'] === 'Delivery').length;
@@ -564,8 +579,18 @@ export async function GET(request: NextRequest) {
     // Delivery pill (blue) - no need to capture return value
     drawPill(`Delivery: ${deliveryCount}`, pillX, y, [52, 152, 219]);
     
+    // CV note line
+    if (cvCount > 0) {
+      y += 0.28;
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bolditalic');
+      doc.setTextColor(120, 80, 0);
+      doc.text(`Coyote Valley #1-9 included in totals (${cvCount} meals). Tribe Prepaid — not listed individually.`, margin, y);
+      doc.setFont('helvetica', 'normal');
+    }
+
     // Stats row 2 - Dietary totals
-    y += 0.35;
+    y += 0.28;
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(80, 80, 80);
@@ -586,10 +611,10 @@ export async function GET(request: NextRequest) {
     // Table header (first page)
     drawTableHeader();
 
-    // Table rows
+    // Table rows (CV excluded — they're in the totals but not individual rows)
     let x = margin; // row x position
     
-    reservations.forEach((res, index) => {
+    displayReservations.forEach((res, index) => {
       // 1. Prepare Content & Calculate Height
       // Name wrapping
       const nameLines = doc.splitTextToSize(res.Name, colWidths[1] - 0.1);
@@ -659,7 +684,8 @@ export async function GET(request: NextRequest) {
       // 6. Paid
       const payment = res['Payment Method'] || '';
       const isPaid = payment === 'Cash' || payment === 'Check' || payment === 'Card (Zeffy)' || 
-                     payment === 'Lunch Card' || payment === 'Prepaid Weekly' || payment === 'Comp Card';
+                     payment === 'Lunch Card' || payment === 'Prepaid Weekly' || payment === 'Comp Card' ||
+                     payment === 'Tribe Prepaid';
       doc.setFontSize(10);
       if (isPaid) {
         doc.setTextColor(0, 128, 0);
@@ -774,22 +800,34 @@ export async function GET(request: NextRequest) {
       doc.setTextColor(100, 100, 100);
       doc.text(`${fridayFormattedDate} (Pick up Thursday)`, margin + 0.75, y + 0.45);
       
-      // Stats
+      // Stats (totals include CV)
       y += 0.75;
       const fridayDineIn = fridayFrozenReservations.filter(r => r['Meal Type'] === 'Dine In').length;
       const fridayToGo = fridayFrozenReservations.filter(r => r['Meal Type'] === 'To Go').length;
       const fridayDelivery = fridayFrozenReservations.filter(r => r['Meal Type'] === 'Delivery').length;
+      const fridayCvCount = fridayFrozenReservations.filter(r => isCoyoteValley(r.Name)).length;
       
       let pillX = margin;
       pillX += drawPill(`Total: ${fridayFrozenReservations.length}`, pillX, y, [52, 152, 219]);
       pillX += drawPill(`Dine In/Pickup: ${fridayDineIn + fridayToGo}`, pillX, y, [66, 125, 120]);
       drawPill(`Delivery: ${fridayDelivery}`, pillX, y, [230, 126, 34]);
       
+      // CV note for Friday
+      if (fridayCvCount > 0) {
+        y += 0.28;
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bolditalic');
+        doc.setTextColor(120, 80, 0);
+        doc.text(`Coyote Valley #1-9 included in totals (${fridayCvCount} meals). Tribe Prepaid \u2014 not listed individually.`, margin, y);
+        doc.setFont('helvetica', 'normal');
+      }
+
       y += 0.45;
       drawTableHeader();
       
-      // Friday frozen rows
-      fridayFrozenReservations.forEach((res, index) => {
+      // Friday frozen rows (CV excluded from display)
+      const fridayDisplayReservations = fridayFrozenReservations.filter(r => !isCoyoteValley(r.Name));
+      fridayDisplayReservations.forEach((res, index) => {
         checkNewPage(0.28);
         
         // Alternating row colors - blue tint for frozen

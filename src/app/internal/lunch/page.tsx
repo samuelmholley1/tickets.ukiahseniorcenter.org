@@ -1091,7 +1091,7 @@ export default function LunchPage() {
 
         const result = await response.json();
         
-        log.push(`Creating ${cardMealCount}-meal lunch card for ${customer.firstName} ${customer.lastName}`);
+        log.push(`Creating ${cardMealCount}-meal ${cardMealType === 'dineIn' ? 'Dine In' : cardMealType === 'pickup' ? 'Pick Up' : 'Delivery'} lunch card for ${customer.firstName} ${customer.lastName}`);
         setTransactionLog(log);
         
         if (response.ok && result.success) {
@@ -2564,7 +2564,7 @@ export default function LunchPage() {
                 <div>
                   <div className="text-white/80 font-['Bitter',serif] text-sm" style={{ marginBottom: '4px' }}>Type</div>
                   <div className="text-white font-['Jost',sans-serif] font-bold text-lg">
-                    {transactionType === 'individual' ? 'Individual Meal' : `${cardMealCount}-Meal Lunch Card`}
+                    {transactionType === 'individual' ? 'Individual Meal' : `${cardMealCount}-Meal Lunch Card (${cardMealType === 'dineIn' ? 'Dine In' : cardMealType === 'pickup' ? 'Pick Up' : 'Delivery'})`}
                   </div>
                 </div>
                 <div>
@@ -2609,7 +2609,9 @@ export default function LunchPage() {
                 </h2>
                 <div className="font-['Bitter',serif] text-amber-900 space-y-2">
                   <p><strong>Customer:</strong> {customer.firstName} {customer.lastName}</p>
-                  <p><strong>Type:</strong> {transactionType === 'individual' ? `${getTotalMeals()} Individual Meal(s)` : `${cardMealCount}-Meal Lunch Card`}</p>
+                  <p><strong>Type:</strong> {transactionType === 'individual' ? `${getTotalMeals()} Individual Meal(s)` : `${cardMealType === 'dineIn' ? 'Dine In' : cardMealType === 'pickup' ? 'Pick Up' : 'Delivery'}`}</p>
+                  <p><strong>Status:</strong> {transactionType === 'lunchCard' ? (cardMemberType === 'member' ? 'Member' : 'Non-Member') : (isMember === 'member' ? 'Member' : 'Non-Member')}</p>
+                  <p><strong>Total Meals:</strong> {transactionType === 'lunchCard' ? cardMealCount : getTotalMeals()}</p>
                   {transactionType === 'individual' && (
                     <>
                       <p><strong>Dates:</strong> {selectedDates.join(', ')}</p>

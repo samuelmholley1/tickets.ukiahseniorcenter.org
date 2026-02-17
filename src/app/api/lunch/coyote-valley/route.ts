@@ -219,7 +219,7 @@ async function batchCreateRecords(records: Array<{ fields: Record<string, unknow
           'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY!}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ records: batch }),
+        body: JSON.stringify({ records: batch, typecast: true }),
       }
     );
 

@@ -264,7 +264,7 @@ export default function LunchPage() {
     firstName: '',
     lastName: '',
     email: 'cashier@seniorctr.org',
-    phone: '',
+    phone: '111-111-1111',
   });
 
   // Transaction type
@@ -542,7 +542,7 @@ export default function LunchPage() {
   const [showAddCardModal, setShowAddCardModal] = useState(false);
   const [newCardForm, setNewCardForm] = useState<NewCardForm>({
     name: '',
-    phone: '',
+    phone: '111-111-1111',
     cardType: 5,
     mealType: 'dineIn',
     memberStatus: 'member',
@@ -877,7 +877,7 @@ export default function LunchPage() {
 
   // Reset form after successful submission
   const resetForm = () => {
-    setCustomer({ firstName: '', lastName: '', email: 'cashier@seniorctr.org', phone: '' });
+    setCustomer({ firstName: '', lastName: '', email: 'cashier@seniorctr.org', phone: '111-111-1111' });
     const initialDate = getNextAvailableLunch();
     setDateMeals({ [initialDate]: [{ name: '', specialRequest: '' }] });
     setCheckNumber('');
@@ -938,7 +938,7 @@ export default function LunchPage() {
           });
         }
         setShowAddCardModal(false);
-        setNewCardForm({ name: '', phone: '', cardType: 5, mealType: 'dineIn', memberStatus: 'member' });
+        setNewCardForm({ name: '', phone: '111-111-1111', cardType: 5, mealType: 'dineIn', memberStatus: 'member' });
         alert(`Card added successfully! ${newCardForm.cardType} meals available.`);
       } else {
         alert(result.error || 'Failed to add card');
@@ -1714,7 +1714,7 @@ export default function LunchPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    setCustomer({ firstName: '', lastName: '', email: 'cashier@seniorctr.org', phone: '' });
+                    setCustomer({ firstName: '', lastName: '', email: 'cashier@seniorctr.org', phone: '111-111-1111' });
                     setAutoDetectedCard(null);
                     setAutoDetectedCardInfo(null);
                   }}

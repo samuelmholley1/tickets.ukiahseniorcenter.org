@@ -413,10 +413,12 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Separate Coyote Valley reservations (counted in totals, not shown as rows)
-    const cvReservations = reservations.filter(r => isCoyoteValley(r.Name));
+    // Separate Coyote Valley reservations — they don't get individual rows
+    // Remove any CV reservations from the data (they're always hardcoded as 9 delivery meals)
     const displayReservations = reservations.filter(r => !isCoyoteValley(r.Name));
-    const cvCount = cvReservations.length;
+    // Remove CV from the main reservations array to avoid double-counting in dietary etc.
+    const nonCvReservations = reservations.filter(r => !isCoyoteValley(r.Name));
+    const CV_HARDCODED_COUNT = 9; // Always 9 Coyote Valley delivery meals
 
     // Format date for display
     const dateObj = new Date(date + 'T12:00:00');
@@ -427,10 +429,11 @@ export async function GET(request: NextRequest) {
       day: 'numeric' 
     });
 
-    // Calculate meal type counts from ALL reservations (including CV)
-    const dineInCount = reservations.filter(r => r['Meal Type'] === 'Dine In').length;
-    const toGoCount = reservations.filter(r => r['Meal Type'] === 'To Go').length;
-    const deliveryCount = reservations.filter(r => r['Meal Type'] === 'Delivery').length;
+    // Calculate meal type counts — non-CV reservations + hardcoded 9 CV deliveries
+    const dineInCount = nonCvReservations.filter(r => r['Meal Type'] === 'Dine In').length;
+    const toGoCount = nonCvReservations.filter(r => r['Meal Type'] === 'To Go').length;
+    const deliveryCount = nonCvReservations.filter(r => r['Meal Type'] === 'Delivery').length + CV_HARDCODED_COUNT;
+    const totalMealCount = dineInCount + toGoCount + deliveryCount;
 
     // Load logo
     const logoBase64 = await getUSCLogo();
@@ -538,7 +541,7 @@ export async function GET(request: NextRequest) {
     let dairyFreeCount = 0;
     let inFridgeCount = 0;
     
-    for (const res of reservations) {
+    for (const res of nonCvReservations) {
       const cleanedNotes = cleanNotes(res.Notes || '');
       const dietary = parseDietaryRestrictions(cleanedNotes, res.Name);
       if (dietary.includes('Vegetarian')) vegetarianCount++;
@@ -569,8 +572,8 @@ export async function GET(request: NextRequest) {
     doc.setFont('helvetica', 'bold');
     let pillX = margin;
     
-    // Total pill (dark gray)
-    pillX += drawPill(`Total: ${reservations.length}`, pillX, y, [80, 80, 80]);
+    // Total pill (dark gray) — includes hardcoded 9 CV meals
+    pillX += drawPill(`Total: ${totalMealCount}`, pillX, y, [80, 80, 80]);
     
     // Dine In pill (teal/green)
     pillX += drawPill(`Dine In: ${dineInCount}`, pillX, y, [66, 125, 120]);
@@ -581,15 +584,13 @@ export async function GET(request: NextRequest) {
     // Delivery pill (blue) - no need to capture return value
     drawPill(`Delivery: ${deliveryCount}`, pillX, y, [52, 152, 219]);
     
-    // CV note line
-    if (cvCount > 0) {
-      y += 0.28;
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'bolditalic');
-      doc.setTextColor(120, 80, 0);
-      doc.text(`Coyote Valley #1-9 included in totals (${cvCount} meals). Tribe Prepaid — not listed individually.`, margin, y);
-      doc.setFont('helvetica', 'normal');
-    }
+    // CV note line — always shown (hardcoded 9 CV deliveries)
+    y += 0.28;
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bolditalic');
+    doc.setTextColor(120, 80, 0);
+    doc.text(`Coyote Valley #s 1-9 are included in today's labels and totals. Tribe Prepaid — not listed individually.`, margin, y);
+    doc.setFont('helvetica', 'normal');
 
     // Stats row 2 - Dietary totals
     y += 0.28;
@@ -773,7 +774,7 @@ export async function GET(request: NextRequest) {
     });
 
     // ========== STAFF OVERRIDE SECTION ==========
-    const staffOverrideReservations = reservations.filter(r => r['Payment Method'] === 'Staff Override');
+    const staffOverrideReservations = nonCvReservations.filter(r => r['Payment Method'] === 'Staff Override');
     if (staffOverrideReservations.length > 0) {
       y += 0.4;
       

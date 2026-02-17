@@ -1134,6 +1134,9 @@ export default function LunchPage() {
         
         if (response.ok && result.success) {
           log.push(`✓ Card created successfully`);
+          if (result.staffOverrideDeducted > 0) {
+            log.push(`⚠ ${result.staffOverrideDeducted} outstanding Staff Override meal(s) auto-deducted from new card`);
+          }
           setSubmitResult({
             success: true,
             message: result.message,

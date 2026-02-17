@@ -221,6 +221,89 @@ export async function POST(request: NextRequest) {
       // Don't fail the request if email fails - the card was still created
     }
 
+    // ========== AUTO-DEDUCT OUTSTANDING STAFF OVERRIDE MEALS ==========
+    // When a new lunch card is purchased, check if this customer has any
+    // outstanding Staff Override reservations and auto-deduct from the new card
+    let staffOverrideDeducted = 0;
+    try {
+      const RESERVATIONS_TABLE_ID = process.env.AIRTABLE_LUNCH_RESERVATIONS_TABLE_ID;
+      if (RESERVATIONS_TABLE_ID) {
+        // Search for outstanding Staff Override reservations for this customer
+        const overrideFilter = `AND({Name} = '${name.trim().replace(/'/g, "\\'")}', {Payment Method} = 'Staff Override')`;
+        const overrideUrl = `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${RESERVATIONS_TABLE_ID}?filterByFormula=${encodeURIComponent(overrideFilter)}`;
+        
+        const overrideRes = await fetch(overrideUrl, {
+          headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}` },
+        });
+        
+        if (overrideRes.ok) {
+          const overrideData = await overrideRes.json();
+          const outstandingReservations = overrideData.records || [];
+          
+          if (outstandingReservations.length > 0) {
+            let remainingMeals = cardType; // Total meals on new card
+            
+            for (const reservation of outstandingReservations) {
+              if (remainingMeals <= 0) break;
+              
+              // Update reservation: change Payment Method from Staff Override to Lunch Card, link to new card
+              const updateFields: Record<string, unknown> = {
+                'Payment Method': 'Lunch Card',
+                'Lunch Card': [result.id], // Link to the newly created card
+              };
+              
+              // Preserve existing Payment Comment but append deduction note
+              const existingComment = reservation.fields['Payment Comment'] as string || '';
+              updateFields['Payment Comment'] = existingComment
+                ? `${existingComment} | Auto-deducted from new card on ${new Date().toLocaleDateString('en-US', { timeZone: 'America/Los_Angeles' })}`
+                : `Auto-deducted from new card on ${new Date().toLocaleDateString('en-US', { timeZone: 'America/Los_Angeles' })}`;
+              
+              const updateRes = await fetch(
+                `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${RESERVATIONS_TABLE_ID}/${reservation.id}`,
+                {
+                  method: 'PATCH',
+                  headers: {
+                    'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ fields: updateFields, typecast: true }),
+                }
+              );
+              
+              if (updateRes.ok) {
+                remainingMeals--;
+                staffOverrideDeducted++;
+              } else {
+                console.error('Failed to update Staff Override reservation:', reservation.id);
+              }
+            }
+            
+            // Update the new lunch card's remaining meals
+            if (staffOverrideDeducted > 0) {
+              const newRemaining = cardType - staffOverrideDeducted;
+              await fetch(
+                `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID}/${result.id}`,
+                {
+                  method: 'PATCH',
+                  headers: {
+                    'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    fields: { 'Remaining Meals': newRemaining },
+                  }),
+                }
+              );
+              console.log(`Auto-deducted ${staffOverrideDeducted} Staff Override meal(s) from new card for ${name.trim()}. Remaining: ${newRemaining}/${cardType}`);
+            }
+          }
+        }
+      }
+    } catch (overrideError) {
+      console.error('Staff Override auto-deduction error (non-fatal):', overrideError);
+      // Don't fail the card creation if override deduction fails
+    }
+
     return NextResponse.json({
       success: true,
       recordId: result.id,
@@ -228,7 +311,10 @@ export async function POST(request: NextRequest) {
       mealType,
       memberStatus,
       amount: price,
-      message: `Lunch card created! ${cardType} ${CARD_TYPE_MAP[mealType]} meals for $${price}`,
+      staffOverrideDeducted,
+      message: staffOverrideDeducted > 0
+        ? `Lunch card created! ${cardType} ${CARD_TYPE_MAP[mealType]} meals for $${price}. ${staffOverrideDeducted} outstanding Staff Override meal(s) auto-deducted (${cardType - staffOverrideDeducted} remaining).`
+        : `Lunch card created! ${cardType} ${CARD_TYPE_MAP[mealType]} meals for $${price}`,
     });
 
   } catch (error) {

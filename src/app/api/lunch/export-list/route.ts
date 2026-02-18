@@ -8,6 +8,29 @@ import {
 
 const AIRTABLE_API_BASE = 'https://api.airtable.com/v0';
 
+// Smart title-case: handles initials (CJ, ISS), Mc prefix, hyphens, apostrophes
+// All lowercase or ALL CAPS get normalized; mixed case (McCallum, DesRoches) left alone
+function titleCaseName(name: string): string {
+  return name.replace(/\s+/g, ' ').trim().split(' ').map(word => {
+    if (word === '&' || word === '') return word;
+    // Split on hyphens and apostrophes, preserving delimiters
+    return word.split(/([-'])/).map(part => {
+      if (part === '-' || part === "'" || !part) return part;
+      // Short all-caps: keep as-is (CJ, ISS, Sr, Jr, II, III, IV)
+      if (part.length <= 3 && part === part.toUpperCase() && /[A-Z]/.test(part)) return part;
+      // Mixed case: respect original (McCallum, DesRoches, MacMillan)
+      if (/[A-Z]/.test(part) && /[a-z]/.test(part)) return part;
+      // All lowercase or all uppercase → smart title case
+      const lower = part.toLowerCase();
+      // Mc prefix (McDonald, McCallum)
+      if (lower.startsWith('mc') && lower.length > 2) {
+        return 'Mc' + lower.charAt(2).toUpperCase() + lower.slice(3);
+      }
+      return lower.charAt(0).toUpperCase() + lower.slice(1);
+    }).join('');
+  }).join(' ');
+}
+
 interface Reservation {
   id: string;
   Name: string;
@@ -160,7 +183,7 @@ export async function GET(request: NextRequest) {
       
       return {
         id: record.id,
-        Name: record.fields['Name'] as string || '',
+        Name: titleCaseName(record.fields['Name'] as string || ''),
         Date: record.fields['Date'] as string || '',
         'Meal Type': record.fields['Meal Type'] as string || '',
         'Member Status': record.fields['Member Status'] as string || '',
@@ -396,7 +419,7 @@ export async function GET(request: NextRequest) {
       
       fridayFrozenReservations = fridayRecords.map((record) => ({
         id: record.id,
-        Name: record.fields['Name'] as string || '',
+        Name: titleCaseName(record.fields['Name'] as string || ''),
         Date: record.fields['Date'] as string || '',
         'Meal Type': record.fields['Meal Type'] as string || '',
         'Member Status': record.fields['Member Status'] as string || '',

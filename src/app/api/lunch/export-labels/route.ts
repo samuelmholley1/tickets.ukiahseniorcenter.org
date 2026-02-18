@@ -41,7 +41,8 @@ const COYOTE_VALLEY_ROUTE = [
   { routeId: 'COYOTE VALLEY #3', name: 'Victor Olea', address: '7601 N State St, Tribal Office' },
   { routeId: 'COYOTE VALLEY #4', name: 'Michael Brown', address: '104 Coyote Valley Blvd.' },
   { routeId: 'COYOTE VALLEY #5', name: 'Guadalupe Munoz', address: '4 Shodakai Ct.' },
-  { routeId: 'COYOTE VALLEY #6 + #7', name: 'Ronald Hoel Sr. & Sherry Knight', address: '128 Campbell Dr.' },
+  { routeId: 'COYOTE VALLEY #6', name: 'Ronald Hoel Sr.', address: '128 Campbell Dr.' },
+  { routeId: 'COYOTE VALLEY #7', name: 'Sherry Knight', address: '128 Campbell Dr.' },
   { routeId: 'COYOTE VALLEY #8', name: 'Trudy Ramos', address: '129 Campbell Dr.' },
   { routeId: 'COYOTE VALLEY #9', name: 'John Feliz Sr.', address: '6 Coyote Valley Blvd.' },
 ];

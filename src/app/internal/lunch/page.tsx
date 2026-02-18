@@ -1629,10 +1629,12 @@ export default function LunchPage() {
                       
                       const hasBuffer = bufferCards.length > 0 && bufferMeals > 0;
                       
+                      const isLowBalance = totalMeals === 2 || totalMeals === 3;
+
                       return (
                         <div
                           key={baseName}
-                          className="w-full text-left p-3 rounded-lg border-2 bg-white border-amber-200"
+                          className={`w-full text-left p-3 rounded-lg border-2 ${isLowBalance ? 'bg-yellow-100 border-yellow-400' : 'bg-white border-amber-200'}`}
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div>
@@ -1884,13 +1886,13 @@ export default function LunchPage() {
               
               {/* Auto-detected lunch card notification - with buffer breakdown */}
               {autoDetectedCardInfo && transactionType === 'individual' && (
-                <div className={`mb-4 p-3 border-2 rounded-lg ${autoDetectedCardInfo.totalMeals > 0 ? 'bg-green-100 border-green-400' : 'bg-yellow-100 border-yellow-400'}`}>
+                <div className={`mb-4 p-3 border-2 rounded-lg ${autoDetectedCardInfo.totalMeals === 0 ? 'bg-yellow-100 border-yellow-400' : (autoDetectedCardInfo.totalMeals === 2 || autoDetectedCardInfo.totalMeals === 3) ? 'bg-yellow-100 border-yellow-400' : 'bg-green-100 border-green-400'}`}>
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div>
-                      <div className={`font-['Jost',sans-serif] font-bold ${autoDetectedCardInfo.totalMeals > 0 ? 'text-green-800' : 'text-yellow-800'}`}>
+                      <div className={`font-['Jost',sans-serif] font-bold ${autoDetectedCardInfo.totalMeals > 0 && autoDetectedCardInfo.totalMeals !== 2 && autoDetectedCardInfo.totalMeals !== 3 ? 'text-green-800' : 'text-yellow-800'}`}>
                         🎫 Lunch Card Found: {autoDetectedCardInfo.baseName}
                       </div>
-                      <div className={`font-['Bitter',serif] ${autoDetectedCardInfo.totalMeals > 0 ? 'text-green-700' : 'text-yellow-700'}`}>
+                      <div className={`font-['Bitter',serif] ${autoDetectedCardInfo.totalMeals > 0 && autoDetectedCardInfo.totalMeals !== 2 && autoDetectedCardInfo.totalMeals !== 3 ? 'text-green-700' : 'text-yellow-700'}`}>
                         <span className="font-bold text-lg">{autoDetectedCardInfo.totalMeals}</span> meals remaining
                         {autoDetectedCardInfo.hasBuffer && (
                           <span className="ml-2 text-amber-600">

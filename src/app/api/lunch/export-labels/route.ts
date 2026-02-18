@@ -263,7 +263,7 @@ export async function GET(request: NextRequest) {
       const notes = cleanNotes(res.Notes || '');
       const specialReqs = extractSpecialRequests(notes, res.Name);
       // Always add "FROZEN FRI" marker
-      if (!specialReqs.includes('FROZEN FRI')) specialReqs.unshift('🧊 FROZEN FRI');
+      if (!specialReqs.includes('FROZEN FRI')) specialReqs.unshift('FROZEN FRI');
       if (res.InFridge && !specialReqs.includes('In Fridge')) specialReqs.push('In Fridge');
       
       allLabels.push({
@@ -370,7 +370,7 @@ export async function GET(request: NextRequest) {
           doc.setTextColor(0, 120, 0);
         }
         
-        doc.text(`${mealType} · ${memberStatus}`, x + px, y + py + 0.30);
+        doc.text(`${mealType} - ${memberStatus}`, x + px, y + py + 0.30);
 
         // Row 3: Special Requests (red, bold if present)
         if (label.specialRequests.length > 0) {

@@ -330,7 +330,7 @@ export async function GET(request: NextRequest) {
             'Meal Type': 'Delivery',
             'Member Status': memberStatus,
             'Payment Method': 'Prepaid Weekly',
-            Notes: deliveryAddress ? `📍 ${deliveryAddress}` : '',
+            Notes: deliveryAddress || '',
             Amount: 0,
             LunchCardId: card.id,
             LunchCardRemaining: remainingMeals,
@@ -345,7 +345,7 @@ export async function GET(request: NextRequest) {
               'Meal Type': 'Delivery',
               'Member Status': memberStatus,
               'Payment Method': 'Prepaid Weekly',
-              Notes: `🧊 FROZEN FRIDAY | ${deliveryAddress ? `📍 ${deliveryAddress}` : ''}`.trim(),
+              Notes: `FROZEN FRIDAY | ${deliveryAddress || ''}`.trim(),
               Amount: 0,
               LunchCardId: card.id,
               LunchCardRemaining: remainingMeals,
@@ -401,7 +401,7 @@ export async function GET(request: NextRequest) {
         'Meal Type': record.fields['Meal Type'] as string || '',
         'Member Status': record.fields['Member Status'] as string || '',
         'Payment Method': record.fields['Payment Method'] as string || '',
-        Notes: `🧊 FROZEN FRIDAY | ${record.fields['Notes'] as string || ''}`.trim(),
+        Notes: `FROZEN FRIDAY | ${record.fields['Notes'] as string || ''}`.trim(),
         Amount: record.fields['Amount'] as number || 0,
         LunchCardId: (record.fields['Lunch Card'] as string[] | undefined)?.[0],
       }));
@@ -630,7 +630,7 @@ export async function GET(request: NextRequest) {
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bolditalic');
     doc.setTextColor(120, 80, 0);
-    doc.text(`Coyote Valley #s 1-9 are included in today's labels and totals. Tribe Prepaid — not listed individually.`, margin, y);
+    doc.text(`Coyote Valley #s 1-9 are included in today's labels and totals. Tribe Prepaid -- not listed individually.`, margin, y);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(0, 0, 0);
     y += 0.3;
@@ -839,7 +839,7 @@ export async function GET(request: NextRequest) {
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(255, 255, 255);
-      doc.text(`STAFF OVERRIDE — Payments Outstanding (${staffOverrideReservations.length})`, margin + 0.15, y + 0.25);
+      doc.text(`STAFF OVERRIDE -- Payments Outstanding (${staffOverrideReservations.length})`, margin + 0.15, y + 0.25);
       y += 0.5;
       
       // Table header for override section
@@ -875,7 +875,7 @@ export async function GET(request: NextRequest) {
           doc.setFontSize(10);
           doc.setTextColor(255, 255, 255);
           doc.setFont('helvetica', 'bold');
-          doc.text('STAFF OVERRIDE — Payments Outstanding (continued)', margin + 0.15, y + 0.21);
+          doc.text('STAFF OVERRIDE -- Payments Outstanding (continued)', margin + 0.15, y + 0.21);
           y += 0.42;
           // Reprint column headers
           doc.setFillColor(220, 200, 200);
@@ -948,7 +948,7 @@ export async function GET(request: NextRequest) {
       doc.setFontSize(18);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(52, 152, 219); // Blue for frozen
-      doc.text('🧊 Friday Frozen Meals', margin + 0.75, y + 0.25);
+      doc.text('Friday Frozen Meals', margin + 0.75, y + 0.25);
       
       const fridayDate = new Date(targetDate);
       fridayDate.setDate(fridayDate.getDate() + 1);
@@ -1028,11 +1028,11 @@ export async function GET(request: NextRequest) {
         
         // Paid (checkmark or X)
         const isPaid = res['Payment Method'] && res['Payment Method'] !== 'Unpaid';
-        doc.text(isPaid ? '✓' : '✗', x, y + 0.12);
+        doc.text(isPaid ? 'Yes' : 'No', x, y + 0.12);
         x += colWidths[4];
         
         // Notes (simplified for frozen)
-        const cleanedNotes = cleanNotes(res.Notes || '').replace(/🧊 FROZEN FRIDAY \|?\s*/g, '');
+        const cleanedNotes = cleanNotes(res.Notes || '').replace(/FROZEN FRIDAY \|?\s*/g, '');
         if (cleanedNotes) {
           doc.setFontSize(7);
           const truncatedNotes = cleanedNotes.length > 25 ? cleanedNotes.substring(0, 23) + '...' : cleanedNotes;

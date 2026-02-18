@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { titleCaseName } from '@/lib/nameUtils';
 
 const AIRTABLE_API_BASE = 'https://api.airtable.com/v0';
 const API_KEY = process.env.AIRTABLE_API_KEY;
@@ -18,7 +19,9 @@ interface AirtableResponse {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { firstName, lastName, email, phone, memberStatus, source } = body;
+    const firstName = titleCaseName(body.firstName || '');
+    const lastName = titleCaseName(body.lastName || '');
+    const { email, phone, memberStatus, source } = body;
 
     if (!firstName || !lastName) {
       return NextResponse.json({ error: 'First name and last name required' }, { status: 400 });

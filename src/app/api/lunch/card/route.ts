@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendLunchNotification } from '@/lib/email';
+import { titleCaseName } from '@/lib/nameUtils';
 
 const AIRTABLE_API_BASE = 'https://api.airtable.com/v0';
 
@@ -94,7 +95,8 @@ export async function POST(request: NextRequest) {
     }
 
     const body: LunchCardRequest = await request.json();
-    const { name, phone, cardType, mealType, memberStatus, paymentMethod, checkNumber, paymentComment, staff, contactId: providedContactId } = body;
+    const { phone, cardType, mealType, memberStatus, paymentMethod, checkNumber, paymentComment, staff, contactId: providedContactId } = body;
+    const name = titleCaseName(body.name || '');
     let contactId = providedContactId;
 
     // Contact Sync Logic

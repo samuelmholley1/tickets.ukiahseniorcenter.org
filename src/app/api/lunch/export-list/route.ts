@@ -805,7 +805,7 @@ export async function GET(request: NextRequest) {
           doc.setFont('helvetica', 'bold');
           doc.text(`${remaining}`, x, y + 0.12);
           if (remaining === 1) doc.text(' (!)', x + 0.15, y + 0.12);
-        } else if (remaining === 3) {
+        } else if (remaining === 2 || remaining === 3) {
           doc.setFillColor(255, 255, 200);
           doc.rect(x - 0.05, y - 0.03, colWidths[7] - 0.1, 0.24, 'F');
           doc.setTextColor(139, 119, 0);

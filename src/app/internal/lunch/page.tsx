@@ -133,7 +133,7 @@ function getCardTypeMismatchMessage(cardType: string, mealType: MealType): strin
  * ================================================ */
 
 // Get next lunch day for attendance list printing (tomorrow, or Monday if Thu-Sun)
-// No 2pm deadline logic — just the next business day lunch
+// No 2pm deadline logic ï¿½ just the next business day lunch
 const getNextLunchDate = (): string => {
   const now = new Date();
   const day = now.getDay(); // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
@@ -652,7 +652,7 @@ export default function LunchPage() {
     }
   }, [staffInitials, fetchRecentTransactions]);
 
-  // Open Balance Cash Box modal — pre-select today's cash/check transactions between 10am-1pm
+  // Open Balance Cash Box modal ï¿½ pre-select today's cash/check transactions between 10am-1pm
   const openCashBoxModal = useCallback(() => {
     const nowPacific = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
     const todayStr = `${nowPacific.getFullYear()}-${String(nowPacific.getMonth() + 1).padStart(2, '0')}-${String(nowPacific.getDate()).padStart(2, '0')}`;
@@ -960,7 +960,7 @@ export default function LunchPage() {
     // Lunch card and comp card are free (already prepaid or complimentary)
     if (paymentMethod === 'lunchCard' || paymentMethod === 'compCard' || paymentMethod === 'staffOverride') return 0;
     if (transactionType === 'individual') {
-      // Price per meal × total meals
+      // Price per meal ï¿½ total meals
       return calculateSingleMealPrice() * getTotalMealsFromDateMeals();
     }
     return calculateCardPrice();
@@ -1273,7 +1273,7 @@ export default function LunchPage() {
                 onClick={() => setShowNavWidget(false)}
                 className="w-6 h-6 flex items-center justify-center rounded hover:bg-white/20 text-white font-bold"
               >
-                ×
+                ï¿½
               </button>
             </div>
             <div className="p-2 space-y-1">
@@ -1307,7 +1307,7 @@ export default function LunchPage() {
           className="w-12 h-12 rounded-full bg-[#427d78] hover:bg-[#5eb3a1] text-white shadow-lg flex items-center justify-center text-xl transition-all"
           title="Navigation Menu"
         >
-          {showNavWidget ? '×' : '?'}
+          {showNavWidget ? 'ï¿½' : '?'}
         </button>
       </div>
       
@@ -1488,7 +1488,7 @@ export default function LunchPage() {
                                   {reservation.Name}
                                 </div>
                                 <div className="font-['Bitter',serif] text-sm text-gray-600 mt-1">
-                                  {reservation['Meal Type']} • {reservation['Member Status']}
+                                  {reservation['Meal Type']} ï¿½ {reservation['Member Status']}
                                 </div>
                                 {reservation.Notes && (
                                   <div className="font-['Bitter',serif] text-sm text-gray-500 italic mt-1">
@@ -1640,7 +1640,7 @@ export default function LunchPage() {
                             <div>
                               <div className="font-['Jost',sans-serif] font-bold text-gray-800">{baseName}</div>
                               <div className="font-['Bitter',serif] text-sm text-gray-600">
-                                ?? {primaryCard.phone} • {primaryCard.totalMeals}-meal {primaryCard.cardType} • {primaryCard.memberStatus}
+                                ?? {primaryCard.phone} ï¿½ {primaryCard.totalMeals}-meal {primaryCard.cardType} ï¿½ {primaryCard.memberStatus}
                               </div>
                               <div className="font-['Jost',sans-serif] font-bold text-lg mt-1">
                                 <span className={totalMeals > 0 ? 'text-green-600' : 'text-red-600'}>
@@ -2386,7 +2386,7 @@ export default function LunchPage() {
                         = ${customMealCount * PRICING.perMeal[cardMemberType][cardMealType]}
                       </span>
                       <span className="text-gray-500 text-sm">
-                        ({customMealCount} × ${PRICING.perMeal[cardMemberType][cardMealType]}/meal)
+                        ({customMealCount} ï¿½ ${PRICING.perMeal[cardMemberType][cardMealType]}/meal)
                       </span>
                     </div>
                   )}
@@ -2523,7 +2523,7 @@ export default function LunchPage() {
               {paymentMethod === 'staffOverride' && (
                 <div style={{ marginBottom: 'var(--space-3)' }}>
                   <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4 mb-3">
-                    <p className="font-['Jost',sans-serif] font-bold text-red-800 mb-1">?? Staff Override — No Payment Collected</p>
+                    <p className="font-['Jost',sans-serif] font-bold text-red-800 mb-1">?? Staff Override ï¿½ No Payment Collected</p>
                     <p className="text-sm text-red-700 font-['Bitter',serif]">This transaction will be recorded at $0. A payment comment is required for audit purposes.</p>
                   </div>
                   <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">Payment Comment *</label>
@@ -2681,8 +2681,8 @@ export default function LunchPage() {
                         >
                           <div className="font-['Jost',sans-serif] font-bold">{card.name}</div>
                           <div className="font-['Bitter',serif] text-sm text-gray-600">
-                            {card.phone} • {card.totalMeals}-meal {card.cardType}
-                            {' '} • <span className="text-green-600 font-bold">{card.remainingMeals} meals left</span>
+                            {card.phone} ï¿½ {card.totalMeals}-meal {card.cardType}
+                            {' '} ï¿½ <span className="text-green-600 font-bold">{card.remainingMeals} meals left</span>
                           </div>
                         </button>
                       ))}
@@ -2983,8 +2983,8 @@ export default function LunchPage() {
                       
                       // Details column content
                       const details = isCard
-                        ? `${tx.cardType} • ${tx.memberStatus}`
-                        : `${tx.date || ''}${tx.isFrozenFriday ? ' ??' : ''} • ${tx.mealType} • ${tx.memberStatus}`;
+                        ? `${tx.cardType} ï¿½ ${tx.memberStatus}`
+                        : `${tx.date || ''}${tx.isFrozenFriday ? ' ??' : ''} ï¿½ ${tx.mealType} ï¿½ ${tx.memberStatus}`;
                       
                       return (
                         <tr key={tx.id} className={`border-b ${typeBg}`}>
@@ -3139,7 +3139,7 @@ export default function LunchPage() {
               }}
               className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600 text-xl font-bold"
             >
-              ×
+              ï¿½
             </button>
 
             {/* Icon */}
@@ -3273,7 +3273,7 @@ export default function LunchPage() {
                 </div>
 
                 <p className="text-sm text-gray-600 font-['Bitter',serif] mb-4">
-                  Today&apos;s cash &amp; check transactions ({todayStr}). Transactions from 10am–1pm are pre-selected.
+                  Today&apos;s cash &amp; check transactions ({todayStr}). Transactions from 10amï¿½1pm are pre-selected.
                 </p>
 
                 {todaysCashCheck.length === 0 ? (
@@ -3414,7 +3414,7 @@ export default function LunchPage() {
                         {totalCashCheck > 0 && (
                           <>
                             <div className="col-span-2 text-xs text-purple-600 italic mt-1">
-                              * Cash &amp; Check split total (${totalCashCheck.toFixed(2)}) is included in Expected Cash above. Actual cash portion may differ — check amounts will also be in the box.
+                              * Cash &amp; Check split total (${totalCashCheck.toFixed(2)}) is included in Expected Cash above. Actual cash portion may differ ï¿½ check amounts will also be in the box.
                             </div>
                           </>
                         )}

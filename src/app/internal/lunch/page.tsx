@@ -607,8 +607,8 @@ export default function LunchPage() {
   const [cashBoxSelections, setCashBoxSelections] = useState<Record<string, boolean>>({});
   const [changeFundAmount, setChangeFundAmount] = useState('80');
 
-  // Show older transactions toggle
-  const [showAllTransactions, setShowAllTransactions] = useState(false);
+  // Paginated transactions display
+  const [visibleTxCount, setVisibleTxCount] = useState(50);
 
   // Fetch recent transactions
   const fetchRecentTransactions = useCallback(async () => {
@@ -2974,8 +2974,8 @@ export default function LunchPage() {
                   ? tx.type === 'reservation' 
                   : tx.type === 'lunch_card'
               );
-              const filteredTransactions = showAllTransactions ? allFiltered : allFiltered.slice(0, 50);
-              const hasMore = allFiltered.length > 50;
+              const filteredTransactions = allFiltered.slice(0, visibleTxCount);
+              const hasMore = allFiltered.length > visibleTxCount;
               
               if (isLoadingTransactions) {
                 return <div className="text-center py-4 text-gray-500 font-['Bitter',serif]">Loading transactions...</div>;
@@ -3041,10 +3041,10 @@ export default function LunchPage() {
                   <div className="text-center mt-2">
                     <button
                       type="button"
-                      onClick={() => setShowAllTransactions(!showAllTransactions)}
+                      onClick={() => setVisibleTxCount(prev => prev + 50)}
                       className="text-sm text-[#427d78] hover:underline font-['Jost',sans-serif] font-bold"
                     >
-                      {showAllTransactions ? `Show Recent 50` : `Show All ${allFiltered.length} Transactions`}
+                      Show 50 More ({allFiltered.length - visibleTxCount} remaining)
                     </button>
                   </div>
                 )}

@@ -132,6 +132,7 @@
 | Status | singleSelect | `fldPnM2BmRVtBqGFt` | Options: Reserved, Picked Up, No Show |
 | Lunch Card | multipleRecordLinks | `fldiRNVsq4QqEegcl` | → tblOBnt2ZatrSugbj |
 | Frozen Friday | checkbox | `fldrsjUPo2F2lw6iE` | Blue check |
+| Comp Card Number | singleLineText | `fld4DV4TYQES3WCTd` | Comp card number for comp card payments |
 | Contact | multipleRecordLinks | `fldkvInhOIVlZQPIc` | → tbl3PQZzXGpT991dH |
 
 ---

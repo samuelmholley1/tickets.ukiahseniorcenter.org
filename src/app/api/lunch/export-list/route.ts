@@ -73,7 +73,7 @@ function parseDietaryRestrictions(notes: string, name?: string): string[] {
 function cleanNotes(notes: string): string {
   if (!notes) return '';
   
-  // Remove common system markers
+  // Remove common system markers and payment metadata (not special requests)
   const cleaned = notes
     .replace(/handwritten/gi, '')
     .replace(/handwritten entry/gi, '')
@@ -85,6 +85,9 @@ function cleanNotes(notes: string): string {
     .replace(/highlighted/gi, '')
     .replace(/\(Highlighted\)/gi, '')
     .replace(/marked\s*['"][^'"]+['"]\s*with\s*/gi, '')
+    .replace(/Check\s*#\s*\S+/gi, '')       // Remove check numbers (payment metadata)
+    .replace(/Comp\s*#\s*\S+/gi, '')        // Remove comp card numbers (payment metadata)
+    .replace(/Override:\s*[^|]*/gi, '')     // Remove override comments (use Payment Comment field)
     .replace(/\s*\|\s*\|\s*/g, ' | ') // Fix double pipes
     .replace(/^\s*\|\s*/g, '') // Remove leading pipe
     .replace(/\s*\|\s*$/g, '') // Remove trailing pipe
@@ -616,13 +619,34 @@ export async function GET(request: NextRequest) {
     // Table header (first page)
     drawTableHeader();
 
+    // Build display names: if same person has multiple meals, show "Name #2", "Name #3" etc.
+    const nameOccurrenceCount = new Map<string, number>();
+    const displayNames: string[] = [];
+    for (const res of nonCvReservations) {
+      const key = res.Name.toLowerCase().trim();
+      const count = (nameOccurrenceCount.get(key) || 0) + 1;
+      nameOccurrenceCount.set(key, count);
+      displayNames.push(count > 1 ? `${res.Name} #${count}` : res.Name);
+    }
+    // Go back and fix first occurrences for names that appear more than once → "Name #1"
+    const nameSecondPass = new Map<string, number>();
+    for (let i = 0; i < nonCvReservations.length; i++) {
+      const key = nonCvReservations[i].Name.toLowerCase().trim();
+      const totalForName = nameOccurrenceCount.get(key) || 1;
+      const seen = (nameSecondPass.get(key) || 0) + 1;
+      nameSecondPass.set(key, seen);
+      if (totalForName > 1) {
+        displayNames[i] = `${nonCvReservations[i].Name} #${seen}`;
+      }
+    }
+
     // Table rows (CV excluded — they're in the totals but not individual rows)
     let x = margin; // row x position
     
     nonCvReservations.forEach((res, index) => {
       // 1. Prepare Content & Calculate Height
-      // Name wrapping
-      const nameLines = doc.splitTextToSize(res.Name, colWidths[1] - 0.1);
+      // Name wrapping — use display name with #N suffix for duplicates
+      const nameLines = doc.splitTextToSize(displayNames[index], colWidths[1] - 0.1);
       
       // Special Requests / Dietary logic
       const cleanedNotes = cleanNotes(res.Notes || '');

@@ -1110,9 +1110,6 @@ export default function LunchPage() {
             const mealNotes = [
               meal.isFrozenFriday ? '🧊 FROZEN FRIDAY' : '',
               meal.specialRequest.trim(),
-              checkNumber ? `Check #${checkNumber}` : '',
-              compCardNumber ? `Comp #${compCardNumber}` : '',
-              (paymentMethod === 'staffOverride' && paymentComment) ? `Override: ${paymentComment.trim()}` : '',
             ].filter(Boolean).join(' | ');
             
             // Get buffer card ID if available (for weekly buyers)

@@ -314,7 +314,7 @@ export default function LunchPage() {
   // Payment
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('cash');
   const [checkNumber, setCheckNumber] = useState('');
-  const [compCardNumber, setCompCardNumber] = useState('');
+  const [compCardNumbers, setCompCardNumbers] = useState<string[]>(['']);
   const [cashAmount, setCashAmount] = useState('');
   const [checkAmount, setCheckAmount] = useState('');
   const [paymentComment, setPaymentComment] = useState('');
@@ -606,6 +606,9 @@ export default function LunchPage() {
   const [showCashBoxModal, setShowCashBoxModal] = useState(false);
   const [cashBoxSelections, setCashBoxSelections] = useState<Record<string, boolean>>({});
   const [changeFundAmount, setChangeFundAmount] = useState('80');
+
+  // Show older transactions toggle
+  const [showAllTransactions, setShowAllTransactions] = useState(false);
 
   // Fetch recent transactions
   const fetchRecentTransactions = useCallback(async () => {
@@ -1003,7 +1006,7 @@ export default function LunchPage() {
     const initialDate = getNextAvailableLunch();
     setDateMeals({ [initialDate]: [{ name: '', specialRequest: '' }] });
     setCheckNumber('');
-    setCompCardNumber('');
+    setCompCardNumbers(['']);
     setCashAmount('');
     setCheckAmount('');
     setPaymentComment('');
@@ -1124,6 +1127,7 @@ export default function LunchPage() {
           : undefined;
 
         // Iterate through all dates and meals
+        let globalMealIdx = 0;
         for (const date of selectedDates) {
           const meals = dateMeals[date] || [];
           for (let i = 0; i < meals.length; i++) {
@@ -1150,6 +1154,7 @@ export default function LunchPage() {
                 lunchCardId: selectedLunchCard?.id,
                 bufferCardId: bufferCard?.id, // Pass buffer card for multi-card deduction
                 notes: mealNotes,
+                compCardNumber: paymentMethod === 'compCard' ? (compCardNumbers[globalMealIdx] || '') : undefined,
                 paymentComment: paymentMethod === 'staffOverride' ? (paymentComment.trim() || undefined) : undefined,
                 staff: staffInitials,
                 quantity: isFirstMeal ? totalMeals : 1, // Deduct total on first call
@@ -1178,6 +1183,7 @@ export default function LunchPage() {
             }
             
             isFirstMeal = false;
+            globalMealIdx++;
           }
           if (errorMessage) break;
         }
@@ -1215,7 +1221,7 @@ export default function LunchPage() {
             memberStatus: cardMemberType,
             paymentMethod: paymentMethod === 'lunchCard' ? 'cash' : paymentMethod,
             checkNumber: checkNumber || undefined,
-            compCardNumber: compCardNumber || undefined,
+            compCardNumber: compCardNumbers[0] || undefined,
             paymentComment: paymentMethod === 'staffOverride' ? (paymentComment.trim() || undefined) : undefined,
             staff: staffInitials,
           }),
@@ -2504,18 +2510,48 @@ export default function LunchPage() {
               
               {paymentMethod === 'compCard' && (
                 <div style={{ marginBottom: 'var(--space-3)' }}>
-                  <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">Comp Card Number *</label>
-                  <input
-                    type="text"
-                    required
-                    value={compCardNumber}
-                    onChange={(e) => setCompCardNumber(e.target.value)}
-                    placeholder="Type card number..."
-                    className="w-full px-4 py-3 border-2 border-pink-300 rounded-lg focus:border-pink-500 focus:outline-none font-['Bitter',serif]"
-                    style={{ maxWidth: '300px' }}
-                  />
+                  <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">
+                    Comp Card Number{getTotalMealsFromDateMeals() > 1 ? 's' : ''} *
+                  </label>
+                  {Array.from({ length: Math.max(1, transactionType === 'individual' ? getTotalMealsFromDateMeals() : 1) }, (_, i) => {
+                    // Build a label for each meal slot
+                    let mealLabel = '';
+                    if (transactionType === 'individual' && getTotalMealsFromDateMeals() > 1) {
+                      let idx = 0;
+                      for (const date of Object.keys(dateMeals).sort()) {
+                        for (let mi = 0; mi < (dateMeals[date]?.length || 0); mi++) {
+                          if (idx === i) {
+                            const meal = dateMeals[date][mi];
+                            const d = new Date(date + 'T12:00:00');
+                            const dayStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                            mealLabel = `Meal ${i + 1}: ${meal.name || 'unnamed'} — ${dayStr}`;
+                          }
+                          idx++;
+                        }
+                      }
+                    }
+                    return (
+                      <div key={i} className="mb-2">
+                        {mealLabel && <div className="text-xs text-pink-700 font-['Jost',sans-serif] font-bold mb-1">{mealLabel}</div>}
+                        <input
+                          type="text"
+                          required
+                          value={compCardNumbers[i] || ''}
+                          onChange={(e) => {
+                            const updated = [...compCardNumbers];
+                            while (updated.length <= i) updated.push('');
+                            updated[i] = e.target.value;
+                            setCompCardNumbers(updated);
+                          }}
+                          placeholder={getTotalMealsFromDateMeals() > 1 ? `Card # for meal ${i + 1}...` : 'Type card number...'}
+                          className="w-full px-4 py-3 border-2 border-pink-300 rounded-lg focus:border-pink-500 focus:outline-none font-['Bitter',serif]"
+                          style={{ maxWidth: '300px' }}
+                        />
+                      </div>
+                    );
+                  })}
                   <p className="text-sm text-pink-600 mt-1 font-['Bitter',serif]">
-                    💡 Enter the complimentary meal card number for tracking.
+                    💡 Enter the complimentary meal card number{getTotalMealsFromDateMeals() > 1 ? ' for each meal' : ''} for tracking.
                   </p>
                 </div>
               )}
@@ -2839,7 +2875,7 @@ export default function LunchPage() {
                   )}
                   <p className="col-span-2"><strong>Payment:</strong> {
                     paymentMethod === 'lunchCard' ? `Lunch Card (${selectedLunchCard?.name})` 
-                    : paymentMethod === 'compCard' ? `Comp Card #${compCardNumber}` 
+                    : paymentMethod === 'compCard' ? `Comp Card #${compCardNumbers.filter(Boolean).join(', #')}` 
                     : paymentMethod === 'staffOverride' ? `Staff Override`
                     : paymentMethod === 'cashCheckSplit' ? `Cash $${cashAmount} + Check #${checkNumber} $${checkAmount}`
                     : paymentMethod === 'check' ? `Check #${checkNumber}`
@@ -2898,7 +2934,7 @@ export default function LunchPage() {
                   (paymentMethod === 'lunchCard' && !selectedLunchCard) ||
                   (paymentMethod === 'lunchCard' && !!selectedLunchCard && selectedLunchCard.remainingMeals < getTotalMeals()) ||
                   (paymentMethod === 'lunchCard' && !!selectedLunchCard && !isCardTypeCompatible(selectedLunchCard.cardType, mealType)) ||
-                  (paymentMethod === 'compCard' && !compCardNumber) ||
+                  (paymentMethod === 'compCard' && compCardNumbers.some((n, i) => i < (transactionType === 'individual' ? getTotalMealsFromDateMeals() : 1) && !n.trim())) ||
                   (paymentMethod === 'check' && !checkNumber) ||
                   (paymentMethod === 'staffOverride' && !paymentComment.trim()) ||
                   (paymentMethod === 'cashCheckSplit' && Math.abs((parseFloat(cashAmount || '0') + parseFloat(checkAmount || '0')) - getTotal()) >= 0.01) ||
@@ -2933,11 +2969,13 @@ export default function LunchPage() {
             
             {(() => {
               // Filter transactions based on current mode
-              const filteredTransactions = recentTransactions.filter(tx => 
+              const allFiltered = recentTransactions.filter(tx => 
                 transactionType === 'individual' 
                   ? tx.type === 'reservation' 
                   : tx.type === 'lunch_card'
               );
+              const filteredTransactions = showAllTransactions ? allFiltered : allFiltered.slice(0, 50);
+              const hasMore = allFiltered.length > 50;
               
               if (isLoadingTransactions) {
                 return <div className="text-center py-4 text-gray-500 font-['Bitter',serif]">Loading transactions...</div>;
@@ -2999,6 +3037,17 @@ export default function LunchPage() {
                     })}
                   </tbody>
                 </table>
+                {hasMore && (
+                  <div className="text-center mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowAllTransactions(!showAllTransactions)}
+                      className="text-sm text-[#427d78] hover:underline font-['Jost',sans-serif] font-bold"
+                    >
+                      {showAllTransactions ? `Show Recent 50` : `Show All ${allFiltered.length} Transactions`}
+                    </button>
+                  </div>
+                )}
               </div>
               );
             })()}

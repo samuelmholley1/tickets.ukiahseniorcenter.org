@@ -35,6 +35,7 @@ interface ReservationRequest {
   bufferCardId?: string; // Optional buffer card ID for weekly buyers
   notes?: string;
   paymentComment?: string;
+  compCardNumber?: string; // For comp card tracking
   staff: string;
   quantity?: number; // defaults to 1
   deductMeal?: boolean; // Only deduct from lunch card if true (for first meal in batch)
@@ -85,7 +86,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body: ReservationRequest = await request.json();
-    const { name, date, mealType, memberStatus, paymentMethod, lunchCardId, notes, paymentComment, staff, quantity = 1, isFrozenFriday = false } = body;
+    const { name, date, mealType, memberStatus, paymentMethod, lunchCardId, notes, paymentComment, compCardNumber, staff, quantity = 1, isFrozenFriday = false } = body;
 
     // Contact Sync Logic
     const CONTACTS_TABLE_ID = process.env.AIRTABLE_CONTACTS_TABLE_ID || 'tbl3PQZzXGpT991dH';
@@ -320,7 +321,7 @@ export async function POST(request: NextRequest) {
         'Member Status': MEMBER_STATUS_MAP[memberStatus],
         'Amount': totalAmount,
         'Payment Method': PAYMENT_METHOD_MAP[paymentMethod],
-        'Notes': notes?.trim().substring(0, 1000) || '',
+        'Notes': [notes?.trim(), compCardNumber ? `Comp Card #${compCardNumber}` : ''].filter(Boolean).join(' | ').substring(0, 1000) || '',
         'Staff': staff.trim().substring(0, 50),
         'Status': 'Reserved',
         'Frozen Friday': isFrozenFriday,

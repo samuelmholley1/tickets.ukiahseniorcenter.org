@@ -132,6 +132,29 @@ function getCardTypeMismatchMessage(cardType: string, mealType: MealType): strin
  * So Thursday 2pm is the deadline for Monday lunch
  * ================================================ */
 
+// Get next lunch day for attendance list printing (tomorrow, or Monday if Thu-Sun)
+// No 2pm deadline logic — just the next business day lunch
+const getNextLunchDate = (): string => {
+  const now = new Date();
+  const day = now.getDay(); // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+  let daysToAdd = 1; // Default: tomorrow
+  switch (day) {
+    case 0: daysToAdd = 1; break; // Sun → Mon
+    case 1: daysToAdd = 1; break; // Mon → Tue
+    case 2: daysToAdd = 1; break; // Tue → Wed
+    case 3: daysToAdd = 1; break; // Wed → Thu
+    case 4: daysToAdd = 4; break; // Thu → Mon (skip Fri/Sat/Sun)
+    case 5: daysToAdd = 3; break; // Fri → Mon
+    case 6: daysToAdd = 2; break; // Sat → Mon
+  }
+  const next = new Date(now);
+  next.setDate(now.getDate() + daysToAdd);
+  const year = next.getFullYear();
+  const month = String(next.getMonth() + 1).padStart(2, '0');
+  const d = String(next.getDate()).padStart(2, '0');
+  return `${year}-${month}-${d}`;
+};
+
 // Get the next available lunch date based on 2pm deadline rule
 // Uses local timezone for proper deadline calculation
 const getNextAvailableLunch = (): string => {
@@ -1378,7 +1401,7 @@ export default function LunchPage() {
                 <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-1 text-sm">Select Date</label>
                 <input
                   type="date"
-                  defaultValue={getNextAvailableLunch()}
+                  defaultValue={getNextLunchDate()}
                   id="export-date"
                   className="px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-[#427d78] focus:outline-none font-['Bitter',serif]"
                 />

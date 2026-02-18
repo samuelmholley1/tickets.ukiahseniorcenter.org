@@ -21,13 +21,24 @@ export default function LunchList() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
 
 
-  // Fix 1: Use local date string instead of UTC
+  // Default to next business lunch day (tomorrow, or Monday if Thu-Sun)
   const [currentDate, setCurrentDate] = useState<string>(() => {
-    // Return YYYY-MM-DD in local time
-    const local = new Date();
-    const offset = local.getTimezoneOffset() * 60000;
-    const localISOTime = new Date(local.getTime() - offset).toISOString();
-    return localISOTime.split('T')[0];
+    const now = new Date();
+    const day = now.getDay(); // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+    let daysToAdd = 1;
+    switch (day) {
+      case 0: daysToAdd = 1; break; // Sun → Mon
+      case 4: daysToAdd = 4; break; // Thu → Mon
+      case 5: daysToAdd = 3; break; // Fri → Mon
+      case 6: daysToAdd = 2; break; // Sat → Mon
+      default: daysToAdd = 1; break; // Mon-Wed → next day
+    }
+    const next = new Date(now);
+    next.setDate(now.getDate() + daysToAdd);
+    const year = next.getFullYear();
+    const month = String(next.getMonth() + 1).padStart(2, '0');
+    const d = String(next.getDate()).padStart(2, '0');
+    return `${year}-${month}-${d}`;
   });
   const [isLoading, setIsLoading] = useState(false);
 

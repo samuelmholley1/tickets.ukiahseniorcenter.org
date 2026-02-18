@@ -583,11 +583,9 @@ export async function GET(request: NextRequest) {
     // Dine In pill (teal/green)
     pillX += drawPill(`Dine In: ${dineInCount}`, pillX, y, [66, 125, 120]);
     
-    // To Go pill (orange)
-    pillX += drawPill(`To Go: ${toGoCount}`, pillX, y, [230, 126, 34]);
-    
-    // Delivery pill (blue) - no need to capture return value
-    drawPill(`Delivery: ${deliveryCount}`, pillX, y, [52, 152, 219]);
+    // Combined Pick Up & Delivery pill (orange) with parenthetical split
+    const pickupDeliveryTotal = toGoCount + deliveryCount;
+    drawPill(`Pick Up & Delivery: ${pickupDeliveryTotal} (${toGoCount} PU / ${deliveryCount} Del)`, pillX, y, [230, 126, 34]);
     
     // CV note line — always shown (hardcoded 9 CV deliveries)
     y += 0.28;

@@ -583,9 +583,13 @@ export async function GET(request: NextRequest) {
     // Dine In pill (teal/green)
     pillX += drawPill(`Dine In: ${dineInCount}`, pillX, y, [66, 125, 120]);
     
-    // Combined Pick Up & Delivery pill (orange) with parenthetical split
+    // Combined Pick Up & Delivery pill (orange) with parenthetical outside in black
     const pickupDeliveryTotal = toGoCount + deliveryCount;
-    drawPill(`Pick Up & Delivery: ${pickupDeliveryTotal} (${toGoCount} PU / ${deliveryCount} Del)`, pillX, y, [230, 126, 34]);
+    const afterPickupPill = pillX + drawPill(`Pick Up & Delivery: ${pickupDeliveryTotal}`, pillX, y, [230, 126, 34]);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 0, 0);
+    doc.text(`(${toGoCount} Pick Up / ${deliveryCount} Delivery)`, afterPickupPill, y);
     
     // CV note line — always shown (hardcoded 9 CV deliveries)
     y += 0.28;
@@ -800,36 +804,31 @@ export async function GET(request: NextRequest) {
     // ========== STAFF OVERRIDE SECTION ==========
     const staffOverrideReservations = nonCvReservations.filter(r => r['Payment Method'] === 'Staff Override');
     if (staffOverrideReservations.length > 0) {
-      y += 0.4;
-      
-      // Check if we need a new page for this section
-      const estimatedHeight = 0.6 + (staffOverrideReservations.length * 0.45);
-      if (y + estimatedHeight > pageHeight - margin) {
-        doc.addPage();
-        y = margin;
-      }
+      // Always start Override section on a new page
+      doc.addPage();
+      y = margin;
       
       // Section header
       doc.setFillColor(180, 40, 40);
-      doc.rect(margin, y, contentWidth, 0.35, 'F');
+      doc.rect(margin, y, contentWidth, 0.38, 'F');
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(255, 255, 255);
-      doc.text(`⚠ Staff Override — Payments Outstanding (${staffOverrideReservations.length})`, margin + 0.1, y + 0.23);
-      y += 0.45;
+      doc.text(`STAFF OVERRIDE — Payments Outstanding (${staffOverrideReservations.length})`, margin + 0.15, y + 0.25);
+      y += 0.5;
       
       // Table header for override section
       doc.setFillColor(220, 200, 200);
-      doc.rect(margin, y, contentWidth, 0.25, 'F');
+      doc.rect(margin, y, contentWidth, 0.28, 'F');
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(80, 0, 0);
-      doc.text('#', margin + 0.05, y + 0.17);
-      doc.text('Name', margin + 0.35, y + 0.17);
-      doc.text('Type', margin + 2.0, y + 0.17);
-      doc.text('Status', margin + 2.7, y + 0.17);
-      doc.text('Comment', margin + 3.5, y + 0.17);
-      y += 0.3;
+      doc.text('#', margin + 0.08, y + 0.19);
+      doc.text('Name', margin + 0.35, y + 0.19);
+      doc.text('Meal Type', margin + 2.2, y + 0.19);
+      doc.text('Member Status', margin + 3.1, y + 0.19);
+      doc.text('Override Reason', margin + 4.5, y + 0.19);
+      y += 0.35;
       
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(0, 0, 0);
@@ -838,7 +837,7 @@ export async function GET(request: NextRequest) {
         // Calculate row height based on comment length
         doc.setFontSize(8);
         const commentText = res.PaymentComment || 'No comment provided';
-        const commentLines = doc.splitTextToSize(commentText, contentWidth - 3.6);
+        const commentLines = doc.splitTextToSize(commentText, contentWidth - 4.5);
         const rowHeight = Math.max(0.3, (commentLines.length * 0.14) + 0.16);
         
         // Check for new page
@@ -846,23 +845,25 @@ export async function GET(request: NextRequest) {
           doc.addPage();
           y = margin;
           // Reprint section header on new page
+          doc.setFillColor(180, 40, 40);
+          doc.rect(margin, y, contentWidth, 0.32, 'F');
           doc.setFontSize(10);
-          doc.setTextColor(180, 40, 40);
+          doc.setTextColor(255, 255, 255);
           doc.setFont('helvetica', 'bold');
-          doc.text('Staff Override — Payments Outstanding (continued)', margin, y + 0.15);
-          y += 0.3;
+          doc.text('STAFF OVERRIDE — Payments Outstanding (continued)', margin + 0.15, y + 0.21);
+          y += 0.42;
           // Reprint column headers
           doc.setFillColor(220, 200, 200);
-          doc.rect(margin, y, contentWidth, 0.25, 'F');
+          doc.rect(margin, y, contentWidth, 0.28, 'F');
           doc.setFontSize(9);
           doc.setFont('helvetica', 'bold');
           doc.setTextColor(80, 0, 0);
-          doc.text('#', margin + 0.05, y + 0.17);
-          doc.text('Name', margin + 0.35, y + 0.17);
-          doc.text('Type', margin + 2.0, y + 0.17);
-          doc.text('Status', margin + 2.7, y + 0.17);
-          doc.text('Comment', margin + 3.5, y + 0.17);
-          y += 0.3;
+          doc.text('#', margin + 0.08, y + 0.19);
+          doc.text('Name', margin + 0.35, y + 0.19);
+          doc.text('Meal Type', margin + 2.2, y + 0.19);
+          doc.text('Member Status', margin + 3.1, y + 0.19);
+          doc.text('Override Reason', margin + 4.5, y + 0.19);
+          y += 0.35;
           doc.setFont('helvetica', 'normal');
           doc.setTextColor(0, 0, 0);
         }
@@ -892,15 +893,15 @@ export async function GET(request: NextRequest) {
         doc.setFont('helvetica', 'normal');
         
         // Meal Type
-        doc.text(res['Meal Type'] || '', margin + 2.0, y + 0.12);
+        doc.text(res['Meal Type'] || '', margin + 2.2, y + 0.12);
         
         // Member Status
-        doc.text(res['Member Status'] || '', margin + 2.7, y + 0.12);
+        doc.text(res['Member Status'] || '', margin + 3.1, y + 0.12);
         
-        // Comment (wrapped)
+        // Override Reason (wrapped)
         doc.setTextColor(139, 0, 0);
         doc.setFont('helvetica', 'bolditalic');
-        doc.text(commentLines, margin + 3.5, y + 0.12);
+        doc.text(commentLines, margin + 4.5, y + 0.12);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(0, 0, 0);
         

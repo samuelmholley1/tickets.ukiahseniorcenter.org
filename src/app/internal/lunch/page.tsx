@@ -605,7 +605,7 @@ export default function LunchPage() {
   // Balance Cash Box
   const [showCashBoxModal, setShowCashBoxModal] = useState(false);
   const [cashBoxSelections, setCashBoxSelections] = useState<Record<string, boolean>>({});
-  const [changeFundAmount, setChangeFundAmount] = useState('100');
+  const [changeFundAmount, setChangeFundAmount] = useState('80');
 
   // Fetch recent transactions
   const fetchRecentTransactions = useCallback(async () => {
@@ -2151,16 +2151,16 @@ export default function LunchPage() {
                       type="button"
                       onClick={() => setIsMember('member')}
                       className={`px-6 py-3 rounded-lg font-['Jost',sans-serif] font-bold transition-all ${
-                        isMember === 'member' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        isMember === 'member' ? 'bg-[#427d78] text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
-                      ✓ Member
+                      Member
                     </button>
                     <button
                       type="button"
                       onClick={() => setIsMember('nonMember')}
                       className={`px-6 py-3 rounded-lg font-['Jost',sans-serif] font-bold transition-all ${
-                        isMember === 'nonMember' ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        isMember === 'nonMember' ? 'bg-[#427d78] text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
                       Non-Member
@@ -2284,16 +2284,16 @@ export default function LunchPage() {
                       type="button"
                       onClick={() => setCardMemberType('member')}
                       className={`px-6 py-3 rounded-lg font-['Jost',sans-serif] font-bold transition-all ${
-                        cardMemberType === 'member' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        cardMemberType === 'member' ? 'bg-[#427d78] text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
-                      ✓ Member
+                      Member
                     </button>
                     <button
                       type="button"
                       onClick={() => setCardMemberType('nonMember')}
                       className={`px-6 py-3 rounded-lg font-['Jost',sans-serif] font-bold transition-all ${
-                        cardMemberType === 'nonMember' ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        cardMemberType === 'nonMember' ? 'bg-[#427d78] text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
                       Non-Member
@@ -2407,7 +2407,7 @@ export default function LunchPage() {
                     type="button"
                     onClick={() => setPaymentMethod('cash')}
                     className={`px-6 py-3 rounded-lg font-['Jost',sans-serif] font-bold transition-all ${
-                      paymentMethod === 'cash' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      paymentMethod === 'cash' ? 'bg-[#427d78] text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
                   >
                     💵 Cash
@@ -2416,7 +2416,7 @@ export default function LunchPage() {
                     type="button"
                     onClick={() => setPaymentMethod('check')}
                     className={`px-6 py-3 rounded-lg font-['Jost',sans-serif] font-bold transition-all ${
-                      paymentMethod === 'check' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      paymentMethod === 'check' ? 'bg-[#427d78] text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
                   >
                     📝 Check
@@ -2425,7 +2425,7 @@ export default function LunchPage() {
                     type="button"
                     onClick={() => setPaymentMethod('cashCheckSplit')}
                     className={`px-6 py-3 rounded-lg font-['Jost',sans-serif] font-bold transition-all ${
-                      paymentMethod === 'cashCheckSplit' ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      paymentMethod === 'cashCheckSplit' ? 'bg-[#427d78] text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
                   >
                     💵📝 Cash & Check
@@ -2434,7 +2434,7 @@ export default function LunchPage() {
                     type="button"
                     onClick={() => setPaymentMethod('card')}
                     className={`px-6 py-3 rounded-lg font-['Jost',sans-serif] font-bold transition-all ${
-                      paymentMethod === 'card' ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      paymentMethod === 'card' ? 'bg-[#427d78] text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
                   >
                     💳 Card
@@ -2444,7 +2444,7 @@ export default function LunchPage() {
                       type="button"
                       onClick={() => setPaymentMethod('compCard')}
                       className={`px-6 py-3 rounded-lg font-['Jost',sans-serif] font-bold transition-all ${
-                        paymentMethod === 'compCard' ? 'bg-pink-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        paymentMethod === 'compCard' ? 'bg-[#427d78] text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
                       🎁 Comp Card
@@ -2455,7 +2455,7 @@ export default function LunchPage() {
                       type="button"
                       onClick={() => setPaymentMethod('lunchCard')}
                       className={`px-6 py-3 rounded-lg font-['Jost',sans-serif] font-bold transition-all ${
-                        paymentMethod === 'lunchCard' ? 'bg-amber-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        paymentMethod === 'lunchCard' ? 'bg-[#427d78] text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
                       🎫 Use Lunch Card

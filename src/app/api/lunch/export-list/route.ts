@@ -456,9 +456,9 @@ export async function GET(request: NextRequest) {
     const contentWidth = pageWidth - (2 * margin);
     let y = margin;
 
-    // Column widths: #, Name, Phone, Type, Status, Paid, Special Requests, Meals Remaining
+    // Column widths: #, Name, Phone, Type, Status, Payment, Special Requests, Meals Remaining
     // Total width available: 7.5 inches
-    const colWidths = [0.3, 1.5, 1.1, 0.6, 0.7, 0.4, 1.5, 1.4];
+    const colWidths = [0.3, 1.5, 1.0, 0.6, 0.65, 0.85, 1.4, 1.2];
 
     // Helper function to draw a colored pill/badge
     const drawPill = (text: string, x: number, yPos: number, bgColor: [number, number, number], textColor: [number, number, number] = [255, 255, 255]) => {
@@ -505,7 +505,7 @@ export async function GET(request: NextRequest) {
       doc.text('Status', hx, y + 0.18);
       hx += colWidths[4];
       
-      doc.text('Paid', hx, y + 0.18);
+      doc.text('Payment', hx, y + 0.18);
       hx += colWidths[5];
       
       // Multi-line header: Special Requests
@@ -712,16 +712,24 @@ export async function GET(request: NextRequest) {
       doc.text(res['Member Status'] || '', x, y + 0.12);
       x += colWidths[4];
       
-      // 6. Paid
+      // 6. Payment method (abbreviated)
       const payment = res['Payment Method'] || '';
-      const isPaid = payment === 'Cash' || payment === 'Check' || payment === 'Card (Zeffy)' || 
-                     payment === 'Lunch Card' || payment === 'Prepaid Weekly' || payment === 'Comp Card' ||
-                     payment === 'Tribe Prepaid' || payment === 'Staff Override';
-      doc.setFontSize(10);
-      if (isPaid) {
-        doc.setTextColor(0, 128, 0);
-        doc.text('✓', x + 0.1, y + 0.13);
-      }
+      const paymentAbbr: Record<string, string> = {
+        'Cash': 'Cash',
+        'Check': 'Check',
+        'Card (Zeffy)': 'Zeffy',
+        'Lunch Card': 'L.Card',
+        'Prepaid Weekly': 'Weekly',
+        'Comp Card': 'Comp',
+        'Tribe Prepaid': 'Tribe',
+        'Staff Override': 'Override',
+      };
+      const paymentLabel = paymentAbbr[payment] || payment;
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'italic');
+      doc.setTextColor(60, 60, 60);
+      doc.text(paymentLabel, x, y + 0.12);
+      doc.setFont('helvetica', 'normal');
       doc.setTextColor(0, 0, 0);
       doc.setFontSize(8);
       x += colWidths[5];

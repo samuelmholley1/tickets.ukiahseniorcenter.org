@@ -538,85 +538,102 @@ export async function GET(request: NextRequest) {
       return false;
     };
 
-    // Calculate dietary totals
-    let vegetarianCount = 0;
-    let glutenFreeCount = 0;
-    let noDessertCount = 0;
-    let noGarlicOnionsCount = 0;
-    let dairyFreeCount = 0;
-    let inFridgeCount = 0;
-    
-    for (const res of nonCvReservations) {
-      const cleanedNotes = cleanNotes(res.Notes || '');
-      const dietary = parseDietaryRestrictions(cleanedNotes, res.Name);
-      if (dietary.includes('Vegetarian')) vegetarianCount++;
-      if (dietary.includes('Gluten-Free')) glutenFreeCount++;
-      if (dietary.includes('No Dessert')) noDessertCount++;
-      if (dietary.includes('No Garlic/Onions')) noGarlicOnionsCount++;
-      if (dietary.includes('Dairy-Free')) dairyFreeCount++;
-      if (dietary.includes('In Fridge') || res.InFridge) inFridgeCount++;
-    }
+    // Calculate per-meal-type dietary totals (split: Dine In vs Pick Up & Delivery)
+    const dineInResv = nonCvReservations.filter(r => r['Meal Type'] === 'Dine In');
+    const pickupDeliveryResv = nonCvReservations.filter(r => r['Meal Type'] === 'To Go' || r['Meal Type'] === 'Delivery');
+
+    type DietaryTotals = { veg: number; gf: number; noDessert: number; vegNoGarlic: number; dairyFree: number; inFridge: number };
+    const calcDietary = (resv: typeof nonCvReservations): DietaryTotals => {
+      let veg = 0, gf = 0, noDessert = 0, vegNoGarlic = 0, dairyFree = 0, inFridge = 0;
+      for (const res of resv) {
+        const d = parseDietaryRestrictions(cleanNotes(res.Notes || ''), res.Name);
+        const isVeg = d.includes('Vegetarian');
+        const isNoGarlic = d.includes('No Garlic/Onions');
+        if (isVeg) veg++;
+        if (d.includes('Gluten-Free')) gf++;
+        if (d.includes('No Dessert')) noDessert++;
+        if (isVeg && isNoGarlic) vegNoGarlic++;
+        if (d.includes('Dairy-Free')) dairyFree++;
+        if (d.includes('In Fridge') || res.InFridge) inFridge++;
+      }
+      return { veg, gf, noDessert, vegNoGarlic, dairyFree, inFridge };
+    };
+
+    const dineInDiet = calcDietary(dineInResv);
+    const pickupDiet = calcDietary(pickupDeliveryResv);
 
     // Header
     if (logoBase64) {
       doc.addImage(logoBase64, 'PNG', margin, y, 0.6, 0.6);
     }
-    
+
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...USC_COLORS.TEAL);
     doc.text('Lunch Reservations', margin + 0.75, y + 0.25);
-    
+
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(100, 100, 100);
     doc.text(formattedDate, margin + 0.75, y + 0.45);
-    
-    // Stats row 1 - Meal type pills with distinct colors
+
     y += 0.75;
+
+    // Total pill — full width row
     doc.setFont('helvetica', 'bold');
-    let pillX = margin;
-    
-    // Total pill (dark gray) — includes hardcoded 9 CV meals
-    pillX += drawPill(`Total: ${totalMealCount}`, pillX, y, [80, 80, 80]);
-    
-    // Dine In pill (teal/green)
-    pillX += drawPill(`Dine In: ${dineInCount}`, pillX, y, [66, 125, 120]);
-    
-    // Combined Pick Up & Delivery pill (orange) with parenthetical outside in black
+    drawPill(`Total: ${totalMealCount}`, margin, y, [80, 80, 80]);
+    y += 0.38;
+
+    // Two-column layout: Dine In (left) | Pick Up & Delivery (right)
+    const colLeft = margin;
+    const colRight = margin + contentWidth / 2 + 0.1;
+    const dietLineHeight = 0.185;
     const pickupDeliveryTotal = toGoCount + deliveryCount;
-    const afterPickupPill = pillX + drawPill(`Pick Up & Delivery: ${pickupDeliveryTotal}`, pillX, y, [230, 126, 34]);
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(0, 0, 0);
-    doc.text(`(${toGoCount} Pick Up / ${deliveryCount} Delivery)`, afterPickupPill, y);
-    
-    // CV note line — always shown (hardcoded 9 CV deliveries)
-    y += 0.28;
+
+    const drawDietaryColumn = (xStart: number, pillLabel: string, pillColor: [number, number, number], diet: DietaryTotals, subNote?: string): number => {
+      let cy = y;
+      doc.setFont('helvetica', 'bold');
+      drawPill(pillLabel, xStart, cy, pillColor);
+      cy += 0.32;
+      if (subNote) {
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(60, 60, 60);
+        doc.text(subNote, xStart, cy);
+        cy += dietLineHeight;
+      }
+      const lines: [string, [number, number, number]][] = [
+        [`Vegetarian: ${diet.veg}`, [34, 139, 34]],
+        [`Gluten-Free: ${diet.gf}`, [184, 134, 11]],
+        [`Vegetarian + No Garlic/Onions: ${diet.vegNoGarlic}`, [128, 0, 128]],
+        [`No Dessert: ${diet.noDessert}`, [139, 69, 19]],
+        [`Dairy-Free: ${diet.dairyFree}`, [0, 0, 139]],
+        [`In Fridge: ${diet.inFridge}`, [0, 128, 255]],
+      ];
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      for (const [text, color] of lines) {
+        doc.setTextColor(...color);
+        doc.text(text, xStart, cy);
+        cy += dietLineHeight;
+      }
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(0, 0, 0);
+      return cy;
+    };
+
+    const leftBottom = drawDietaryColumn(colLeft, `Dine In: ${dineInCount}`, [66, 125, 120], dineInDiet);
+    const rightBottom = drawDietaryColumn(colRight, `Pick Up & Delivery: ${pickupDeliveryTotal}`, [230, 126, 34], pickupDiet, `(${toGoCount} Pick Up / ${deliveryCount} Delivery)`);
+    y = Math.max(leftBottom, rightBottom) + 0.18;
+
+    // CV note line — always shown
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bolditalic');
     doc.setTextColor(120, 80, 0);
     doc.text(`Coyote Valley #s 1-9 are included in today's labels and totals. Tribe Prepaid — not listed individually.`, margin, y);
     doc.setFont('helvetica', 'normal');
-
-    // Stats row 2 - Dietary totals
-    y += 0.28;
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(80, 80, 80);
-    
-    const dietaryStats = [
-      `Vegetarian: ${vegetarianCount}`,
-      `Gluten-Free: ${glutenFreeCount}`,
-      `No Dessert: ${noDessertCount}`,
-      `No Garlic/Onions: ${noGarlicOnionsCount}`,
-      `Dairy-Free: ${dairyFreeCount}`,
-      `In Fridge: ${inFridgeCount}`,
-    ].join('  |  ');
-    
-    doc.text(dietaryStats, margin, y);
-    
-    y += 0.35;
+    doc.setTextColor(0, 0, 0);
+    y += 0.3;
 
     // Table header (first page)
     drawTableHeader();

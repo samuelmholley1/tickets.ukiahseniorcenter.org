@@ -211,6 +211,27 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Auto-number meals when someone has both a Thursday hot meal and a Friday frozen meal
+    // Prepend "#1" to hot meal notes and "#2" to frozen meal notes so kitchen knows which is which
+    if (isThursday && fridayFrozenReservations.length > 0) {
+      const normalizeName = (n: string) => n.toLowerCase().replace(/\s+/g, ' ').trim();
+      const frozenNames = new Set(fridayFrozenReservations.map(r => normalizeName(r.Name)));
+      const hotNames = new Set(labelReservations.map(r => normalizeName(r.Name)));
+      
+      for (const res of labelReservations) {
+        if (frozenNames.has(normalizeName(res.Name))) {
+          const existingNotes = (res.Notes || '').replace(/^#1\s*\|?\s*/, '').trim();
+          res.Notes = existingNotes ? `#1 | ${existingNotes}` : '#1';
+        }
+      }
+      for (const res of fridayFrozenReservations) {
+        if (hotNames.has(normalizeName(res.Name))) {
+          const existingNotes = (res.Notes || '').replace(/^#2\s*\|?\s*/, '').trim();
+          res.Notes = existingNotes ? `#2 | ${existingNotes}` : '#2';
+        }
+      }
+    }
+
     // Build label data
     interface LabelData {
       isCoyoteValley: boolean;

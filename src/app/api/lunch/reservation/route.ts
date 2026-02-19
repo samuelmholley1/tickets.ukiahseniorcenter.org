@@ -7,13 +7,13 @@ const AIRTABLE_API_BASE = 'https://api.airtable.com/v0';
 /* ========== LUNCH PRICING ==========
  * Dine In:  Member $8,  Non-Member $10
  * To Go:    Member $9,  Non-Member $11
- * Delivery: To Go price + $3
+ * Delivery: To Go price + $4 ($1 container + $3 delivery)
  * =================================== */
 
 const PRICING = {
   dineIn:   { member: 8,  nonMember: 10 },
   toGo:     { member: 9,  nonMember: 11 },
-  delivery: { member: 12, nonMember: 14 }, // To Go + $3 delivery
+  delivery: { member: 13, nonMember: 15 }, // To Go + $4 ($1 container + $3 delivery)
 } as const;
 
 type MealType = 'dineIn' | 'toGo' | 'delivery';

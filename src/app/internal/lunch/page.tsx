@@ -59,7 +59,7 @@ interface TodayReservation {
  *   - Member To Go: $9
  *   - Non-Member Dine In: $10
  *   - Non-Member To Go: $11
- *   - Delivery Add-on: $3
+ *   - Delivery Add-on: +$4 ($1 container + $3 delivery)
  * 
  * Lunch Cards (prepaid):
  *   5, 10, 15, 20 meal options
@@ -74,30 +74,30 @@ const PRICING = {
     memberToGo: 9,
     nonMemberDineIn: 10,
     nonMemberToGo: 11,
-    deliveryCharge: 3,
+    deliveryCharge: 4, // $1 container fee + $3 delivery fee
   },
   cards: {
     5: {
-      member: { dineIn: 40, pickup: 45, delivery: 60 },
-      nonMember: { dineIn: 50, pickup: 55, delivery: 70 },
+      member: { dineIn: 40, pickup: 45, delivery: 65 },
+      nonMember: { dineIn: 50, pickup: 55, delivery: 75 },
     },
     10: {
-      member: { dineIn: 80, pickup: 90, delivery: 120 },
-      nonMember: { dineIn: 100, pickup: 110, delivery: 140 },
+      member: { dineIn: 80, pickup: 90, delivery: 130 },
+      nonMember: { dineIn: 100, pickup: 110, delivery: 150 },
     },
     15: {
-      member: { dineIn: 120, pickup: 135, delivery: 180 },
-      nonMember: { dineIn: 150, pickup: 165, delivery: 210 },
+      member: { dineIn: 120, pickup: 135, delivery: 195 },
+      nonMember: { dineIn: 150, pickup: 165, delivery: 225 },
     },
     20: {
-      member: { dineIn: 160, pickup: 180, delivery: 240 },
-      nonMember: { dineIn: 200, pickup: 220, delivery: 280 },
+      member: { dineIn: 160, pickup: 180, delivery: 260 },
+      nonMember: { dineIn: 200, pickup: 220, delivery: 300 },
     },
   },
   // Per-meal rates for custom quantities
   perMeal: {
-    member:    { dineIn: 8, pickup: 9, delivery: 12 },
-    nonMember: { dineIn: 10, pickup: 11, delivery: 14 },
+    member:    { dineIn: 8, pickup: 9, delivery: 13 },
+    nonMember: { dineIn: 10, pickup: 11, delivery: 15 },
   },
 } as const;
 
@@ -3101,7 +3101,7 @@ export default function LunchPage() {
                       <td className="text-right p-2">${PRICING.individual.nonMemberToGo}</td>
                     </tr>
                     <tr className="border-b">
-                      <td className="p-2">Delivery (+$3)</td>
+                      <td className="p-2">Delivery (+$4)</td>
                       <td className="text-right p-2">${PRICING.individual.memberToGo + PRICING.individual.deliveryCharge}</td>
                       <td className="text-right p-2">${PRICING.individual.nonMemberToGo + PRICING.individual.deliveryCharge}</td>
                     </tr>

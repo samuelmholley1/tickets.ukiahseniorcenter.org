@@ -68,6 +68,10 @@ function parseDietaryRestrictions(notes: string, name?: string): string[] {
   if (DIETARY_KEYWORDS.dairyFree.some(k => lower.includes(k))) detected.push('Dairy-Free');
   if (DIETARY_KEYWORDS.inFridge.some(k => lower.includes(k))) detected.push('In Fridge');
   
+  // Meal numbering markers (#1 hot, #2 frozen) — auto-added for Thu/Fri dual meals
+  const mealNumMatch = (notes || '').match(/#(\d+)/);
+  if (mealNumMatch) detected.unshift(`Meal #${mealNumMatch[1]}`);
+  
   return detected;
 }
 
@@ -791,6 +795,7 @@ export async function GET(request: NextRequest) {
           else if (item === 'Gluten-Free') doc.setTextColor(184, 134, 11);
           else if (item === 'Dairy-Free') doc.setTextColor(0, 0, 139);
           else if (item === 'In Fridge') doc.setTextColor(0, 128, 255);
+          else if (item.startsWith('Meal #')) doc.setTextColor(220, 50, 50); // Red for meal numbers
           else doc.setTextColor(0, 0, 0);
           
           doc.setFont('helvetica', 'bold');

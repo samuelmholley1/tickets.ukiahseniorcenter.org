@@ -87,6 +87,10 @@ function extractSpecialRequests(notes: string, name?: string): string[] {
   if (lower.includes('dairy-free') || lower.includes('dairy free') || lower.includes('no dairy')) requests.push('Dairy-Free');
   if (lower.includes('in fridge') || lower.includes('fridge')) requests.push('In Fridge');
   
+  // Meal numbering markers (#1 hot, #2 frozen) — auto-added for Thu/Fri dual meals
+  const mealNumMatch = (notes || '').match(/#(\d+)/);
+  if (mealNumMatch) requests.unshift(`Meal #${mealNumMatch[1]}`);
+  
   return requests;
 }
 

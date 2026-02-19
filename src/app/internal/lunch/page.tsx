@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { SiteNavigation } from '@/components/SiteNavigation';
 import { SiteFooterContent } from '@/components/SiteFooterContent';
+import { parseJointName } from '@/lib/nameUtils';
 
 interface LunchCard {
   id: string;
@@ -1060,10 +1061,11 @@ export default function LunchPage() {
           setAutoDetectedCard(newCard);
           setPaymentMethod('lunchCard');
           // Fill customer info
+          const parsed = parseJointName(newCardForm.name);
           setCustomer({
             ...customer,
-            firstName: newCardForm.name.split(' ')[0] || '',
-            lastName: newCardForm.name.split(' ').slice(1).join(' ') || '',
+            firstName: parsed.firstName,
+            lastName: parsed.lastName,
             phone: newCardForm.phone,
           });
         }
@@ -1668,10 +1670,8 @@ export default function LunchPage() {
                               <button
                                 type="button"
                                 onClick={() => {
-                                  // Parse name into first/last
-                                  const nameParts = baseName.split(' ');
-                                  const firstName = nameParts[0] || '';
-                                  const lastName = nameParts.slice(1).join(' ') || '';
+                                  // Parse name into first/last (supports joint names like "Mary Snyder & Don Burgess")
+                                  const { firstName, lastName } = parseJointName(baseName);
                                   // Auto-populate everything (use contact info if available)
                                   setCustomer(prev => ({
                                     ...prev,
@@ -2699,11 +2699,11 @@ export default function LunchPage() {
                             setAvailableLunchCards([]);
                             // Auto-populate customer info from contact if available
                             if (card.contactEmail || card.contactPhone) {
-                              const nameParts = card.name.split(' ');
+                              const parsed = parseJointName(card.name);
                               setCustomer(prev => ({
                                 ...prev,
-                                firstName: nameParts[0] || prev.firstName,
-                                lastName: nameParts.slice(1).join(' ') || prev.lastName,
+                                firstName: parsed.firstName || prev.firstName,
+                                lastName: parsed.lastName || prev.lastName,
                                 phone: card.contactPhone || card.phone || prev.phone,
                                 email: card.contactEmail || prev.email,
                               }));
@@ -2882,7 +2882,13 @@ export default function LunchPage() {
                     : paymentMethod === 'card' ? 'Card (Zeffy)'
                     : 'Cash'
                   }</p>
-                  {paymentMethod === 'staffOverride' && paymentComment && (
+                  {transactionType === 'individual' && (() => {
+                    const allRequests = Object.values(dateMeals).flat().map(m => m.specialRequest?.trim()).filter(Boolean);
+                    return (
+                      <p className="col-span-2"><strong>Special Requests:</strong> {allRequests.length > 0 ? allRequests.join(', ') : 'None'}</p>
+                    );
+                  })()}
+                  {paymentComment && (
                     <p className="col-span-2 text-red-700"><strong>Comment:</strong> {paymentComment}</p>
                   )}
                   {paymentMethod === 'lunchCard' && selectedLunchCard && (

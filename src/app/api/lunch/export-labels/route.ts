@@ -346,31 +346,25 @@ export async function GET(request: NextRequest) {
         doc.setTextColor(0, 0, 0);
         doc.text(label.routeId || '', x + px, y + py + 0.12);
 
-        // Row 2: Name
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(0, 0, 0);
-        let name = label.name;
-        if (name.length > 32) name = name.substring(0, 30) + '...';
-        doc.text(name, x + px, y + py + 0.28);
-
-        // Row 3: Address
-        doc.setFontSize(7);
-        doc.setTextColor(80, 80, 80);
-        const addr = label.address || '';
-        doc.text(addr.length > 38 ? addr.substring(0, 36) + '...' : addr, x + px, y + py + 0.42);
-
-        // Row 4: Special requests + In Fridge
-        doc.setFontSize(7);
+        // Row 2: Special requests (red, bold if present)
         if (label.specialRequests.length > 0) {
+          doc.setFontSize(8);
           doc.setTextColor(180, 0, 0);
           doc.setFont('helvetica', 'bold');
           const reqText = label.specialRequests.join(', ');
-          doc.text(reqText.length > 40 ? reqText.substring(0, 38) + '...' : reqText, x + px, y + py + 0.56);
-        } else {
+          doc.text(reqText.length > 40 ? reqText.substring(0, 38) + '...' : reqText, x + px, y + py + 0.30);
+          
+          // Row 3: Date
+          doc.setFontSize(6);
           doc.setTextColor(100, 100, 100);
           doc.setFont('helvetica', 'normal');
-          doc.text(shortDate, x + px, y + py + 0.56);
+          doc.text(shortDate, x + px, y + py + 0.44);
+        } else {
+          // No special requests - just date
+          doc.setFontSize(7);
+          doc.setTextColor(100, 100, 100);
+          doc.setFont('helvetica', 'normal');
+          doc.text(shortDate, x + px, y + py + 0.30);
         }
       } else {
         // REGULAR LABEL
@@ -382,22 +376,21 @@ export async function GET(request: NextRequest) {
         if (name.length > 26) name = name.substring(0, 24) + '...';
         doc.text(name, x + px, y + py + 0.12);
 
-        // Row 2: Meal Type + Member Status (full word)
+        // Row 2: Meal Type only
         doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
         
-        const mealType = label.mealType || 'Unknown';
-        const memberStatus = label.memberStatus === 'Member' ? 'Member' : 'Non-Member';
+        const mealType = label.mealType === 'To Go' ? 'Pickup' : (label.mealType || 'Unknown');
         
         if (mealType === 'Delivery') {
           doc.setTextColor(180, 0, 0);
-        } else if (mealType === 'To Go') {
+        } else if (mealType === 'Pickup') {
           doc.setTextColor(0, 100, 180);
         } else {
           doc.setTextColor(0, 120, 0);
         }
         
-        doc.text(`${mealType} - ${memberStatus}`, x + px, y + py + 0.30);
+        doc.text(mealType, x + px, y + py + 0.30);
 
         // Row 3: Special Requests (red, bold if present)
         if (label.specialRequests.length > 0) {
@@ -428,7 +421,7 @@ export async function GET(request: NextRequest) {
       doc.setTextColor(100, 100, 100);
       const dineInCount = reservations.filter(r => r['Meal Type'] === 'Dine In').length;
       const message = dineInCount > 0 
-        ? `No To Go or Delivery meals for this date (${dineInCount} Dine In only)`
+        ? `No Pickup or Delivery meals for this date (${dineInCount} Dine In only)`
         : 'No reservations for this date';
       doc.text(message, AVERY_5160.pageWidth / 2, AVERY_5160.pageHeight / 2, { align: 'center' });
     }

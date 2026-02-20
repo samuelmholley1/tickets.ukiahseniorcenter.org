@@ -602,6 +602,7 @@ export default function LunchPage() {
   // $1 Container charge
   const [isProcessingContainer, setIsProcessingContainer] = useState(false);
   const [containerMessage, setContainerMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [showContainerModal, setShowContainerModal] = useState(false);
 
   // Balance Cash Box
   const [showCashBoxModal, setShowCashBoxModal] = useState(false);
@@ -626,15 +627,19 @@ export default function LunchPage() {
     }
   }, []);
 
-  // Handle $1 container charge
-  const handleContainerCharge = useCallback(async () => {
+  // Handle $1 container charge — show modal first
+  const openContainerModal = useCallback(() => {
     if (!staffInitials.trim()) {
       setContainerMessage({ type: 'error', text: 'Enter staff initials first ↓' });
       paymentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setTimeout(() => setContainerMessage(null), 4000);
       return;
     }
-    if (!confirm('Process $1 cash To Go container charge?')) return;
+    setShowContainerModal(true);
+  }, [staffInitials]);
+
+  const confirmContainerCharge = useCallback(async () => {
+    setShowContainerModal(false);
     setIsProcessingContainer(true);
     setContainerMessage(null);
     try {
@@ -656,7 +661,7 @@ export default function LunchPage() {
     }
   }, [staffInitials, fetchRecentTransactions]);
 
-  // Open Balance Cash Box modal — pre-select today's cash/check transactions between 10am-1pm
+  // Open Balance Cash Box modal — auto-select ALL today's cash/check transactions
   const openCashBoxModal = useCallback(() => {
     const nowPacific = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
     const todayStr = `${nowPacific.getFullYear()}-${String(nowPacific.getMonth() + 1).padStart(2, '0')}-${String(nowPacific.getDate()).padStart(2, '0')}`;
@@ -670,13 +675,10 @@ export default function LunchPage() {
       return txDateStr === todayStr && cashCheckMethods.includes(tx.paymentMethod);
     });
 
-    // Pre-select transactions created between 10am-1pm Pacific
+    // Auto-select ALL today's cash/check transactions
     const selections: Record<string, boolean> = {};
     todaysCashCheck.forEach(tx => {
-      const txDate = new Date(tx.createdAt);
-      const txPacific = new Date(txDate.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
-      const hour = txPacific.getHours();
-      selections[tx.id] = hour >= 10 && hour < 13; // 10am to 12:59pm
+      selections[tx.id] = true;
     });
     setCashBoxSelections(selections);
     setShowCashBoxModal(true);
@@ -1862,7 +1864,7 @@ export default function LunchPage() {
                 )}
                 <button
                   type="button"
-                  onClick={handleContainerCharge}
+                  onClick={openContainerModal}
                   disabled={isProcessingContainer}
                   className="px-5 py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white font-['Jost',sans-serif] font-bold rounded-lg transition-all shadow"
                 >
@@ -3326,7 +3328,7 @@ export default function LunchPage() {
                 </div>
 
                 <p className="text-sm text-gray-600 font-['Bitter',serif] mb-4">
-                  Today&apos;s cash &amp; check transactions ({todayStr}). Transactions from 10am–1pm are pre-selected.
+                  Today&apos;s cash &amp; check transactions ({todayStr}). All transactions are auto-selected.
                 </p>
 
                 {todaysCashCheck.length === 0 ? (
@@ -3472,6 +3474,27 @@ export default function LunchPage() {
                           </>
                         )}
                       </div>
+
+                      {/* Checks listing */}
+                      {(() => {
+                        const checkTxs = selectedTxs.filter(tx => tx.paymentMethod === 'Check' || tx.paymentMethod === 'Cash & Check');
+                        if (checkTxs.length === 0) return null;
+                        return (
+                          <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <h4 className="font-['Jost',sans-serif] font-bold text-blue-800 text-sm mb-2">
+                              📝 Checks to Account For ({checkTxs.length})
+                            </h4>
+                            <div className="space-y-1">
+                              {checkTxs.map(tx => (
+                                <div key={tx.id} className="flex justify-between text-sm font-['Bitter',serif]">
+                                  <span className="text-blue-800 font-semibold">{tx.name}</span>
+                                  <span className="text-blue-700 font-bold">${tx.amount.toFixed(2)} <span className="text-blue-500 text-xs">({tx.paymentMethod})</span></span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </>
                 )}
@@ -3490,6 +3513,53 @@ export default function LunchPage() {
           </div>
         );
       })()}
+
+      {/* Container Charge Confirmation Modal */}
+      {showContainerModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden">
+            {/* Logo header */}
+            <div className="bg-gradient-to-r from-[#427d78] to-[#5eb3a1] p-5 flex items-center justify-center">
+              <img
+                src="https://ukiahseniorcenter.org/wp-content/uploads/2023/07/usc-logo-greentext.webp"
+                alt="Ukiah Senior Center"
+                className="h-16 object-contain brightness-0 invert"
+              />
+            </div>
+            <div className="p-6 text-center">
+              <div className="text-5xl mb-3">🥡</div>
+              <h3 className="font-['Jost',sans-serif] font-bold text-gray-800 text-xl mb-2">
+                $1 Container Charge
+              </h3>
+              <p className="font-['Bitter',serif] text-gray-600 text-sm mb-1">
+                To Go container fee • Cash payment
+              </p>
+              <p className="font-['Bitter',serif] text-gray-500 text-xs mb-4">
+                Customer: Anonymous • Staff: {staffInitials.trim().toUpperCase()}
+              </p>
+              <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-4 mb-5">
+                <div className="font-['Jost',sans-serif] font-bold text-orange-800 text-3xl">$1.00</div>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowContainerModal(false)}
+                  className="flex-1 px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-['Jost',sans-serif] font-bold rounded-lg transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmContainerCharge}
+                  className="flex-1 px-4 py-3 bg-orange-500 hover:bg-orange-600 text-white font-['Jost',sans-serif] font-bold rounded-lg transition-all shadow"
+                >
+                  ✓ Confirm
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <SiteFooterContent />
     </>

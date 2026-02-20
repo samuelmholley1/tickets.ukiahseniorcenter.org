@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
 
     const payload = {
       fields: {
-        'Name': 'Container Charge',
+        'Name': 'Anonymous',
         'Date': todayStr,
         'Meal Type': 'To Go',
         'Member Status': 'Member',
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
         'Payment Method': 'Cash',
         'Staff': staff.trim().substring(0, 50),
         'Status': 'Reserved',
-        'Notes': '$1 To Go container',
+        'Notes': '$1 To Go container fee',
       },
       typecast: true,
     };

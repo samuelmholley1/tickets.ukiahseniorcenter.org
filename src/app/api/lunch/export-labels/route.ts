@@ -124,11 +124,26 @@ export async function GET(request: NextRequest) {
       let url = `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_RESERVATIONS_TABLE_ID}?${baseFilter}`;
       if (offset) url += `&offset=${offset}`;
       
-      const response = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}` },
-      });
+      let response: Response | null = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        response = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}` },
+        });
+        if (response.ok) break;
+        // Rate limit (429) or server error (5xx) - wait and retry
+        if (response.status === 429 || response.status >= 500) {
+          console.error(`Airtable returned ${response.status}, retrying (attempt ${attempt + 1}/3)...`);
+          await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
+          continue;
+        }
+        break; // Client error (4xx) - don't retry
+      }
 
-      if (!response.ok) throw new Error('Failed to fetch reservations from Airtable');
+      if (!response || !response.ok) {
+        const errorText = response ? await response.text() : 'No response';
+        console.error(`Airtable labels fetch failed: ${response?.status} - ${errorText}`);
+        throw new Error(`Failed to fetch reservations from Airtable (${response?.status || 'unknown'})`);
+      }
 
       const data = await response.json();
       allRecords.push(...data.records);
@@ -180,15 +195,25 @@ export async function GET(request: NextRequest) {
         let url = `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_RESERVATIONS_TABLE_ID}?filterByFormula=${encodeURIComponent(fridayFilter)}`;
         if (fridayOffset) url += `&offset=${fridayOffset}`;
         
-        const response = await fetch(url, {
-          headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}` },
-        });
+        let fridayResp: Response | null = null;
+        for (let attempt = 0; attempt < 3; attempt++) {
+          fridayResp = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}` },
+          });
+          if (fridayResp.ok) break;
+          if (fridayResp.status === 429 || fridayResp.status >= 500) {
+            await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
+            continue;
+          }
+          break;
+        }
         
-        if (response.ok) {
-          const data = await response.json();
+        if (fridayResp && fridayResp.ok) {
+          const data = await fridayResp.json();
           fridayRecords.push(...data.records);
           fridayOffset = data.offset;
         } else {
+          console.error(`Friday frozen fetch failed: ${fridayResp?.status}`);
           break;
         }
       } while (fridayOffset);

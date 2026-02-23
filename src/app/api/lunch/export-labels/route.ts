@@ -342,6 +342,22 @@ export async function GET(request: NextRequest) {
     const dateObj = new Date(date + 'T12:00:00');
     const shortDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
+    // Usable area inside each label (with padding)
+    const px = 0.08; // horizontal padding
+    const py = 0.06; // vertical padding
+    const maxW = labelWidth - px * 2;  // 2.465"
+    const maxH = labelHeight - py * 2; // 0.88"
+
+    // Find the largest font size where text fits within maxWidth
+    function fitFontSize(text: string, font: 'bold' | 'normal', maxSize: number, minSize: number = 7): number {
+      for (let size = maxSize; size >= minSize; size -= 0.5) {
+        doc.setFontSize(size);
+        doc.setFont('helvetica', font);
+        if (doc.getTextWidth(text) <= maxW) return size;
+      }
+      return minSize;
+    }
+
     // Draw each label
     allLabels.forEach((label, index) => {
       if (index > 0 && index % labelsPerPage === 0) {
@@ -355,87 +371,118 @@ export async function GET(request: NextRequest) {
       const x = leftMargin + col * (labelWidth + hGap);
       const y = topMargin + row * labelHeight;
 
-      // Label border
-      doc.setDrawColor(220, 220, 220);
-      doc.setLineWidth(0.01);
-      doc.rect(x, y, labelWidth, labelHeight);
-
-      const px = 0.08;
-      const py = 0.08;
+      // No border — clean labels for Avery 5160
 
       if (label.isCoyoteValley) {
         // COYOTE VALLEY LABEL
-        // Row 1: Route ID (bold, black)
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(0, 0, 0);
-        doc.text(label.routeId || '', x + px, y + py + 0.12);
+        const hasReqs = label.specialRequests.length > 0;
+        const reqText = hasReqs ? label.specialRequests.join(', ') : '';
 
-        // Row 2: Special requests (red, bold if present)
-        if (label.specialRequests.length > 0) {
-          doc.setFontSize(8);
-          doc.setTextColor(180, 0, 0);
+        if (hasReqs) {
+          // 3 rows: Route ID, Special Requests, Date - split height into 3
+          const rowH = maxH / 3;
+
+          // Route ID (bold, black) — as big as fits
+          const idSize = fitFontSize(label.routeId || '', 'bold', 24);
+          doc.setFontSize(idSize);
           doc.setFont('helvetica', 'bold');
-          const reqText = label.specialRequests.join(', ');
-          doc.text(reqText.length > 40 ? reqText.substring(0, 38) + '...' : reqText, x + px, y + py + 0.30);
-          
-          // Row 3: Date
-          doc.setFontSize(6);
-          doc.setTextColor(100, 100, 100);
+          doc.setTextColor(0, 0, 0);
+          doc.text(label.routeId || '', x + px, y + py + rowH * 0.75);
+
+          // Special Requests (red, bold)
+          const reqSize = fitFontSize(reqText, 'bold', 18);
+          doc.setFontSize(reqSize);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(180, 0, 0);
+          doc.text(reqText, x + px, y + py + rowH * 1.75);
+
+          // Date (gray)
+          const dateSize = fitFontSize(shortDate, 'normal', 12);
+          doc.setFontSize(dateSize);
           doc.setFont('helvetica', 'normal');
-          doc.text(shortDate, x + px, y + py + 0.44);
+          doc.setTextColor(100, 100, 100);
+          doc.text(shortDate, x + px, y + py + rowH * 2.75);
         } else {
-          // No special requests - just date
-          doc.setFontSize(7);
-          doc.setTextColor(100, 100, 100);
+          // 2 rows: Route ID, Date - split height into 2
+          const rowH = maxH / 2;
+
+          const idSize = fitFontSize(label.routeId || '', 'bold', 28);
+          doc.setFontSize(idSize);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(0, 0, 0);
+          doc.text(label.routeId || '', x + px, y + py + rowH * 0.75);
+
+          const dateSize = fitFontSize(shortDate, 'normal', 16);
+          doc.setFontSize(dateSize);
           doc.setFont('helvetica', 'normal');
-          doc.text(shortDate, x + px, y + py + 0.30);
+          doc.setTextColor(100, 100, 100);
+          doc.text(shortDate, x + px, y + py + rowH * 1.75);
         }
       } else {
         // REGULAR LABEL
-        // Row 1: Name (bold)
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(0, 0, 0);
-        let name = label.name;
-        if (name.length > 26) name = name.substring(0, 24) + '...';
-        doc.text(name, x + px, y + py + 0.12);
-
-        // Row 2: Meal Type only
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-        
         const mealType = label.mealType === 'To Go' ? 'Pickup' : (label.mealType || 'Unknown');
-        
-        if (mealType === 'Delivery') {
-          doc.setTextColor(180, 0, 0);
-        } else if (mealType === 'Pickup') {
-          doc.setTextColor(0, 100, 180);
-        } else {
-          doc.setTextColor(0, 120, 0);
-        }
-        
-        doc.text(mealType, x + px, y + py + 0.30);
+        const hasReqs = label.specialRequests.length > 0;
+        const reqText = hasReqs ? label.specialRequests.join(', ') : '';
 
-        // Row 3: Special Requests (red, bold if present)
-        if (label.specialRequests.length > 0) {
-          doc.setFontSize(8);
-          doc.setTextColor(180, 0, 0);
+        if (hasReqs) {
+          // 4 rows: Name, Meal Type, Special Requests, Date
+          const rowH = maxH / 4;
+
+          // Name (bold, black)
+          const nameSize = fitFontSize(label.name, 'bold', 22);
+          doc.setFontSize(nameSize);
           doc.setFont('helvetica', 'bold');
-          const reqText = label.specialRequests.join(', ');
-          doc.text(reqText.length > 35 ? reqText.substring(0, 33) + '...' : reqText, x + px, y + py + 0.46);
-          
-          // Row 4: Date
-          doc.setFontSize(6);
-          doc.setTextColor(100, 100, 100);
+          doc.setTextColor(0, 0, 0);
+          doc.text(label.name, x + px, y + py + rowH * 0.75);
+
+          // Meal Type (colored)
+          const mealSize = fitFontSize(mealType, 'normal', 18);
+          doc.setFontSize(mealSize);
           doc.setFont('helvetica', 'normal');
-          doc.text(shortDate, x + px, y + py + 0.58);
+          if (mealType === 'Delivery') doc.setTextColor(180, 0, 0);
+          else if (mealType === 'Pickup') doc.setTextColor(0, 100, 180);
+          else doc.setTextColor(0, 120, 0);
+          doc.text(mealType, x + px, y + py + rowH * 1.75);
+
+          // Special Requests (red, bold)
+          const reqSize = fitFontSize(reqText, 'bold', 16);
+          doc.setFontSize(reqSize);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(180, 0, 0);
+          doc.text(reqText, x + px, y + py + rowH * 2.75);
+
+          // Date (gray)
+          const dateSize = fitFontSize(shortDate, 'normal', 10);
+          doc.setFontSize(dateSize);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(100, 100, 100);
+          doc.text(shortDate, x + px, y + py + rowH * 3.75);
         } else {
-          // No special requests - just date
-          doc.setFontSize(7);
-          doc.setTextColor(100, 100, 100);
+          // 3 rows: Name, Meal Type, Date
+          const rowH = maxH / 3;
+
+          // Name (bold, black)
+          const nameSize = fitFontSize(label.name, 'bold', 26);
+          doc.setFontSize(nameSize);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(0, 0, 0);
+          doc.text(label.name, x + px, y + py + rowH * 0.75);
+
+          // Meal Type (colored)
+          const mealSize = fitFontSize(mealType, 'normal', 20);
+          doc.setFontSize(mealSize);
           doc.setFont('helvetica', 'normal');
-          doc.text(shortDate, x + px, y + py + 0.46);
+          if (mealType === 'Delivery') doc.setTextColor(180, 0, 0);
+          else if (mealType === 'Pickup') doc.setTextColor(0, 100, 180);
+          else doc.setTextColor(0, 120, 0);
+          doc.text(mealType, x + px, y + py + rowH * 1.75);
+
+          // Date (gray)
+          const dateSize = fitFontSize(shortDate, 'normal', 14);
+          doc.setFontSize(dateSize);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(100, 100, 100);
+          doc.text(shortDate, x + px, y + py + rowH * 2.75);
         }
       }
     });

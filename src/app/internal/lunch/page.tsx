@@ -3546,6 +3546,12 @@ export default function LunchPage() {
                                 <span>${totalCheck.toFixed(2)}</span>
                               </div>
                             )}
+                            {totalCheck > 0 && (
+                              <div className="flex justify-between font-bold border-t border-gray-300 pt-1">
+                                <span>= Subtotal</span>
+                                <span>${(expectedCashInBox + totalCheck).toFixed(2)}</span>
+                              </div>
+                            )}
                             <div className="flex justify-between text-gray-500">
                               <span>− Remove Change Fund</span>
                               <span>&lt;${changeFund.toFixed(2)}&gt;</span>

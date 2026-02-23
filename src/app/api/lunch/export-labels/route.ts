@@ -76,6 +76,10 @@ function extractSpecialRequests(notes: string, name?: string): string[] {
   if (nameLower.includes('fulin') || nameLower.includes('fu lin')) {
     requests.push('Vegetarian');
     requests.push('No Garlic/Onions');
+  } else if (nameLower.includes('vilner')) {
+    // David Vilner ALWAYS gets Vegetarian
+    requests.push('Vegetarian');
+    if (lower.includes('no garlic') || lower.includes('no onion')) requests.push('No Garlic/Onions');
   } else {
     if (lower.includes('vegetarian')) requests.push('Vegetarian');
     // Combined: No Garlic/Onions is ONE category

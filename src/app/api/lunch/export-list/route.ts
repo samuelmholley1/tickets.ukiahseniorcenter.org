@@ -59,6 +59,10 @@ function parseDietaryRestrictions(notes: string, name?: string): string[] {
   if (nameLower.includes('fulin') || nameLower.includes('fu lin')) {
     detected.push('Vegetarian');
     detected.push('No Garlic/Onions');
+  } else if (nameLower.includes('vilner')) {
+    // David Vilner ALWAYS gets Vegetarian
+    detected.push('Vegetarian');
+    if (DIETARY_KEYWORDS.noGarlicOnions.some(k => lower.includes(k))) detected.push('No Garlic/Onions');
   } else {
     if (DIETARY_KEYWORDS.vegetarian.some(k => lower.includes(k))) detected.push('Vegetarian');
     if (DIETARY_KEYWORDS.noGarlicOnions.some(k => lower.includes(k))) detected.push('No Garlic/Onions');

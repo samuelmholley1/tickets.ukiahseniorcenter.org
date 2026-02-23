@@ -55,10 +55,11 @@ function parseDietaryRestrictions(notes: string, name?: string): string[] {
   const nameLower = (name || '').toLowerCase();
   const detected: string[] = [];
   
-  // Fulin Chang ALWAYS gets Vegetarian + No Garlic/Onions
-  if (nameLower.includes('fulin') || nameLower.includes('fu lin')) {
+  // Fulin Chang ALWAYS gets Vegetarian + No Garlic/Onions + No Dessert
+  if (nameLower.includes('fulin') || nameLower.includes('fu lin') || nameLower.includes('fu-lin')) {
     detected.push('Vegetarian');
     detected.push('No Garlic/Onions');
+    detected.push('No Dessert');
   } else if (nameLower.includes('vilner')) {
     // David Vilner ALWAYS gets Vegetarian
     detected.push('Vegetarian');

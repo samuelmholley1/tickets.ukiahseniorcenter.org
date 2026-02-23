@@ -462,7 +462,8 @@ export default function LunchPage() {
   // Auto-populate special request for known dietary needs
   const getAutoSpecialRequest = (name: string): string => {
     const normalized = name.toLowerCase().trim();
-    if (normalized === 'david vilner' || normalized === 'fulin chang') return 'Vegetarian';
+    if (normalized === 'fulin chang' || normalized === 'fu-lin chang' || normalized === 'fu lin chang') return 'Vegetarian, No Garlic/Onions, No Dessert';
+    if (normalized === 'david vilner') return 'Vegetarian';
     return '';
   };
   

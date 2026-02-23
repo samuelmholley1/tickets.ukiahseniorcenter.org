@@ -72,10 +72,11 @@ function extractSpecialRequests(notes: string, name?: string): string[] {
   const lower = (notes || '').toLowerCase();
   const nameLower = (name || '').toLowerCase();
   
-  // Fulin Chang ALWAYS gets Vegetarian + No Garlic/Onions
-  if (nameLower.includes('fulin') || nameLower.includes('fu lin')) {
+  // Fulin Chang ALWAYS gets Vegetarian + No Garlic/Onions + No Dessert
+  if (nameLower.includes('fulin') || nameLower.includes('fu lin') || nameLower.includes('fu-lin')) {
     requests.push('Vegetarian');
     requests.push('No Garlic/Onions');
+    requests.push('No Dessert');
   } else if (nameLower.includes('vilner')) {
     // David Vilner ALWAYS gets Vegetarian
     requests.push('Vegetarian');

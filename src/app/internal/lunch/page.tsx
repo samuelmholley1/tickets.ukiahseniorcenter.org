@@ -3247,13 +3247,27 @@ export default function LunchPage() {
             {/* Action Buttons */}
             <div className="flex gap-3">
               {submitResult.success ? (
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="flex-1 py-3 px-4 bg-green-600 hover:bg-green-700 text-white font-['Jost',sans-serif] font-bold text-lg rounded-xl transition-colors shadow-lg"
-                >
-                  ✓ Start New Transaction
-                </button>
+                <div className="flex gap-3 w-full">
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="flex-1 py-3 px-4 bg-green-600 hover:bg-green-700 text-white font-['Jost',sans-serif] font-bold text-lg rounded-xl transition-colors shadow-lg"
+                  >
+                    ✓ Start New Transaction
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      resetForm();
+                      setTimeout(() => {
+                        recentTransactionsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }, 100);
+                    }}
+                    className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-['Jost',sans-serif] font-bold text-lg rounded-xl transition-colors shadow-lg"
+                  >
+                    📜 Review Recent Transactions
+                  </button>
+                </div>
               ) : (
                 <>
                   <button

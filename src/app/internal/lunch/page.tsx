@@ -620,6 +620,11 @@ export default function LunchPage() {
   const [containerMessage, setContainerMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showContainerModal, setShowContainerModal] = useState(false);
 
+  // Retroactive (past date) payment warning
+  const [showPastDateWarning, setShowPastDateWarning] = useState(false);
+  const [retroactiveOverride, setRetroactiveOverride] = useState(false);
+  const [pastDatesInTransaction, setPastDatesInTransaction] = useState<string[]>([]);
+
   // Balance Cash Box
   const [showCashBoxModal, setShowCashBoxModal] = useState(false);
   const [cashBoxSelections, setCashBoxSelections] = useState<Record<string, boolean>>({});
@@ -1038,6 +1043,9 @@ export default function LunchPage() {
     setAutoDetectedCardInfo(null);
     setSubmitResult(null);
     setShowConfirmation(false);
+    setRetroactiveOverride(false);
+    setPastDatesInTransaction([]);
+    setShowPastDateWarning(false);
     setTransactionLog([]);
     // Scroll to lunch card lookup section
     setTimeout(() => {
@@ -1112,6 +1120,18 @@ export default function LunchPage() {
         alert('Payment comment is required for Staff Override');
         return;
       }
+
+      // Check for past dates and warn if not already overridden
+      if (transactionType === 'individual' && !retroactiveOverride) {
+        const todayStr = getTodayPacificStr();
+        const pastDates = selectedDates.filter(d => d < todayStr);
+        if (pastDates.length > 0) {
+          setPastDatesInTransaction(pastDates);
+          setShowPastDateWarning(true);
+          return;
+        }
+      }
+
       setShowConfirmation(true);
       return;
     }
@@ -1181,6 +1201,7 @@ export default function LunchPage() {
                 quantity: isFirstMeal ? totalMeals : 1, // Deduct total on first call
                 deductMeal: isFirstMeal, // Only deduct from card on first meal
                 isFrozenFriday: meal.isFrozenFriday || false,
+                retroactive: retroactiveOverride, // Allow past-date reservations when overridden
                 // Only include email data on first meal
                 emailData: isFirstMeal ? {
                   allDates: emailDateInfo,
@@ -3594,6 +3615,70 @@ export default function LunchPage() {
           </div>
         );
       })()}
+
+      {/* Past Date Warning Modal */}
+      {showPastDateWarning && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden">
+            {/* Logo header */}
+            <div className="bg-gradient-to-r from-[#b45309] to-[#d97706] p-5 flex items-center justify-center">
+              <img
+                src="https://ukiahseniorcenter.org/wp-content/uploads/2023/07/usc-logo-greentext.webp"
+                alt="Ukiah Senior Center"
+                className="h-16 object-contain brightness-0 invert"
+              />
+            </div>
+            <div className="p-6 text-center">
+              <div className="text-5xl mb-3">⚠️</div>
+              <h3 className="font-['Jost',sans-serif] font-bold text-gray-800 text-xl mb-2">
+                Retroactive Payment
+              </h3>
+              <p className="font-['Bitter',serif] text-gray-600 text-sm mb-3">
+                This transaction includes {pastDatesInTransaction.length === 1 ? 'a past date' : 'past dates'}:
+              </p>
+              <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-3 mb-4">
+                <div className="font-['Jost',sans-serif] font-bold text-amber-800 text-sm space-y-1">
+                  {pastDatesInTransaction.map(d => {
+                    const dateObj = new Date(d + 'T12:00:00');
+                    return (
+                      <div key={d}>
+                        {dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <p className="font-['Bitter',serif] text-gray-500 text-xs mb-5">
+                These meals have already been served. Proceed to record the retroactive payment?
+              </p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPastDateWarning(false);
+                    setPastDatesInTransaction([]);
+                  }}
+                  className="flex-1 px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-['Jost',sans-serif] font-bold rounded-lg transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPastDateWarning(false);
+                    setRetroactiveOverride(true);
+                    // Continue to confirmation screen
+                    setShowConfirmation(true);
+                  }}
+                  className="flex-1 px-4 py-3 bg-amber-500 hover:bg-amber-600 text-white font-['Jost',sans-serif] font-bold rounded-lg transition-all shadow"
+                >
+                  ✓ Apply Payment
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Container Charge Confirmation Modal */}
       {showContainerModal && (

@@ -37,6 +37,7 @@ interface ReservationRequest {
   quantity?: number; // defaults to 1
   deductMeal?: boolean; // Only deduct from lunch card if true (for first meal in batch)
   isFrozenFriday?: boolean; // Is this a frozen Friday meal (picked up Thursday)?
+  retroactive?: boolean; // Allow creating reservations for past dates (retroactive payment)
   // Email data (only sent on first meal of batch)
   emailData?: {
     allDates: MealDateInfo[]; // All dates in this transaction
@@ -83,7 +84,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body: ReservationRequest = await request.json();
-    const { date, mealType, memberStatus, paymentMethod, lunchCardId, notes, paymentComment, compCardNumber, staff, quantity = 1, isFrozenFriday = false } = body;
+    const { date, mealType, memberStatus, paymentMethod, lunchCardId, notes, paymentComment, compCardNumber, staff, quantity = 1, isFrozenFriday = false, retroactive = false } = body;
     const name = titleCaseName(body.name || '');
 
     // Contact Sync Logic
@@ -151,13 +152,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Friday reservations must be marked as Frozen Friday meals' }, { status: 400 });
     }
     
-    // Allow reservations for today or future only (no past dates)
+    // Allow reservations for today or future only (no past dates) unless retroactive override
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const reservationDateOnly = new Date(reservationDate);
     reservationDateOnly.setHours(0, 0, 0, 0);
-    if (reservationDateOnly < today) {
-      return NextResponse.json({ error: 'Cannot create reservations for past dates' }, { status: 400 });
+    if (reservationDateOnly < today && !retroactive) {
+      return NextResponse.json({ error: 'Cannot create reservations for past dates', code: 'PAST_DATE' }, { status: 400 });
     }
     
     if (!['dineIn', 'toGo', 'delivery'].includes(mealType)) {

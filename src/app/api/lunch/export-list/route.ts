@@ -528,43 +528,43 @@ export async function GET(request: NextRequest) {
     // Helper function to draw table header (2 rows for long headers)
     const drawTableHeader = () => {
       doc.setFillColor(66, 125, 120);
-      doc.rect(margin, y, contentWidth, 0.45, 'F'); // Taller header for 2 lines
+      doc.rect(margin, y, contentWidth, 0.50, 'F'); // Taller header for 2 lines
       
-      doc.setFontSize(8);
+      doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(255, 255, 255);
       
       let hx = margin + 0.05;
       
       // Row 1 headers
-      doc.text('#', hx, y + 0.18);
+      doc.text('#', hx, y + 0.22);
       hx += colWidths[0];
       
-      doc.text('Name', hx, y + 0.18);
+      doc.text('Name', hx, y + 0.22);
       hx += colWidths[1];
 
-      doc.text('Phone', hx, y + 0.18);
+      doc.text('Phone', hx, y + 0.22);
       hx += colWidths[2];
       
-      doc.text('Type', hx, y + 0.18);
+      doc.text('Type', hx, y + 0.22);
       hx += colWidths[3];
       
-      doc.text('Status', hx, y + 0.18);
+      doc.text('Status', hx, y + 0.22);
       hx += colWidths[4];
       
-      doc.text('Payment', hx, y + 0.18);
+      doc.text('Payment', hx, y + 0.22);
       hx += colWidths[5];
       
       // Multi-line header: Special Requests
-      doc.text('Special', hx, y + 0.13);
-      doc.text('Requests', hx, y + 0.28);
+      doc.text('Special', hx, y + 0.16);
+      doc.text('Requests', hx, y + 0.34);
       hx += colWidths[6];
       
       // Multi-line header: Meals Remaining
-      doc.text('Meals', hx, y + 0.13);
-      doc.text('Remaining', hx, y + 0.28);
+      doc.text('Meals', hx, y + 0.16);
+      doc.text('Remaining', hx, y + 0.34);
       
-      y += 0.5;
+      y += 0.55;
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(0, 0, 0);
     };
@@ -728,7 +728,7 @@ export async function GET(request: NextRequest) {
       if (dietary.length > 0) {
         let currentLineWidth = 0;
         const maxReqWidth = colWidths[6] - 0.1;
-        doc.setFontSize(7);
+        doc.setFontSize(9);
         doc.setFont('helvetica', 'bold');
         for (let i = 0; i < dietary.length; i++) {
           const itemText = dietary[i] + (i < dietary.length - 1 ? ', ' : '');
@@ -743,8 +743,8 @@ export async function GET(request: NextRequest) {
       }
       
       const maxLines = Math.max(nameLines.length, reqLinesCount);
-      const lineHeight = 0.14;
-      const rowHeight = Math.max(0.28, (maxLines * lineHeight) + 0.14);
+      const lineHeight = 0.17;
+      const rowHeight = Math.max(0.34, (maxLines * lineHeight) + 0.17);
       
       checkNewPage(rowHeight);
       
@@ -762,30 +762,30 @@ export async function GET(request: NextRequest) {
       visibleRowIndex++;
       
       let x = margin + 0.05;
-      doc.setFontSize(8);
+      doc.setFontSize(10);
       doc.setTextColor(0, 0, 0);
       doc.setFont('helvetica', 'normal');
       
       // 1. Row number
-      doc.text(String(index + 1), x, y + 0.12);
+      doc.text(String(index + 1), x, y + 0.15);
       x += colWidths[0];
       
       // 2. Name (Wrapped)
       doc.setFont('helvetica', 'bold');
-      doc.text(nameLines, x, y + 0.12);
+      doc.text(nameLines, x, y + 0.15);
       doc.setFont('helvetica', 'normal');
       x += colWidths[1];
       
       // 3. Phone (New)
-      doc.text(res.Phone || '', x, y + 0.12);
+      doc.text(res.Phone || '', x, y + 0.15);
       x += colWidths[2];
       
       // 4. Meal Type
-      doc.text(res['Meal Type'] || '', x, y + 0.12);
+      doc.text(res['Meal Type'] || '', x, y + 0.15);
       x += colWidths[3];
       
       // 5. Member Status
-      doc.text(res['Member Status'] || '', x, y + 0.12);
+      doc.text(res['Member Status'] || '', x, y + 0.15);
       x += colWidths[4];
       
       // 6. Payment method (abbreviated)
@@ -801,20 +801,20 @@ export async function GET(request: NextRequest) {
         'Staff Override': 'Override',
       };
       const paymentLabel = paymentAbbr[payment] || payment;
-      doc.setFontSize(7);
+      doc.setFontSize(9);
       doc.setFont('helvetica', 'italic');
       doc.setTextColor(60, 60, 60);
-      doc.text(paymentLabel, x, y + 0.12);
+      doc.text(paymentLabel, x, y + 0.15);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(0, 0, 0);
-      doc.setFontSize(8);
+      doc.setFontSize(10);
       x += colWidths[5];
       
       // 7. Special Requests (Wrapped & Colored)
       if (dietary.length > 0) {
-        doc.setFontSize(7);
+        doc.setFontSize(9);
         let reqX = x;
-        let reqY = y + 0.13; // slightly offset for alignment
+        let reqY = y + 0.16; // slightly offset for alignment
         let currentLineWidth = 0;
         const maxReqWidth = colWidths[6] - 0.1;
         
@@ -825,7 +825,7 @@ export async function GET(request: NextRequest) {
           if (item === 'FROZEN') {
             // Yellow highlight background behind "FROZEN" text
             doc.setFont('helvetica', 'bold');
-            doc.setFontSize(7);
+            doc.setFontSize(9);
             const frozenW = doc.getTextWidth('FROZEN, ');
             doc.setFillColor(255, 255, 0);
             doc.rect(reqX - 0.01, reqY - 0.09, frozenW + 0.02, 0.13, 'F');
@@ -861,33 +861,33 @@ export async function GET(request: NextRequest) {
       x += colWidths[6];
       
       // 8. Meals Remaining
-      doc.setFontSize(8);
+      doc.setFontSize(10);
       if (res.LunchCardRemaining !== undefined) {
         const remaining = res.LunchCardRemaining;
         
         // Color-code based on remaining meals
         if (remaining <= 1) {
           doc.setFillColor(255, 200, 200);
-          doc.rect(x - 0.05, y - 0.03, colWidths[7] - 0.1, 0.24, 'F');
+          doc.rect(x - 0.05, y - 0.03, colWidths[7] - 0.1, 0.28, 'F');
           doc.setTextColor(139, 0, 0);
           doc.setFont('helvetica', 'bold');
-          doc.text(`${remaining}`, x, y + 0.12);
-          if (remaining === 1) doc.text(' (!)', x + 0.15, y + 0.12);
+          doc.text(`${remaining}`, x, y + 0.15);
+          if (remaining === 1) doc.text(' (!)', x + 0.15, y + 0.15);
         } else if (remaining === 2 || remaining === 3) {
           doc.setFillColor(255, 255, 200);
-          doc.rect(x - 0.05, y - 0.03, colWidths[7] - 0.1, 0.24, 'F');
+          doc.rect(x - 0.05, y - 0.03, colWidths[7] - 0.1, 0.28, 'F');
           doc.setTextColor(139, 119, 0);
           doc.setFont('helvetica', 'bold');
-          doc.text(`${remaining}`, x, y + 0.12);
+          doc.text(`${remaining}`, x, y + 0.15);
         } else {
           doc.setTextColor(0, 0, 0);
-          doc.text(`${remaining}`, x, y + 0.12);
+          doc.text(`${remaining}`, x, y + 0.15);
         }
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(0, 0, 0);
       } else {
         doc.setTextColor(150, 150, 150);
-        doc.text('N/A', x, y + 0.12);
+        doc.text('N/A', x, y + 0.15);
         doc.setTextColor(0, 0, 0);
       }
       

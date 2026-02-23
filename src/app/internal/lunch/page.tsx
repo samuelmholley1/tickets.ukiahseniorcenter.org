@@ -41,6 +41,17 @@ interface MealEntry {
 // For frozen Friday: date is THE FRIDAY, isFrozenFriday=true indicates pickup is Thursday
 type DateMeals = Record<string, MealEntry[]>;
 
+// Special request options for multi-select UI
+const SPECIAL_REQUEST_OPTIONS = [
+  'Vegetarian',
+  'No Garlic/Onions',
+  'Gluten-Free',
+  'Dairy-Free',
+  'No Dessert',
+  'No Chocolate Dessert',
+  'In Fridge',
+] as const;
+
 // Today's reservation for manual override (transition period feature)
 interface TodayReservation {
   id: string;
@@ -2275,12 +2286,48 @@ export default function LunchPage() {
                                 </div>
                                 <div>
                                   <label className="block text-xs text-gray-600 mb-1">Special Request (optional)</label>
+                                  <div className="flex flex-wrap gap-1.5 mb-1.5">
+                                    {SPECIAL_REQUEST_OPTIONS.map((option) => {
+                                      const currentTags = (meal.specialRequest || '').split(',').map(s => s.trim()).filter(Boolean);
+                                      const isActive = currentTags.includes(option);
+                                      return (
+                                        <button
+                                          key={option}
+                                          type="button"
+                                          onClick={() => {
+                                            const newTags = isActive
+                                              ? currentTags.filter(t => t !== option)
+                                              : [...currentTags, option];
+                                            updateMealDetail(date, idx, 'specialRequest', newTags.join(', '));
+                                          }}
+                                          className={`px-2.5 py-1 rounded-full text-xs font-['Jost',sans-serif] font-bold transition-all border ${
+                                            isActive
+                                              ? 'bg-[#427d78] text-white border-[#427d78]'
+                                              : 'bg-gray-100 text-gray-600 border-gray-300 hover:border-[#427d78] hover:text-[#427d78]'
+                                          }`}
+                                        >
+                                          {isActive ? '✓ ' : ''}{option}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
                                   <input
                                     type="text"
-                                    placeholder="No onions, extra bread, etc."
-                                    value={meal.specialRequest}
-                                    onChange={(e) => updateMealDetail(date, idx, 'specialRequest', e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                    placeholder="Other notes (extra bread, etc.)"
+                                    value={(() => {
+                                      const tags = (meal.specialRequest || '').split(',').map(s => s.trim()).filter(Boolean);
+                                      const knownTags = SPECIAL_REQUEST_OPTIONS as readonly string[];
+                                      return tags.filter(t => !knownTags.includes(t)).join(', ');
+                                    })()}
+                                    onChange={(e) => {
+                                      const currentTags = (meal.specialRequest || '').split(',').map(s => s.trim()).filter(Boolean);
+                                      const knownTags = SPECIAL_REQUEST_OPTIONS as readonly string[];
+                                      const selectedKnown = currentTags.filter(t => knownTags.includes(t));
+                                      const otherText = e.target.value.trim();
+                                      const combined = otherText ? [...selectedKnown, otherText].join(', ') : selectedKnown.join(', ');
+                                      updateMealDetail(date, idx, 'specialRequest', combined);
+                                    }}
+                                    className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs"
                                   />
                                 </div>
                               </div>

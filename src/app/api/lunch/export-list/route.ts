@@ -43,6 +43,7 @@ const DIETARY_KEYWORDS = {
   vegetarian: ['vegetarian', 'veggie', 'veg', 'vegetable'],
   glutenFree: ['gluten-free', 'gluten free', 'gf', 'no gluten'],
   noDessert: ['no dessert', 'no desert'],
+  noChocolateDessert: ['no chocolate dessert', 'no chocolate'],
   noGarlicOnions: ['no garlic', 'no onion', 'no onions'], // Combined into one category
   dairyFree: ['dairy-free', 'dairy free', 'no dairy', 'lactose'],
   inFridge: ['in fridge', 'fridge', 'leave in fridge'],
@@ -70,7 +71,8 @@ function parseDietaryRestrictions(notes: string, name?: string): string[] {
   }
   
   if (DIETARY_KEYWORDS.glutenFree.some(k => lower.includes(k))) detected.push('Gluten-Free');
-  if (DIETARY_KEYWORDS.noDessert.some(k => lower.includes(k))) detected.push('No Dessert');
+  if (DIETARY_KEYWORDS.noChocolateDessert.some(k => lower.includes(k))) detected.push('No Chocolate Dessert');
+  else if (DIETARY_KEYWORDS.noDessert.some(k => lower.includes(k))) detected.push('No Dessert');
   if (DIETARY_KEYWORDS.dairyFree.some(k => lower.includes(k))) detected.push('Dairy-Free');
   if (DIETARY_KEYWORDS.inFridge.some(k => lower.includes(k))) detected.push('In Fridge');
   

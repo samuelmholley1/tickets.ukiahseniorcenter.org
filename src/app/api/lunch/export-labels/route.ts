@@ -88,7 +88,8 @@ function extractSpecialRequests(notes: string, name?: string): string[] {
   }
   
   if (lower.includes('gluten-free') || lower.includes('gluten free') || lower.includes('gf')) requests.push('Gluten-Free');
-  if (lower.includes('no dessert')) requests.push('No Dessert');
+  if (lower.includes('no chocolate dessert') || lower.includes('no chocolate')) requests.push('No Chocolate Dessert');
+  else if (lower.includes('no dessert')) requests.push('No Dessert');
   if (lower.includes('dairy-free') || lower.includes('dairy free') || lower.includes('no dairy')) requests.push('Dairy-Free');
   if (lower.includes('in fridge') || lower.includes('fridge')) requests.push('In Fridge');
   

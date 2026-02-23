@@ -271,6 +271,7 @@ interface LunchTransaction {
 export default function LunchPage() {
   // Sticky header state
   const [isSticky, setIsSticky] = useState(false);
+  const [isNearTransactions, setIsNearTransactions] = useState(false);
   const headerRef = useRef<HTMLDivElement>(null);
   const transactionSectionRef = useRef<HTMLDivElement>(null);
   
@@ -281,9 +282,6 @@ export default function LunchPage() {
   const paymentRef = useRef<HTMLDivElement>(null);
   const recentTransactionsRef = useRef<HTMLDivElement>(null);
   const pricingRef = useRef<HTMLDivElement>(null);
-  
-  // Navigation widget state
-  const [showNavWidget, setShowNavWidget] = useState(false);
   
   // Track last auto-filled customer name for meal names
   const lastAutoFilledNameRef = useRef('');
@@ -827,6 +825,10 @@ export default function LunchPage() {
         const rect = transactionSectionRef.current.getBoundingClientRect();
         setIsSticky(rect.top < 0);
       }
+      if (recentTransactionsRef.current) {
+        const rect = recentTransactionsRef.current.getBoundingClientRect();
+        setIsNearTransactions(rect.top < window.innerHeight);
+      }
     };
     
     window.addEventListener('scroll', handleScroll);
@@ -1272,53 +1274,25 @@ export default function LunchPage() {
     <>
       <SiteNavigation />
       
-      {/* Navigation Widget - floating button and menu */}
-      <div className="fixed bottom-4 right-4 z-50">
-        {showNavWidget && (
-          <div className="mb-2 bg-white rounded-lg shadow-2xl border-2 border-[#427d78] overflow-hidden animate-in slide-in-from-bottom-4">
-            <div className="bg-[#427d78] text-white px-4 py-2 flex justify-between items-center">
-              <span className="font-['Jost',sans-serif] font-bold text-sm">Jump to Section</span>
-              <button
-                type="button"
-                onClick={() => setShowNavWidget(false)}
-                className="w-6 h-6 flex items-center justify-center rounded hover:bg-white/20 text-white font-bold"
-              >
-                ×
-              </button>
-            </div>
-            <div className="p-2 space-y-1">
-              {[
-                { ref: exportSectionRef, label: '📤 Export Reports', id: 'export' },
-                { ref: transactionSectionRef, label: '🍴 Transaction Type', id: 'transaction' },
-                { ref: lunchCardLookupRef, label: '🔍 Card Lookup', id: 'lookup' },
-                { ref: customerInfoRef, label: '👤 Customer Info', id: 'customer' },
-                { ref: paymentRef, label: '💵 Payment', id: 'payment' },
-                { ref: recentTransactionsRef, label: '📜 Recent Transactions', id: 'recent' },
-                { ref: pricingRef, label: '📋 Pricing Reference', id: 'pricing' },
-              ].map(item => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => {
-                    item.ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    setShowNavWidget(false);
-                  }}
-                  className="w-full text-left px-3 py-2 rounded hover:bg-[#e8f5f3] text-gray-700 font-['Jost',sans-serif] text-sm transition-colors"
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          </div>
+      {/* Navigation Jump Buttons - floating in bottom right */}
+      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+        {isNearTransactions ? (
+          <button
+            type="button"
+            onClick={() => transactionSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            className="px-4 py-3 rounded-full bg-[#427d78] hover:bg-[#5eb3a1] text-white shadow-lg font-['Jost',sans-serif] font-bold text-sm transition-all"
+          >
+            ⬆ Jump to New Transaction
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => recentTransactionsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            className="px-4 py-3 rounded-full bg-[#427d78] hover:bg-[#5eb3a1] text-white shadow-lg font-['Jost',sans-serif] font-bold text-sm transition-all"
+          >
+            ⬇ Jump to Recent Transactions
+          </button>
         )}
-        <button
-          type="button"
-          onClick={() => setShowNavWidget(!showNavWidget)}
-          className="w-12 h-12 rounded-full bg-[#427d78] hover:bg-[#5eb3a1] text-white shadow-lg flex items-center justify-center text-xl transition-all"
-          title="Navigation Menu"
-        >
-          {showNavWidget ? '×' : '☰'}
-        </button>
       </div>
       
       {/* Sticky Transaction Type Widget - appears when scrolled past main toggle */}
@@ -3002,11 +2976,11 @@ export default function LunchPage() {
                 <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
                   <thead>
                     <tr className="bg-gray-100">
-                      <th className="text-left p-2 font-['Jost',sans-serif]">Time</th>
+                      <th className="text-left p-2 font-['Jost',sans-serif]">Purchase Time</th>
                       <th className="text-left p-2 font-['Jost',sans-serif]">Name</th>
                       <th className="text-left p-2 font-['Jost',sans-serif]">Details</th>
-                      <th className="text-right p-2 font-['Jost',sans-serif]">Amount</th>
-                      <th className="text-left p-2 font-['Jost',sans-serif]">Payment</th>
+                      <th className="text-right p-2 pr-4 font-['Jost',sans-serif]">Amount</th>
+                      <th className="text-left p-2 pl-4 font-['Jost',sans-serif] leading-tight">Payment<br/>Method</th>
                       <th className="text-center p-2 font-['Jost',sans-serif]">Staff</th>
                     </tr>
                   </thead>
@@ -3035,10 +3009,10 @@ export default function LunchPage() {
                           <td className="p-2 text-xs text-gray-600 whitespace-nowrap">{timeStr}</td>
                           <td className="p-2 font-semibold">{tx.name}</td>
                           <td className="p-2 text-gray-600 text-xs">{details}</td>
-                          <td className="p-2 text-right font-bold">
+                          <td className="p-2 pr-4 text-right font-bold">
                             {tx.amount > 0 ? `$${tx.amount.toFixed(2)}` : ''}
                           </td>
-                          <td className="p-2 text-xs">{tx.paymentMethod}</td>
+                          <td className="p-2 pl-4 text-xs">{tx.paymentMethod}</td>
                           <td className="p-2 text-center text-xs font-bold text-gray-600">{tx.staff}</td>
                         </tr>
                       );

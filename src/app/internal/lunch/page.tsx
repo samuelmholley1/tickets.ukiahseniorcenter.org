@@ -3313,6 +3313,17 @@ export default function LunchPage() {
         const changeFund = parseFloat(changeFundAmount) || 0;
         // Cash in box = change fund + pure cash + cash portion of splits (full split amount included since we can't separate)
         const expectedCashInBox = changeFund + totalCash + totalCashCheck;
+        const totalDeposit = totalCash + totalCheck + totalCashCheck;
+
+        // Count ALL today's reservations (meals) and containers
+        const allTodaysReservations = recentTransactions.filter(tx => {
+          const txDate = new Date(tx.createdAt);
+          const txPacific = new Date(txDate.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+          const txDateStr = `${txPacific.getFullYear()}-${String(txPacific.getMonth() + 1).padStart(2, '0')}-${String(txPacific.getDate()).padStart(2, '0')}`;
+          return txDateStr === todayStr && tx.type === 'reservation';
+        });
+        const totalMealsToday = allTodaysReservations.filter(tx => tx.name !== 'Anonymous' && tx.name !== 'Container Charge').length;
+        const totalContainersToday = allTodaysReservations.filter(tx => tx.name === 'Anonymous' || (tx.notes || '').includes('container')).length;
 
         return (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -3327,9 +3338,17 @@ export default function LunchPage() {
                   >✕</button>
                 </div>
 
-                <p className="text-sm text-gray-600 font-['Bitter',serif] mb-4">
+                <p className="text-sm text-gray-600 font-['Bitter',serif] mb-2">
                   Today&apos;s cash &amp; check transactions ({todayStr}). All transactions are auto-selected.
                 </p>
+                <div className="flex gap-4 mb-4 text-xs font-['Jost',sans-serif]">
+                  <span className="bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full">
+                    🍽️ {totalMealsToday} Meals Sold
+                  </span>
+                  <span className="bg-orange-100 text-orange-800 font-bold px-3 py-1 rounded-full">
+                    🥡 {totalContainersToday} Container{totalContainersToday !== 1 ? 's' : ''} Sold
+                  </span>
+                </div>
 
                 {todaysCashCheck.length === 0 ? (
                   <div className="text-center py-6 text-gray-500 font-['Bitter',serif]">
@@ -3495,6 +3514,52 @@ export default function LunchPage() {
                           </div>
                         );
                       })()}
+
+                      {/* Reconciliation Receipt */}
+                      {selectedTxs.length > 0 && (
+                        <div className="mt-4 bg-white border-2 border-gray-800 rounded-lg p-4 font-mono text-sm">
+                          <div className="text-center font-bold text-gray-800 mb-3 text-base border-b-2 border-dashed border-gray-400 pb-2">
+                            DEPOSIT RECONCILIATION
+                          </div>
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between text-gray-600">
+                              <span>Cash Box Change Fund</span>
+                              <span>${changeFund.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between text-green-700 font-semibold">
+                              <span>+ Collected Cash</span>
+                              <span>${totalCash.toFixed(2)}</span>
+                            </div>
+                            {totalCashCheck > 0 && (
+                              <div className="flex justify-between text-purple-700 font-semibold">
+                                <span>+ Cash &amp; Check (mixed)</span>
+                                <span>${totalCashCheck.toFixed(2)}</span>
+                              </div>
+                            )}
+                            <div className="flex justify-between font-bold border-t border-gray-300 pt-1">
+                              <span>= Total Cash in Box</span>
+                              <span>${expectedCashInBox.toFixed(2)}</span>
+                            </div>
+                            {totalCheck > 0 && (
+                              <div className="flex justify-between text-blue-700 font-semibold">
+                                <span>+ Total Checks</span>
+                                <span>${totalCheck.toFixed(2)}</span>
+                              </div>
+                            )}
+                            <div className="flex justify-between text-gray-500">
+                              <span>− Remove Change Fund</span>
+                              <span>&lt;${changeFund.toFixed(2)}&gt;</span>
+                            </div>
+                            <div className="flex justify-between font-bold text-lg border-t-2 border-double border-gray-800 pt-2 mt-1">
+                              <span>TOTAL DEPOSIT</span>
+                              <span className="text-emerald-700">${totalDeposit.toFixed(2)}</span>
+                            </div>
+                          </div>
+                          <div className="text-center text-xs text-gray-400 mt-3 border-t border-dashed border-gray-300 pt-2">
+                            {todayStr} • {selectedTxs.length} transaction{selectedTxs.length !== 1 ? 's' : ''}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </>
                 )}

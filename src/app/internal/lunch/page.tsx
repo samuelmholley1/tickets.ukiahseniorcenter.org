@@ -2311,24 +2311,6 @@ export default function LunchPage() {
                                       );
                                     })}
                                   </div>
-                                  <input
-                                    type="text"
-                                    placeholder="Other notes (extra bread, etc.)"
-                                    value={(() => {
-                                      const tags = (meal.specialRequest || '').split(',').map(s => s.trim()).filter(Boolean);
-                                      const knownTags = SPECIAL_REQUEST_OPTIONS as readonly string[];
-                                      return tags.filter(t => !knownTags.includes(t)).join(', ');
-                                    })()}
-                                    onChange={(e) => {
-                                      const currentTags = (meal.specialRequest || '').split(',').map(s => s.trim()).filter(Boolean);
-                                      const knownTags = SPECIAL_REQUEST_OPTIONS as readonly string[];
-                                      const selectedKnown = currentTags.filter(t => knownTags.includes(t));
-                                      const otherText = e.target.value.trim();
-                                      const combined = otherText ? [...selectedKnown, otherText].join(', ') : selectedKnown.join(', ');
-                                      updateMealDetail(date, idx, 'specialRequest', combined);
-                                    }}
-                                    className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs"
-                                  />
                                 </div>
                               </div>
                             </div>

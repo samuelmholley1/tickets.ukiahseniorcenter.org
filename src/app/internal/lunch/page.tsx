@@ -2030,7 +2030,7 @@ export default function LunchPage() {
                         {week.days.map((day) => {
                           const isSelected = dateMeals[day.value] !== undefined;
                           const mealCount = dateMeals[day.value]?.length || 0;
-                          const isDisabled = day.isClosed || day.isPastDeadline;
+                          const isDisabled = day.isClosed;
                           const isToday = day.value === getTodayPacificStr() && !day.isFrozenFriday;
                           
                           return (
@@ -2072,9 +2072,7 @@ export default function LunchPage() {
                                     )}
                                   </>
                                 )}
-                                {day.isPastDeadline && !day.isClosed && !isToday && (
-                                  <div style={{ fontSize: '8px', fontWeight: 'normal', lineHeight: 1 }}>Closed</div>
-                                )}
+
                               </button>
                               
                               {/* Today's control buttons - only on today's cell */}

@@ -459,12 +459,19 @@ export default function LunchPage() {
     return weeks;
   };
   
+  // Auto-populate special request for known dietary needs
+  const getAutoSpecialRequest = (name: string): string => {
+    const normalized = name.toLowerCase().trim();
+    if (normalized === 'david vilner' || normalized === 'fulin chang') return 'Vegetarian';
+    return '';
+  };
+  
   // Add a meal to a date (or add date with 1 meal if not exists)
   const addMealToDate = (date: string, isFrozenFriday: boolean = false) => {
     const customerName = `${customer.firstName} ${customer.lastName}`.trim();
     setDateMeals(prev => ({
       ...prev,
-      [date]: [...(prev[date] || []), { name: customerName, specialRequest: '', isFrozenFriday }]
+      [date]: [...(prev[date] || []), { name: customerName, specialRequest: getAutoSpecialRequest(customerName), isFrozenFriday }]
     }));
   };
   
@@ -489,6 +496,13 @@ export default function LunchPage() {
       const meals = [...(prev[date] || [])];
       if (meals[mealIndex]) {
         meals[mealIndex] = { ...meals[mealIndex], [field]: value };
+        // Auto-populate special request when name is changed
+        if (field === 'name' && typeof value === 'string') {
+          const autoRequest = getAutoSpecialRequest(value);
+          if (autoRequest && !meals[mealIndex].specialRequest?.trim()) {
+            meals[mealIndex] = { ...meals[mealIndex], specialRequest: autoRequest };
+          }
+        }
       }
       return { ...prev, [date]: meals };
     });
@@ -508,7 +522,7 @@ export default function LunchPage() {
       // Add date with 1 meal
       setDateMeals(prev => ({
         ...prev,
-        [date]: [{ name: customerName, specialRequest: '', isFrozenFriday }]
+        [date]: [{ name: customerName, specialRequest: getAutoSpecialRequest(customerName), isFrozenFriday }]
       }));
     }
   };

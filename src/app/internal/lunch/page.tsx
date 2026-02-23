@@ -699,12 +699,15 @@ export default function LunchPage() {
     const todayStr = `${nowPacific.getFullYear()}-${String(nowPacific.getMonth() + 1).padStart(2, '0')}-${String(nowPacific.getDate()).padStart(2, '0')}`;
 
     // Filter for today's cash/check/cashCheckSplit from both reservation and card transactions
+    // Exclude $0 entries (legacy multi-meal batch records)
     const cashCheckMethods = ['Cash', 'Check', 'Cash & Check'];
     const todaysCashCheck = recentTransactions.filter(tx => {
       const txDate = new Date(tx.createdAt);
       const txPacific = new Date(txDate.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
       const txDateStr = `${txPacific.getFullYear()}-${String(txPacific.getMonth() + 1).padStart(2, '0')}-${String(txPacific.getDate()).padStart(2, '0')}`;
-      return txDateStr === todayStr && cashCheckMethods.includes(tx.paymentMethod);
+      if (txDateStr !== todayStr || !cashCheckMethods.includes(tx.paymentMethod)) return false;
+      if (tx.amount === 0 && (tx.paymentMethod === 'Cash' || tx.paymentMethod === 'Check')) return false;
+      return true;
     });
 
     // Auto-select ALL today's cash/check transactions
@@ -3360,12 +3363,16 @@ export default function LunchPage() {
         const todayStr = `${nowPacific.getFullYear()}-${String(nowPacific.getMonth() + 1).padStart(2, '0')}-${String(nowPacific.getDate()).padStart(2, '0')}`;
 
         // Filter all of today's cash/check/cashCheckSplit transactions
+        // Also filter out $0 entries (legacy multi-meal batch records that should have per-meal pricing)
         const cashCheckMethods = ['Cash', 'Check', 'Cash & Check'];
         const todaysCashCheck = recentTransactions.filter(tx => {
           const txDate = new Date(tx.createdAt);
           const txPacific = new Date(txDate.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
           const txDateStr = `${txPacific.getFullYear()}-${String(txPacific.getMonth() + 1).padStart(2, '0')}-${String(txPacific.getDate()).padStart(2, '0')}`;
-          return txDateStr === todayStr && cashCheckMethods.includes(tx.paymentMethod);
+          if (txDateStr !== todayStr || !cashCheckMethods.includes(tx.paymentMethod)) return false;
+          // Hide $0 cash/check entries — these are legacy batch records with incorrect pricing
+          if (tx.amount === 0 && (tx.paymentMethod === 'Cash' || tx.paymentMethod === 'Check')) return false;
+          return true;
         });
 
         // Calculate totals from selected transactions

@@ -307,9 +307,8 @@ export async function POST(request: NextRequest) {
 
     // Calculate price (0 if paying with lunch card or comp card)
     const pricePerMeal = (paymentMethod === 'lunchCard' || paymentMethod === 'compCard' || paymentMethod === 'staffOverride') ? 0 : PRICING[mealType][memberStatus];
-    // For multi-meal transactions, only the first record should show the total amount
-    // Subsequent records show $0 to avoid double-counting in reports
-    const totalAmount = shouldDeduct ? (pricePerMeal * quantity) : 0;
+    // Each record stores its own per-meal price for accurate reporting
+    const totalAmount = pricePerMeal;
 
     // Build the Airtable record
     const payload: { fields: Record<string, unknown> } = {

@@ -42,10 +42,11 @@ export async function GET() {
     }
 
     // Only show records from 2/17/2026 onwards (fresh start after 2-week gap)
+    // Use IS_ON_OR_AFTER to include the cutoff date itself
     const CUTOFF_DATE = '2026-02-17';
 
     // Fetch recent lunch cards (purchased on or after cutoff)
-    const cardsFilter = encodeURIComponent(`IS_AFTER({Purchase Date}, '${CUTOFF_DATE}')`);
+    const cardsFilter = encodeURIComponent(`OR(IS_SAME({Purchase Date}, '${CUTOFF_DATE}', 'day'), IS_AFTER({Purchase Date}, '${CUTOFF_DATE}'))`);
     const cardsResponse = await fetch(
       `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${lunchCardsTableId}?maxRecords=200&filterByFormula=${cardsFilter}&sort%5B0%5D%5Bfield%5D=Purchase%20Date&sort%5B0%5D%5Bdirection%5D=desc`,
       {
@@ -56,7 +57,7 @@ export async function GET() {
     );
 
     // Fetch recent reservations (date on or after cutoff)
-    const reservationsFilter = encodeURIComponent(`IS_AFTER({Date}, '${CUTOFF_DATE}')`);
+    const reservationsFilter = encodeURIComponent(`OR(IS_SAME({Date}, '${CUTOFF_DATE}', 'day'), IS_AFTER({Date}, '${CUTOFF_DATE}'))`);
     const reservationsResponse = await fetch(
       `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${reservationsTableId}?maxRecords=200&filterByFormula=${reservationsFilter}&sort%5B0%5D%5Bfield%5D=Date&sort%5B0%5D%5Bdirection%5D=desc`,
       {

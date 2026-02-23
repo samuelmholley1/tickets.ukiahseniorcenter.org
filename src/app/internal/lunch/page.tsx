@@ -3010,7 +3010,7 @@ export default function LunchPage() {
           <div ref={recentTransactionsRef} className="card" style={{ marginTop: 'var(--space-6)' }}>
             <div className="flex items-center justify-between flex-wrap gap-2" style={{ marginBottom: 'var(--space-3)' }}>
               <h2 className="font-['Jost',sans-serif] font-bold text-[#427d78] text-xl">
-                📜 Recent {transactionType === 'individual' ? 'Meal Reservations' : 'Lunch Card Purchases'}
+                📜 Recent Transactions
               </h2>
               <button
                 type="button"
@@ -3022,12 +3022,8 @@ export default function LunchPage() {
             </div>
             
             {(() => {
-              // Filter transactions based on current mode
-              const allFiltered = recentTransactions.filter(tx => 
-                transactionType === 'individual' 
-                  ? tx.type === 'reservation' 
-                  : tx.type === 'lunch_card'
-              );
+              // Show all transactions (reservations + card purchases merged)
+              const allFiltered = recentTransactions;
               const filteredTransactions = allFiltered.slice(0, visibleTxCount);
               const hasMore = allFiltered.length > visibleTxCount;
               
@@ -3038,7 +3034,7 @@ export default function LunchPage() {
               if (filteredTransactions.length === 0) {
                 return (
                   <div className="text-center py-4 text-gray-500 font-['Bitter',serif]">
-                    No recent {transactionType === 'individual' ? 'meal reservations' : 'lunch card purchases'}
+                    No recent transactions
                   </div>
                 );
               }

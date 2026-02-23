@@ -707,6 +707,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Table rows (CV excluded — they're in the totals but not individual rows)
+    let visibleRowIndex = 0; // Track rendered rows for consistent alternating shading
     nonCvReservations.forEach((res, index) => {
       // 1. Prepare Content & Calculate Height
       // Name wrapping — use display name with #N suffix for duplicates
@@ -750,10 +751,11 @@ export async function GET(request: NextRequest) {
         // Yellow "FROZEN" indicator on left edge
         doc.setFillColor(255, 255, 0);
         doc.rect(margin, y - 0.05, 0.04, rowHeight, 'F');
-      } else if (index % 2 === 0) {
-        doc.setFillColor(245, 245, 245);
+      } else if (visibleRowIndex % 2 === 0) {
+        doc.setFillColor(232, 232, 232);
         doc.rect(margin, y - 0.05, contentWidth, rowHeight, 'F');
       }
+      visibleRowIndex++;
       
       let x = margin + 0.05;
       doc.setFontSize(8);

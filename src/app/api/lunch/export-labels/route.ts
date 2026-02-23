@@ -293,7 +293,7 @@ export async function GET(request: NextRequest) {
       });
     }
     
-    // Other labels from database
+    // Other labels from database (Thursday hot meals)
     for (const res of labelReservations) {
       const notes = cleanNotes(res.Notes || '');
       const specialReqs = extractSpecialRequests(notes, res.Name);
@@ -310,12 +310,10 @@ export async function GET(request: NextRequest) {
       });
     }
     
-    // Friday Frozen labels (Thursday only) - add as separate section
+    // Friday Frozen labels (Thursday only) - INTEGRATED into same sorted list
     for (const res of fridayFrozenReservations) {
       const notes = cleanNotes(res.Notes || '');
       const specialReqs = extractSpecialRequests(notes, res.Name);
-      // Always add "FROZEN FRI" marker
-      if (!specialReqs.includes('FROZEN FRI')) specialReqs.unshift('FROZEN FRI');
       if (res.InFridge && !specialReqs.includes('In Fridge')) specialReqs.push('In Fridge');
       
       allLabels.push({
@@ -328,6 +326,18 @@ export async function GET(request: NextRequest) {
         inFridge: res.InFridge || false,
       });
     }
+
+    // Sort all non-CV labels together by last name (hot + frozen interleaved)
+    const cvLabels = allLabels.filter(l => l.isCoyoteValley);
+    const nonCvLabels = allLabels.filter(l => !l.isCoyoteValley);
+    nonCvLabels.sort((a, b) => {
+      const getLastName = (name: string) => {
+        const parts = name.trim().split(/\s+/);
+        return parts[parts.length - 1].toLowerCase();
+      };
+      return getLastName(a.name).localeCompare(getLastName(b.name));
+    });
+    const sortedLabels = [...cvLabels, ...nonCvLabels];
 
     // Create PDF
     const doc = new jsPDF({
@@ -359,7 +369,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Draw each label
-    allLabels.forEach((label, index) => {
+    sortedLabels.forEach((label, index) => {
       if (index > 0 && index % labelsPerPage === 0) {
         doc.addPage();
       }
@@ -419,76 +429,133 @@ export async function GET(request: NextRequest) {
           doc.text(shortDate, x + px, y + py + rowH * 1.75);
         }
       } else {
-        // REGULAR LABEL
+        // REGULAR LABEL (hot or frozen)
         const mealType = label.mealType === 'To Go' ? 'Pickup' : (label.mealType || 'Unknown');
         const hasReqs = label.specialRequests.length > 0;
         const reqText = hasReqs ? label.specialRequests.join(', ') : '';
+        const isFrozen = label.isFrozenFriday === true;
 
-        if (hasReqs) {
-          // 4 rows: Name, Meal Type, Special Requests, Date
-          const rowH = maxH / 4;
+        // Frozen labels: line 2 = "FROZEN" (yellow highlight). No date row.
+        // Hot labels: line 2 = Meal Type (colored), last row = date.
+        if (isFrozen) {
+          if (hasReqs) {
+            // 3 rows: Name, FROZEN, Special Requests
+            const rowH = maxH / 3;
 
-          // Name (bold, black)
-          const nameSize = fitFontSize(label.name, 'bold', 22);
-          doc.setFontSize(nameSize);
-          doc.setFont('helvetica', 'bold');
-          doc.setTextColor(0, 0, 0);
-          doc.text(label.name, x + px, y + py + rowH * 0.75);
+            // Name (bold, black)
+            const nameSize = fitFontSize(label.name, 'bold', 22);
+            doc.setFontSize(nameSize);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(0, 0, 0);
+            doc.text(label.name, x + px, y + py + rowH * 0.75);
 
-          // Meal Type (colored)
-          const mealSize = fitFontSize(mealType, 'normal', 18);
-          doc.setFontSize(mealSize);
-          doc.setFont('helvetica', 'normal');
-          if (mealType === 'Delivery') doc.setTextColor(180, 0, 0);
-          else if (mealType === 'Pickup') doc.setTextColor(0, 100, 180);
-          else doc.setTextColor(0, 120, 0);
-          doc.text(mealType, x + px, y + py + rowH * 1.75);
+            // FROZEN (yellow highlight with black text)
+            const frozenSize = fitFontSize('FROZEN', 'bold', 20);
+            doc.setFontSize(frozenSize);
+            doc.setFont('helvetica', 'bold');
+            const frozenW = doc.getTextWidth('FROZEN');
+            const frozenH = frozenSize * 0.02; // approximate text height in inches
+            doc.setFillColor(255, 255, 0);
+            doc.rect(x + px - 0.02, y + py + rowH * 1.75 - frozenH - 0.02, frozenW + 0.04, frozenH + 0.06, 'F');
+            doc.setTextColor(0, 0, 0);
+            doc.text('FROZEN', x + px, y + py + rowH * 1.75);
 
-          // Special Requests (red, bold)
-          const reqSize = fitFontSize(reqText, 'bold', 16);
-          doc.setFontSize(reqSize);
-          doc.setFont('helvetica', 'bold');
-          doc.setTextColor(180, 0, 0);
-          doc.text(reqText, x + px, y + py + rowH * 2.75);
+            // Special Requests (red, bold)
+            const reqSize = fitFontSize(reqText, 'bold', 16);
+            doc.setFontSize(reqSize);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(180, 0, 0);
+            doc.text(reqText, x + px, y + py + rowH * 2.75);
+          } else {
+            // 2 rows: Name, FROZEN
+            const rowH = maxH / 2;
 
-          // Date (gray)
-          const dateSize = fitFontSize(shortDate, 'normal', 10);
-          doc.setFontSize(dateSize);
-          doc.setFont('helvetica', 'normal');
-          doc.setTextColor(100, 100, 100);
-          doc.text(shortDate, x + px, y + py + rowH * 3.75);
+            // Name (bold, black)
+            const nameSize = fitFontSize(label.name, 'bold', 26);
+            doc.setFontSize(nameSize);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(0, 0, 0);
+            doc.text(label.name, x + px, y + py + rowH * 0.75);
+
+            // FROZEN (yellow highlight with black text)
+            const frozenSize = fitFontSize('FROZEN', 'bold', 24);
+            doc.setFontSize(frozenSize);
+            doc.setFont('helvetica', 'bold');
+            const frozenW = doc.getTextWidth('FROZEN');
+            const frozenH = frozenSize * 0.02;
+            doc.setFillColor(255, 255, 0);
+            doc.rect(x + px - 0.02, y + py + rowH * 1.75 - frozenH - 0.02, frozenW + 0.04, frozenH + 0.06, 'F');
+            doc.setTextColor(0, 0, 0);
+            doc.text('FROZEN', x + px, y + py + rowH * 1.75);
+          }
         } else {
-          // 3 rows: Name, Meal Type, Date
-          const rowH = maxH / 3;
+          // HOT MEAL label
+          if (hasReqs) {
+            // 4 rows: Name, Meal Type, Special Requests, Date
+            const rowH = maxH / 4;
 
-          // Name (bold, black)
-          const nameSize = fitFontSize(label.name, 'bold', 26);
-          doc.setFontSize(nameSize);
-          doc.setFont('helvetica', 'bold');
-          doc.setTextColor(0, 0, 0);
-          doc.text(label.name, x + px, y + py + rowH * 0.75);
+            // Name (bold, black)
+            const nameSize = fitFontSize(label.name, 'bold', 22);
+            doc.setFontSize(nameSize);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(0, 0, 0);
+            doc.text(label.name, x + px, y + py + rowH * 0.75);
 
-          // Meal Type (colored)
-          const mealSize = fitFontSize(mealType, 'normal', 20);
-          doc.setFontSize(mealSize);
-          doc.setFont('helvetica', 'normal');
-          if (mealType === 'Delivery') doc.setTextColor(180, 0, 0);
-          else if (mealType === 'Pickup') doc.setTextColor(0, 100, 180);
-          else doc.setTextColor(0, 120, 0);
-          doc.text(mealType, x + px, y + py + rowH * 1.75);
+            // Meal Type (colored)
+            const mealSize = fitFontSize(mealType, 'normal', 18);
+            doc.setFontSize(mealSize);
+            doc.setFont('helvetica', 'normal');
+            if (mealType === 'Delivery') doc.setTextColor(180, 0, 0);
+            else if (mealType === 'Pickup') doc.setTextColor(0, 100, 180);
+            else doc.setTextColor(0, 120, 0);
+            doc.text(mealType, x + px, y + py + rowH * 1.75);
 
-          // Date (gray)
-          const dateSize = fitFontSize(shortDate, 'normal', 14);
-          doc.setFontSize(dateSize);
-          doc.setFont('helvetica', 'normal');
-          doc.setTextColor(100, 100, 100);
-          doc.text(shortDate, x + px, y + py + rowH * 2.75);
+            // Special Requests (red, bold)
+            const reqSize = fitFontSize(reqText, 'bold', 16);
+            doc.setFontSize(reqSize);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(180, 0, 0);
+            doc.text(reqText, x + px, y + py + rowH * 2.75);
+
+            // Date (gray)
+            const dateSize = fitFontSize(shortDate, 'normal', 10);
+            doc.setFontSize(dateSize);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(100, 100, 100);
+            doc.text(shortDate, x + px, y + py + rowH * 3.75);
+          } else {
+            // 3 rows: Name, Meal Type, Date
+            const rowH = maxH / 3;
+
+            // Name (bold, black)
+            const nameSize = fitFontSize(label.name, 'bold', 26);
+            doc.setFontSize(nameSize);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(0, 0, 0);
+            doc.text(label.name, x + px, y + py + rowH * 0.75);
+
+            // Meal Type (colored)
+            const mealSize = fitFontSize(mealType, 'normal', 20);
+            doc.setFontSize(mealSize);
+            doc.setFont('helvetica', 'normal');
+            if (mealType === 'Delivery') doc.setTextColor(180, 0, 0);
+            else if (mealType === 'Pickup') doc.setTextColor(0, 100, 180);
+            else doc.setTextColor(0, 120, 0);
+            doc.text(mealType, x + px, y + py + rowH * 1.75);
+
+            // Date (gray)
+            const dateSize = fitFontSize(shortDate, 'normal', 14);
+            doc.setFontSize(dateSize);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(100, 100, 100);
+            doc.text(shortDate, x + px, y + py + rowH * 2.75);
+          }
         }
       }
     });
 
     // Empty message
-    if (allLabels.length === 0) {
+    if (sortedLabels.length === 0) {
       doc.setFontSize(14);
       doc.setTextColor(100, 100, 100);
       const dineInCount = reservations.filter(r => r['Meal Type'] === 'Dine In').length;

@@ -25,6 +25,7 @@ interface Reservation {
   Phone?: string; // Customer phone number
   ContactId?: string; // Linked Contact record ID
   PaymentComment?: string; // Staff Override comment
+  isFrozenFriday?: boolean; // Frozen Friday meal (printed with Thursday)
 }
 
 // Coyote Valley customers — included in totals but not shown as individual rows
@@ -407,9 +408,10 @@ export async function GET(request: NextRequest) {
         'Meal Type': record.fields['Meal Type'] as string || '',
         'Member Status': record.fields['Member Status'] as string || '',
         'Payment Method': record.fields['Payment Method'] as string || '',
-        Notes: `FROZEN FRIDAY | ${record.fields['Notes'] as string || ''}`.trim(),
+        Notes: record.fields['Notes'] as string || '',
         Amount: record.fields['Amount'] as number || 0,
         LunchCardId: (record.fields['Lunch Card'] as string[] | undefined)?.[0],
+        isFrozenFriday: true,
       }));
       
       // Sort Friday frozen by last name too
@@ -442,6 +444,19 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Merge frozen Friday reservations into main list (they print together on Thursday)
+    if (isThursday && fridayFrozenReservations.length > 0) {
+      reservations.push(...fridayFrozenReservations);
+      // Re-sort the full list by last name
+      reservations.sort((a, b) => {
+        const getLastName = (name: string) => {
+          const parts = name.trim().split(/\s+/);
+          return parts[parts.length - 1].toLowerCase();
+        };
+        return getLastName(a.Name).localeCompare(getLastName(b.Name));
+      });
+    }
+
     // Filter out container charges — $1 To Go container charge records are NOT real meals
     const isContainerCharge = (r: Reservation) => r.Name === 'Container Charge' && (r.Notes || '').includes('$1 To Go container');
     const nonContainerReservations = reservations.filter(r => !isContainerCharge(r));
@@ -461,10 +476,12 @@ export async function GET(request: NextRequest) {
     });
 
     // Calculate meal type counts — non-CV reservations + hardcoded 9 CV deliveries
+    // Include frozen Friday meals in the counts
     const dineInCount = nonCvReservations.filter(r => r['Meal Type'] === 'Dine In').length;
     const toGoCount = nonCvReservations.filter(r => r['Meal Type'] === 'To Go').length;
     const deliveryCount = nonCvReservations.filter(r => r['Meal Type'] === 'Delivery').length + CV_HARDCODED_COUNT;
     const totalMealCount = dineInCount + toGoCount + deliveryCount;
+    const frozenCount = nonCvReservations.filter(r => r.isFrozenFriday).length;
 
     // Load logo
     const logoBase64 = await getUSCLogo();
@@ -607,7 +624,11 @@ export async function GET(request: NextRequest) {
 
     // Total pill — full width row
     doc.setFont('helvetica', 'bold');
-    drawPill(`Total: ${totalMealCount}`, margin, y, [80, 80, 80]);
+    let totalPillX = margin;
+    totalPillX += drawPill(`Total: ${totalMealCount}`, totalPillX, y, [80, 80, 80]);
+    if (frozenCount > 0) {
+      drawPill(`Frozen Fri: ${frozenCount}`, totalPillX, y, [52, 152, 219]);
+    }
     y += 0.38;
 
     // Two-column layout: Dine In (left) | Pick Up & Delivery (right)
@@ -686,8 +707,6 @@ export async function GET(request: NextRequest) {
     }
 
     // Table rows (CV excluded — they're in the totals but not individual rows)
-    let x = margin; // row x position
-    
     nonCvReservations.forEach((res, index) => {
       // 1. Prepare Content & Calculate Height
       // Name wrapping — use display name with #N suffix for duplicates
@@ -696,6 +715,8 @@ export async function GET(request: NextRequest) {
       // Special Requests / Dietary logic
       const cleanedNotes = cleanNotes(res.Notes || '');
       const dietary = parseDietaryRestrictions(cleanedNotes, res.Name);
+      // Frozen Friday meals get "FROZEN" prepended
+      if (res.isFrozenFriday && !dietary.includes('FROZEN')) dietary.unshift('FROZEN');
       
       // Calculate height for Requests column (simulate wrapping)
       let reqLinesCount = 1;
@@ -722,8 +743,14 @@ export async function GET(request: NextRequest) {
       
       checkNewPage(rowHeight);
       
-      // Alternating row colors
-      if (index % 2 === 0) {
+      // Row background - frozen rows get blue tint, others alternate gray/white
+      if (res.isFrozenFriday) {
+        doc.setFillColor(230, 244, 255); // Blue tint for frozen
+        doc.rect(margin, y - 0.05, contentWidth, rowHeight, 'F');
+        // Yellow "FROZEN" indicator on left edge
+        doc.setFillColor(255, 255, 0);
+        doc.rect(margin, y - 0.05, 0.04, rowHeight, 'F');
+      } else if (index % 2 === 0) {
         doc.setFillColor(245, 245, 245);
         doc.rect(margin, y - 0.05, contentWidth, rowHeight, 'F');
       }
@@ -789,7 +816,15 @@ export async function GET(request: NextRequest) {
           const item = dietary[i];
           
           // Color code
-          if (item === 'Vegetarian') doc.setTextColor(34, 139, 34);
+          if (item === 'FROZEN') {
+            // Yellow highlight background behind "FROZEN" text
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(7);
+            const frozenW = doc.getTextWidth('FROZEN, ');
+            doc.setFillColor(255, 255, 0);
+            doc.rect(reqX - 0.01, reqY - 0.09, frozenW + 0.02, 0.13, 'F');
+            doc.setTextColor(0, 0, 0);
+          } else if (item === 'Vegetarian') doc.setTextColor(34, 139, 34);
           else if (item === 'No Dessert') doc.setTextColor(139, 69, 19);
           else if (item === 'No Garlic/Onions') doc.setTextColor(128, 0, 128);
           else if (item === 'Gluten-Free') doc.setTextColor(184, 134, 11);
@@ -958,122 +993,6 @@ export async function GET(request: NextRequest) {
         doc.setTextColor(0, 0, 0);
         
         y += rowHeight;
-      });
-    }
-
-    // ========== FRIDAY FROZEN SECTION (only on Thursdays) ==========
-    if (isThursday && fridayFrozenReservations.length > 0) {
-      // Start on a new page for Friday frozen meals
-      doc.addPage();
-      y = margin;
-      
-      // Friday Frozen header
-      if (logoBase64) {
-        doc.addImage(logoBase64, 'PNG', margin, y, 0.6, 0.6);
-      }
-      
-      doc.setFontSize(18);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(52, 152, 219); // Blue for frozen
-      doc.text('Friday Frozen Meals', margin + 0.75, y + 0.25);
-      
-      const fridayDate = new Date(targetDate);
-      fridayDate.setDate(fridayDate.getDate() + 1);
-      const fridayFormattedDate = fridayDate.toLocaleDateString('en-US', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      });
-      
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(100, 100, 100);
-      doc.text(`${fridayFormattedDate} (Pick up Thursday)`, margin + 0.75, y + 0.45);
-      
-      // Stats (totals include CV)
-      y += 0.75;
-      const fridayDineIn = fridayFrozenReservations.filter(r => r['Meal Type'] === 'Dine In').length;
-      const fridayToGo = fridayFrozenReservations.filter(r => r['Meal Type'] === 'To Go').length;
-      const fridayDelivery = fridayFrozenReservations.filter(r => r['Meal Type'] === 'Delivery').length;
-      const fridayCvCount = fridayFrozenReservations.filter(r => isCoyoteValley(r.Name)).length;
-      
-      let pillX = margin;
-      pillX += drawPill(`Total: ${fridayFrozenReservations.length}`, pillX, y, [52, 152, 219]);
-      pillX += drawPill(`Dine In/Pickup: ${fridayDineIn + fridayToGo}`, pillX, y, [66, 125, 120]);
-      drawPill(`Delivery: ${fridayDelivery}`, pillX, y, [230, 126, 34]);
-      
-      // CV note for Friday
-      if (fridayCvCount > 0) {
-        y += 0.28;
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'bolditalic');
-        doc.setTextColor(120, 80, 0);
-        doc.text(`Coyote Valley #1-9 included in totals (${fridayCvCount} meals). Tribe Prepaid \u2014 not listed individually.`, margin, y);
-        doc.setFont('helvetica', 'normal');
-      }
-
-      y += 0.45;
-      drawTableHeader();
-      
-      // Friday frozen rows (CV excluded from display)
-      const fridayDisplayReservations = fridayFrozenReservations.filter(r => !isCoyoteValley(r.Name));
-      fridayDisplayReservations.forEach((res, index) => {
-        checkNewPage(0.28);
-        
-        // Alternating row colors - blue tint for frozen
-        if (index % 2 === 0) {
-          doc.setFillColor(230, 244, 255);
-        } else {
-          doc.setFillColor(245, 250, 255);
-        }
-        doc.rect(margin, y - 0.05, contentWidth, 0.28, 'F');
-        
-        x = margin + 0.05;
-        doc.setFontSize(8);
-        doc.setTextColor(0, 0, 0);
-        
-        // Row number
-        doc.text(String(index + 1), x, y + 0.12);
-        x += colWidths[0];
-        
-        // Name
-        const name = res.Name.length > 24 ? res.Name.substring(0, 22) + '...' : res.Name;
-        doc.setFont('helvetica', 'bold');
-        doc.text(name, x, y + 0.12);
-        doc.setFont('helvetica', 'normal');
-        x += colWidths[1];
-        
-        // Meal Type
-        doc.text(res['Meal Type'] || '', x, y + 0.12);
-        x += colWidths[2];
-        
-        // Member Status
-        const statusShort = res['Member Status'] === 'Member' ? 'Member' : 'Non-Mem';
-        doc.text(statusShort, x, y + 0.12);
-        x += colWidths[3];
-        
-        // Paid (checkmark or X)
-        const isPaid = res['Payment Method'] && res['Payment Method'] !== 'Unpaid';
-        doc.text(isPaid ? 'Yes' : 'No', x, y + 0.12);
-        x += colWidths[4];
-        
-        // Notes (simplified for frozen)
-        const cleanedNotes = cleanNotes(res.Notes || '').replace(/FROZEN FRIDAY \|?\s*/g, '');
-        if (cleanedNotes) {
-          doc.setFontSize(7);
-          const truncatedNotes = cleanedNotes.length > 25 ? cleanedNotes.substring(0, 23) + '...' : cleanedNotes;
-          doc.text(truncatedNotes, x, y + 0.12);
-          doc.setFontSize(8);
-        }
-        x += colWidths[5];
-        
-        // Meals remaining - N/A for frozen section
-        doc.setTextColor(150, 150, 150);
-        doc.text('N/A', x, y + 0.12);
-        doc.setTextColor(0, 0, 0);
-        
-        y += 0.25;
       });
     }
 

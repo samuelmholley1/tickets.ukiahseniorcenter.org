@@ -72,10 +72,19 @@ export default function LunchList() {
     setCurrentDate(`${year}-${month}-${day}`);
   };
 
-  // Group by meal type for easier display
+  // Group by meal type for summary counts
   const dineIn = reservations.filter(r => r['Meal Type'] === 'Dine In');
   const toGo = reservations.filter(r => r['Meal Type'] === 'To Go');
   const delivery = reservations.filter(r => r['Meal Type'] === 'Delivery');
+
+  // Merged list sorted Z-A by last name
+  const sortedReservations = [...reservations].sort((a, b) => {
+    const getLastName = (name: string) => {
+      const parts = name.trim().split(/\s+/);
+      return parts[parts.length - 1].toLowerCase();
+    };
+    return getLastName(b.Name).localeCompare(getLastName(a.Name));
+  });
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f8f9fa]">
@@ -177,11 +186,43 @@ export default function LunchList() {
                          <p className="text-gray-400 text-lg">No reservations found for this date.</p>
                      </div>
                  ) : (
-                     <>
-                        <Section title="🍽️ Dine In" items={dineIn} color="blue" />
-                        <Section title="🛍️ To Go / Pickup" items={toGo} color="green" />
-                        <Section title="🚚 Delivery" items={delivery} color="yellow" />
-                     </>
+                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                         <div className="bg-gray-50 px-6 py-3 border-b border-gray-200">
+                             <h3 className="font-bold text-gray-900 text-lg">All Reservations ({sortedReservations.length})</h3>
+                         </div>
+                         <div className="divide-y divide-gray-100">
+                             {sortedReservations.map(item => {
+                                 const typeColor = item['Meal Type'] === 'Dine In' ? 'blue' : item['Meal Type'] === 'To Go' ? 'green' : 'yellow';
+                                 const typeBg = { blue: 'bg-blue-100 text-blue-800', green: 'bg-green-100 text-green-800', yellow: 'bg-yellow-100 text-yellow-800' }[typeColor] || 'bg-gray-100 text-gray-700';
+                                 return (
+                                     <div key={item.id} className="p-4 hover:bg-gray-50 flex justify-between items-start">
+                                         <div>
+                                             <div className="font-bold text-gray-800 text-lg">{item.Name}</div>
+                                             {item.Notes && (
+                                                 <p className="text-sm text-gray-500 mt-1 italic">&quot;{item.Notes}&quot;</p>
+                                             )}
+                                             <div className="flex gap-2 mt-2">
+                                                 <span className={`text-xs px-2 py-1 rounded font-bold ${typeBg}`}>
+                                                     {item['Meal Type']}
+                                                 </span>
+                                                 <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">
+                                                     {item['Member Status']}
+                                                 </span>
+                                                 <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">
+                                                     paid via {item['Payment Method']}
+                                                 </span>
+                                             </div>
+                                         </div>
+                                         <div className="text-right">
+                                             {item.Amount && item.Amount > 0 && (
+                                                 <div className="font-bold text-green-700">${item.Amount}</div>
+                                             )}
+                                         </div>
+                                     </div>
+                                 );
+                             })}
+                         </div>
+                     </div>
                  )}
              </div>
           )}
@@ -193,45 +234,4 @@ export default function LunchList() {
   );
 }
 
-function Section({ title, items, color }: { title: string, items: Reservation[], color: string }) {
-    if (items.length === 0) return null;
-    
-    const colorClasses = {
-        blue: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-900' },
-        green: { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-900' },
-        yellow: { bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-900' },
-    }[color] || { bg: 'bg-gray-50', border: 'border-gray-200', text: 'text-gray-900' };
 
-    return (
-        <div className={`bg-white rounded-xl shadow-sm border ${colorClasses.border} overflow-hidden`}>
-            <div className={`${colorClasses.bg} px-6 py-3 border-b ${colorClasses.border}`}>
-                <h3 className={`font-bold ${colorClasses.text} text-lg`}>{title} ({items.length})</h3>
-            </div>
-            <div className="divide-y divide-gray-100">
-                {items.map(item => (
-                    <div key={item.id} className="p-4 hover:bg-gray-50 flex justify-between items-start">
-                        <div>
-                            <div className="font-bold text-gray-800 text-lg">{item.Name}</div>
-                            {item.Notes && (
-                                <p className="text-sm text-gray-500 mt-1 italic">&quot;{item.Notes}&quot;</p>
-                            )}
-                            <div className="flex gap-2 mt-2">
-                                <span className={`text-xs px-2 py-1 rounded bg-gray-100 text-gray-600`}>
-                                    {item['Member Status']}
-                                </span>
-                                <span className={`text-xs px-2 py-1 rounded bg-gray-100 text-gray-600`}>
-                                    paid via {item['Payment Method']}
-                                </span>
-                            </div>
-                        </div>
-                        <div className="text-right">
-                             {item.Amount && item.Amount > 0 && (
-                                 <div className="font-bold text-green-700">${item.Amount}</div>
-                             )}
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-}

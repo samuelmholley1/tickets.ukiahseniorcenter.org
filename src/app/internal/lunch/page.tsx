@@ -3024,8 +3024,8 @@ export default function LunchPage() {
             {(() => {
               // Show all transactions, hiding $0 duplicate entries from multi-meal cash/check batches
               const allFiltered = recentTransactions.filter(tx => {
-                // For reservations paid by cash/check, $0 means it's an extra row in a multi-meal batch
-                if (tx.type === 'reservation' && tx.amount === 0) {
+                // $0 cash/check entries are extra rows in multi-meal batches — hide them
+                if (tx.amount === 0) {
                   const pm = (tx.paymentMethod || '').toLowerCase();
                   if (pm.includes('cash') || pm.includes('check')) return false;
                 }

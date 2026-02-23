@@ -57,9 +57,10 @@ interface TodayReservation {
  * Individual Meals:
  *   - Member Dine In: $8
  *   - Member To Go: $9
+ *   - Member Delivery: $12
  *   - Non-Member Dine In: $10
  *   - Non-Member To Go: $11
- *   - Delivery Add-on: +$4 ($1 container + $3 delivery)
+ *   - Non-Member Delivery: $14
  * 
  * Lunch Cards (prepaid):
  *   5, 10, 15, 20 meal options
@@ -72,32 +73,33 @@ const PRICING = {
   individual: {
     memberDineIn: 8,
     memberToGo: 9,
+    memberDelivery: 12,
     nonMemberDineIn: 10,
     nonMemberToGo: 11,
-    deliveryCharge: 4, // $1 container fee + $3 delivery fee
+    nonMemberDelivery: 14,
   },
   cards: {
     5: {
-      member: { dineIn: 40, pickup: 45, delivery: 65 },
-      nonMember: { dineIn: 50, pickup: 55, delivery: 75 },
+      member: { dineIn: 40, pickup: 45, delivery: 60 },
+      nonMember: { dineIn: 50, pickup: 55, delivery: 70 },
     },
     10: {
-      member: { dineIn: 80, pickup: 90, delivery: 130 },
-      nonMember: { dineIn: 100, pickup: 110, delivery: 150 },
+      member: { dineIn: 80, pickup: 90, delivery: 120 },
+      nonMember: { dineIn: 100, pickup: 110, delivery: 140 },
     },
     15: {
-      member: { dineIn: 120, pickup: 135, delivery: 195 },
-      nonMember: { dineIn: 150, pickup: 165, delivery: 225 },
+      member: { dineIn: 120, pickup: 135, delivery: 180 },
+      nonMember: { dineIn: 150, pickup: 165, delivery: 210 },
     },
     20: {
-      member: { dineIn: 160, pickup: 180, delivery: 260 },
-      nonMember: { dineIn: 200, pickup: 220, delivery: 300 },
+      member: { dineIn: 160, pickup: 180, delivery: 240 },
+      nonMember: { dineIn: 200, pickup: 220, delivery: 280 },
     },
   },
   // Per-meal rates for custom quantities
   perMeal: {
-    member:    { dineIn: 8, pickup: 9, delivery: 13 },
-    nonMember: { dineIn: 10, pickup: 11, delivery: 15 },
+    member:    { dineIn: 8, pickup: 9, delivery: 12 },
+    nonMember: { dineIn: 10, pickup: 11, delivery: 14 },
   },
 } as const;
 
@@ -327,8 +329,10 @@ export default function LunchPage() {
     return Object.values(dateMeals).reduce((sum, meals) => sum + meals.length, 0);
   };
   
-  // Generate weeks for calendar display (Mon-Fri columns, 4 weeks ahead)
+  // Generate weeks for calendar display (Mon-Fri columns, 4 weeks ahead + previous weeks)
   // Friday is special: "Chef's Choice (FROZEN)" picked up Thursday
+  const [previousWeeksShown, setPreviousWeeksShown] = useState(0);
+  
   interface CalendarDay {
     value: string; // YYYY-MM-DD - the actual date of the meal (Friday for frozen)
     label: string;
@@ -393,10 +397,15 @@ export default function LunchPage() {
       firstMonday.setDate(today.getDate() - (currentDay - 1));
     }
     
-    // Generate 4 weeks
-    for (let week = 0; week < 4; week++) {
-      const weekStart = new Date(firstMonday);
-      weekStart.setDate(firstMonday.getDate() + (week * 7));
+    // Start from N weeks before the first Monday
+    const startMonday = new Date(firstMonday);
+    startMonday.setDate(firstMonday.getDate() - (previousWeeksShown * 7));
+    
+    // Generate previousWeeksShown + 4 weeks
+    const totalWeeks = previousWeeksShown + 4;
+    for (let week = 0; week < totalWeeks; week++) {
+      const weekStart = new Date(startMonday);
+      weekStart.setDate(startMonday.getDate() + (week * 7));
       
       const weekDays: CalendarDay[] = [];
       
@@ -465,10 +474,6 @@ export default function LunchPage() {
       const meals = prev[date] || [];
       if (meals.length <= 1) {
         // Remove the date entirely if this was the last meal
-        // But keep at least one date
-        if (Object.keys(prev).length <= 1) {
-          return prev; // Don't remove last date
-        }
         const { [date]: _removed, ...rest } = prev;
         void _removed; // Suppress unused variable warning
         return rest;
@@ -493,14 +498,12 @@ export default function LunchPage() {
   const handleDateClick = (date: string, isFrozenFriday: boolean = false) => {
     const customerName = `${customer.firstName} ${customer.lastName}`.trim();
     if (dateMeals[date]) {
-      // Date is selected - remove it (unless it's the only one)
-      if (Object.keys(dateMeals).length > 1) {
-        setDateMeals(prev => {
-          const { [date]: _removed, ...rest } = prev;
-          void _removed; // Suppress unused variable warning
-          return rest;
-        });
-      }
+      // Date is selected - remove it (allow 0 dates while editing)
+      setDateMeals(prev => {
+        const { [date]: _removed, ...rest } = prev;
+        void _removed; // Suppress unused variable warning
+        return rest;
+      });
     } else {
       // Add date with 1 meal
       setDateMeals(prev => ({
@@ -935,16 +938,13 @@ export default function LunchPage() {
 
   // Calculate individual meal price (single meal)
   const calculateSingleMealPrice = () => {
-    let basePrice = 0;
-    if (isMember === 'member') {
-      basePrice = mealType === 'dineIn' ? PRICING.individual.memberDineIn : PRICING.individual.memberToGo;
-    } else {
-      basePrice = mealType === 'dineIn' ? PRICING.individual.nonMemberDineIn : PRICING.individual.nonMemberToGo;
-    }
     if (mealType === 'delivery') {
-      basePrice = (isMember === 'member' ? PRICING.individual.memberToGo : PRICING.individual.nonMemberToGo) + PRICING.individual.deliveryCharge;
+      return isMember === 'member' ? PRICING.individual.memberDelivery : PRICING.individual.nonMemberDelivery;
     }
-    return basePrice;
+    if (mealType === 'pickup') {
+      return isMember === 'member' ? PRICING.individual.memberToGo : PRICING.individual.nonMemberToGo;
+    }
+    return isMember === 'member' ? PRICING.individual.memberDineIn : PRICING.individual.nonMemberDineIn;
   };
 
   // Calculate lunch card price
@@ -1998,6 +1998,15 @@ export default function LunchPage() {
                       </span>
                     </label>
                   </div>
+
+                  {/* Show Previous Week button */}
+                  <button
+                    type="button"
+                    onClick={() => setPreviousWeeksShown(prev => prev + 1)}
+                    className="w-full mb-2 py-1.5 px-3 bg-gray-100 hover:bg-gray-200 text-gray-600 font-['Jost',sans-serif] font-bold text-sm rounded-lg transition-colors border border-gray-300"
+                  >
+                    ← Show Previous Week
+                  </button>
                   
                   {/* Column Headers: Mon Tue Wed Thu Fri */}
                   <div className="grid grid-cols-5 gap-1 mb-1">
@@ -2179,7 +2188,7 @@ export default function LunchPage() {
                         mealType === 'delivery' ? 'bg-[#427d78] text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
-                      🚗 Delivery (+${PRICING.individual.deliveryCharge})
+                      🚗 Delivery (${isMember === 'member' ? PRICING.individual.memberDelivery : PRICING.individual.nonMemberDelivery})
                     </button>
                   </div>
                 </div>
@@ -3077,9 +3086,9 @@ export default function LunchPage() {
                       <td className="text-right p-2">${PRICING.individual.nonMemberToGo}</td>
                     </tr>
                     <tr className="border-b">
-                      <td className="p-2">Delivery (+$4)</td>
-                      <td className="text-right p-2">${PRICING.individual.memberToGo + PRICING.individual.deliveryCharge}</td>
-                      <td className="text-right p-2">${PRICING.individual.nonMemberToGo + PRICING.individual.deliveryCharge}</td>
+                      <td className="p-2">Delivery</td>
+                      <td className="text-right p-2">${PRICING.individual.memberDelivery}</td>
+                      <td className="text-right p-2">${PRICING.individual.nonMemberDelivery}</td>
                     </tr>
                   </tbody>
                 </table>

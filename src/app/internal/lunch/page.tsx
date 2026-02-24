@@ -1940,17 +1940,27 @@ export default function LunchPage() {
                       )}
                     </div>
                     {autoDetectedCardInfo.totalMeals > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedLunchCard(autoDetectedCardInfo.primaryCard);
-                          setSelectedCardInfo(autoDetectedCardInfo); // Store full info for buffer support
-                          setPaymentMethod('lunchCard');
-                        }}
-                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-['Jost',sans-serif] font-bold rounded-lg"
-                      >
-                        Use This Card
-                      </button>
+                      paymentMethod === 'lunchCard' && selectedLunchCard?.id === autoDetectedCardInfo.primaryCard.id ? (
+                        <div className="px-4 py-2 bg-green-800 text-white font-['Jost',sans-serif] font-bold rounded-lg flex items-center gap-2">
+                          ✅ Card Selected
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedLunchCard(autoDetectedCardInfo.primaryCard);
+                            setSelectedCardInfo(autoDetectedCardInfo);
+                            setPaymentMethod('lunchCard');
+                            // Scroll to payment section so user sees it's applied
+                            setTimeout(() => {
+                              document.getElementById('payment-method-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }, 100);
+                          }}
+                          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-['Jost',sans-serif] font-bold rounded-lg"
+                        >
+                          Use This Card
+                        </button>
+                      )
                     )}
                   </div>
                 </div>
@@ -2452,7 +2462,7 @@ export default function LunchPage() {
             )}
 
             {/* Payment Method */}
-            <div ref={paymentRef} className="card" style={{ marginBottom: 'var(--space-4)' }}>
+            <div id="payment-method-section" ref={paymentRef} className="card" style={{ marginBottom: 'var(--space-4)' }}>
               <h2 className="font-['Jost',sans-serif] font-bold text-[#427d78] text-xl" style={{ marginBottom: 'var(--space-3)' }}>
                 Payment
               </h2>

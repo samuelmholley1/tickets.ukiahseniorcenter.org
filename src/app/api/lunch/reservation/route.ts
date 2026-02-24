@@ -463,3 +463,110 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+// Cancel a reservation with refund handling
+export async function DELETE(request: NextRequest) {
+  try {
+    if (!process.env.AIRTABLE_API_KEY || !process.env.AIRTABLE_BASE_ID || !process.env.AIRTABLE_LUNCH_RESERVATIONS_TABLE_ID) {
+      throw new Error('Airtable environment variables not configured');
+    }
+
+    const body = await request.json();
+    const { reservationId, refundMethod, staff } = body as {
+      reservationId: string;
+      refundMethod: 'cash' | 'lunchCard' | 'forfeit';
+      staff?: string;
+    };
+
+    if (!reservationId) {
+      return NextResponse.json({ error: 'Reservation ID is required' }, { status: 400 });
+    }
+    if (!refundMethod) {
+      return NextResponse.json({ error: 'Refund method is required' }, { status: 400 });
+    }
+
+    // 1. Fetch the reservation to get details (payment method, lunch card link, amount)
+    const fetchRes = await fetch(
+      `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_RESERVATIONS_TABLE_ID}/${reservationId}`,
+      { headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}` } }
+    );
+
+    if (!fetchRes.ok) {
+      return NextResponse.json({ error: 'Reservation not found' }, { status: 404 });
+    }
+
+    const reservation = await fetchRes.json();
+    const fields = reservation.fields;
+    const name = fields['Name'] || 'Unknown';
+    const amount = fields['Amount'] || 0;
+    const lunchCardIds = fields['Lunch Card'] as string[] | undefined;
+    const lunchCardId = lunchCardIds?.[0];
+
+    // 2. If refunding to lunch card, replenish 1 meal on the linked card
+    if (refundMethod === 'lunchCard') {
+      if (!lunchCardId) {
+        return NextResponse.json({ 
+          error: 'No lunch card linked to this reservation. Use cash refund or forfeit instead.' 
+        }, { status: 400 });
+      }
+
+      // Fetch current card balance
+      const cardRes = await fetch(
+        `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID}/${lunchCardId}`,
+        { headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}` } }
+      );
+
+      if (cardRes.ok) {
+        const cardData = await cardRes.json();
+        const currentMeals = (cardData.fields['Remaining Meals'] as number) || 0;
+
+        // Add 1 meal back
+        await fetch(
+          `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID}/${lunchCardId}`,
+          {
+            method: 'PATCH',
+            headers: {
+              'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              fields: { 'Remaining Meals': currentMeals + 1 },
+            }),
+          }
+        );
+      }
+    }
+
+    // 3. Delete the reservation record from Airtable
+    const deleteRes = await fetch(
+      `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_RESERVATIONS_TABLE_ID}/${reservationId}`,
+      {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}` },
+      }
+    );
+
+    if (!deleteRes.ok) {
+      const errorText = await deleteRes.text();
+      console.error('Failed to delete reservation:', errorText);
+      return NextResponse.json({ error: 'Failed to delete reservation' }, { status: 500 });
+    }
+
+    const refundLabel = refundMethod === 'cash' ? 'Cash Refund' : refundMethod === 'lunchCard' ? 'Lunch Card Replenished' : 'Payment Forfeited';
+
+    return NextResponse.json({
+      success: true,
+      message: `Reservation for ${name} cancelled. ${refundLabel}.`,
+      refundMethod,
+      amount,
+      staff: staff || '',
+    });
+
+  } catch (error) {
+    console.error('Cancel reservation error:', error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to cancel reservation' },
+      { status: 500 }
+    );
+  }
+}

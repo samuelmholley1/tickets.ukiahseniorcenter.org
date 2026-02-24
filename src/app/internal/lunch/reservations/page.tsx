@@ -19,6 +19,11 @@ interface Reservation {
 
 export default function LunchList() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [cancelTarget, setCancelTarget] = useState<Reservation | null>(null);
+  const [cancelStep, setCancelStep] = useState<'choose' | 'confirm' | 'processing' | 'done' | 'error'>('choose');
+  const [selectedRefund, setSelectedRefund] = useState<'cash' | 'lunchCard' | 'forfeit' | null>(null);
+  const [cancelResult, setCancelResult] = useState<string>('');
+  const [cancelError, setCancelError] = useState<string>('');
 
 
   // Default to next business lunch day (tomorrow, or Monday if Thu-Sun)
@@ -85,6 +90,52 @@ export default function LunchList() {
     };
     return getLastName(b.Name).localeCompare(getLastName(a.Name));
   });
+
+  const openCancelModal = (reservation: Reservation) => {
+    setCancelTarget(reservation);
+    setCancelStep('choose');
+    setSelectedRefund(null);
+    setCancelResult('');
+    setCancelError('');
+  };
+
+  const closeCancelModal = () => {
+    setCancelTarget(null);
+    setCancelStep('choose');
+    setSelectedRefund(null);
+  };
+
+  const handleCancel = async () => {
+    if (!cancelTarget || !selectedRefund) return;
+    setCancelStep('processing');
+
+    try {
+      const res = await fetch('/api/lunch/reservation', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reservationId: cancelTarget.id,
+          refundMethod: selectedRefund,
+          staff: 'STAFF',
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setCancelResult(data.message);
+        setCancelStep('done');
+        // Remove from local list
+        setReservations(prev => prev.filter(r => r.id !== cancelTarget.id));
+      } else {
+        setCancelError(data.error || 'Failed to cancel reservation');
+        setCancelStep('error');
+      }
+    } catch {
+      setCancelError('Network error. Please try again.');
+      setCancelStep('error');
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f8f9fa]">
@@ -196,12 +247,12 @@ export default function LunchList() {
                                  const typeBg = { blue: 'bg-blue-100 text-blue-800', green: 'bg-green-100 text-green-800', yellow: 'bg-yellow-100 text-yellow-800' }[typeColor] || 'bg-gray-100 text-gray-700';
                                  return (
                                      <div key={item.id} className="p-4 hover:bg-gray-50 flex justify-between items-start">
-                                         <div>
+                                         <div className="flex-1 min-w-0">
                                              <div className="font-bold text-gray-800 text-lg">{item.Name}</div>
                                              {item.Notes && (
                                                  <p className="text-sm text-gray-500 mt-1 italic">&quot;{item.Notes}&quot;</p>
                                              )}
-                                             <div className="flex gap-2 mt-2">
+                                             <div className="flex gap-2 mt-2 flex-wrap">
                                                  <span className={`text-xs px-2 py-1 rounded font-bold ${typeBg}`}>
                                                      {item['Meal Type']}
                                                  </span>
@@ -213,10 +264,17 @@ export default function LunchList() {
                                                  </span>
                                              </div>
                                          </div>
-                                         <div className="text-right">
+                                         <div className="flex items-center gap-3 ml-4 shrink-0">
                                              {item.Amount && item.Amount > 0 && (
                                                  <div className="font-bold text-green-700">${item.Amount}</div>
                                              )}
+                                             <button
+                                                 type="button"
+                                                 onClick={() => openCancelModal(item)}
+                                                 className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 rounded-lg text-sm font-bold border border-red-200 hover:border-red-300 transition-all"
+                                             >
+                                                 ✕ Cancel
+                                             </button>
                                          </div>
                                      </div>
                                  );
@@ -228,6 +286,166 @@ export default function LunchList() {
           )}
         </div>
       </main>
+
+      {/* Cancel Reservation Modal */}
+      {cancelTarget && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+            {/* Header */}
+            <div className="bg-red-600 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-white font-bold text-xl font-['Jost',sans-serif]">Cancel Reservation</h2>
+              <button onClick={closeCancelModal} className="text-white/80 hover:text-white text-2xl font-bold leading-none">&times;</button>
+            </div>
+
+            <div className="p-6">
+              {/* Reservation info */}
+              <div className="bg-gray-50 rounded-lg p-4 mb-5 border border-gray-200">
+                <div className="font-bold text-gray-900 text-lg">{cancelTarget.Name}</div>
+                <div className="text-sm text-gray-600 mt-1">
+                  {cancelTarget['Meal Type']} &bull; {cancelTarget['Member Status']} &bull; {cancelTarget['Payment Method']}
+                </div>
+                {cancelTarget.Amount && cancelTarget.Amount > 0 && (
+                  <div className="text-green-700 font-bold mt-1">${cancelTarget.Amount}</div>
+                )}
+              </div>
+
+              {/* Step: Choose refund method */}
+              {cancelStep === 'choose' && (
+                <>
+                  <p className="text-gray-700 font-medium mb-4">How should this cancellation be handled?</p>
+                  <div className="space-y-3">
+                    <button
+                      onClick={() => { setSelectedRefund('cash'); setCancelStep('confirm'); }}
+                      className="w-full text-left p-4 rounded-xl border-2 border-gray-200 hover:border-green-400 hover:bg-green-50 transition-all group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">💵</span>
+                        <div>
+                          <div className="font-bold text-gray-900 group-hover:text-green-800">Refund — Cash</div>
+                          <div className="text-sm text-gray-500">Give cash back to customer. Cash box balance will be adjusted.</div>
+                        </div>
+                      </div>
+                    </button>
+
+                    {cancelTarget['Payment Method'] === 'Lunch Card' && (
+                      <button
+                        onClick={() => { setSelectedRefund('lunchCard'); setCancelStep('confirm'); }}
+                        className="w-full text-left p-4 rounded-xl border-2 border-gray-200 hover:border-amber-400 hover:bg-amber-50 transition-all group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">🎫</span>
+                          <div>
+                            <div className="font-bold text-gray-900 group-hover:text-amber-800">Refund — Lunch Card</div>
+                            <div className="text-sm text-gray-500">Add 1 meal back to their lunch card balance.</div>
+                          </div>
+                        </div>
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => { setSelectedRefund('forfeit'); setCancelStep('confirm'); }}
+                      className="w-full text-left p-4 rounded-xl border-2 border-gray-200 hover:border-red-300 hover:bg-red-50 transition-all group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">🚫</span>
+                        <div>
+                          <div className="font-bold text-gray-900 group-hover:text-red-800">Forfeit Payment</div>
+                          <div className="text-sm text-gray-500">Cancel without refund. Customer forfeits payment.</div>
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* Step: Confirm */}
+              {cancelStep === 'confirm' && selectedRefund && (
+                <>
+                  <div className={`p-4 rounded-xl border-2 mb-5 ${
+                    selectedRefund === 'cash' ? 'bg-green-50 border-green-300' :
+                    selectedRefund === 'lunchCard' ? 'bg-amber-50 border-amber-300' :
+                    'bg-red-50 border-red-300'
+                  }`}>
+                    <div className="font-bold text-lg mb-1">
+                      {selectedRefund === 'cash' && '💵 Cash Refund'}
+                      {selectedRefund === 'lunchCard' && '🎫 Lunch Card Refund'}
+                      {selectedRefund === 'forfeit' && '🚫 Forfeit Payment'}
+                    </div>
+                    <div className="text-sm text-gray-700">
+                      {selectedRefund === 'cash' && `Return $${cancelTarget.Amount || 0} cash to ${cancelTarget.Name}. This will be reflected in cash box balancing.`}
+                      {selectedRefund === 'lunchCard' && `Add 1 meal back to ${cancelTarget.Name}'s lunch card.`}
+                      {selectedRefund === 'forfeit' && `${cancelTarget.Name}'s reservation will be cancelled with no refund.`}
+                    </div>
+                  </div>
+
+                  <p className="text-red-700 font-bold text-center mb-4">⚠️ This action cannot be undone.</p>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => { setCancelStep('choose'); setSelectedRefund(null); }}
+                      className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-all"
+                    >
+                      ← Back
+                    </button>
+                    <button
+                      onClick={handleCancel}
+                      className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-all"
+                    >
+                      Confirm Cancellation
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* Step: Processing */}
+              {cancelStep === 'processing' && (
+                <div className="text-center py-6">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-red-600 mx-auto mb-3"></div>
+                  <p className="text-gray-600 font-medium">Processing cancellation...</p>
+                </div>
+              )}
+
+              {/* Step: Done */}
+              {cancelStep === 'done' && (
+                <div className="text-center py-4">
+                  <div className="text-4xl mb-3">✅</div>
+                  <p className="text-green-800 font-bold text-lg mb-2">Reservation Cancelled</p>
+                  <p className="text-gray-600 mb-5">{cancelResult}</p>
+                  <button
+                    onClick={closeCancelModal}
+                    className="px-6 py-3 bg-[#427d78] hover:bg-[#356560] text-white font-bold rounded-xl transition-all"
+                  >
+                    Done
+                  </button>
+                </div>
+              )}
+
+              {/* Step: Error */}
+              {cancelStep === 'error' && (
+                <div className="text-center py-4">
+                  <div className="text-4xl mb-3">❌</div>
+                  <p className="text-red-800 font-bold text-lg mb-2">Cancellation Failed</p>
+                  <p className="text-gray-600 mb-5">{cancelError}</p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setCancelStep('choose')}
+                      className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-all"
+                    >
+                      Try Again
+                    </button>
+                    <button
+                      onClick={closeCancelModal}
+                      className="flex-1 px-4 py-3 bg-red-100 hover:bg-red-200 text-red-700 font-bold rounded-xl transition-all"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       
       <SiteFooterContent />
     </div>

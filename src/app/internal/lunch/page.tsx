@@ -547,6 +547,15 @@ export default function LunchPage() {
   const [isSearchingCards, setIsSearchingCards] = useState(false);
   const [cardDeductions, setCardDeductions] = useState<{ date: string; name: string }[]>([]); // Deduction history for selected card
   
+  // Review Card state - shows meal punch history for a card
+  const [reviewCardId, setReviewCardId] = useState<string | null>(null);
+  const [reviewCardData, setReviewCardData] = useState<{
+    cardInfo: { name: string; totalMeals: string; remainingMeals: number; cardType: string; memberStatus: string; purchaseDate: string; paymentMethod: string } | null;
+    punches: { id: string; date: string; name: string; mealType: string; notes: string; amount: number; staff: string; createdAt: string }[];
+    totalPunches: number;
+  } | null>(null);
+  const [isLoadingReview, setIsLoadingReview] = useState(false);
+
   // Auto-detected lunch card from customer name (aggregated with buffer info)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_autoDetectedCard, setAutoDetectedCard] = useState<LunchCard | null>(null);
@@ -1692,42 +1701,120 @@ export default function LunchPage() {
                                 </div>
                               )}
                             </div>
-                            {totalMeals > 0 && (
+                            <div className="flex flex-col gap-1">
+                              {totalMeals > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    // Parse name into first/last (supports joint names like "Mary Snyder & Don Burgess")
+                                    const { firstName, lastName } = parseJointName(baseName);
+                                    // Auto-populate everything (use contact info if available)
+                                    setCustomer(prev => ({
+                                      ...prev,
+                                      firstName,
+                                      lastName,
+                                      phone: primaryCard.contactPhone || primaryCard.phone || prev.phone,
+                                      email: primaryCard.contactEmail || prev.email,
+                                    }));
+                                    setSelectedLunchCard(primaryCard);
+                                    // Store full aggregated info for buffer support
+                                    setSelectedCardInfo({
+                                      baseName,
+                                      primaryCard,
+                                      allCards: cards,
+                                      regularMeals,
+                                      bufferMeals,
+                                      totalMeals,
+                                      hasBuffer,
+                                    });
+                                    setAutoDetectedCard(primaryCard);
+                                    setPaymentMethod('lunchCard');
+                                    setLunchCardSearch('');
+                                    setAvailableLunchCards([]);
+                                  }}
+                                  className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white font-['Jost',sans-serif] font-bold rounded-lg text-sm whitespace-nowrap"
+                                >
+                                  Use This Card
+                                </button>
+                              )}
                               <button
                                 type="button"
-                                onClick={() => {
-                                  // Parse name into first/last (supports joint names like "Mary Snyder & Don Burgess")
-                                  const { firstName, lastName } = parseJointName(baseName);
-                                  // Auto-populate everything (use contact info if available)
-                                  setCustomer(prev => ({
-                                    ...prev,
-                                    firstName,
-                                    lastName,
-                                    phone: primaryCard.contactPhone || primaryCard.phone || prev.phone,
-                                    email: primaryCard.contactEmail || prev.email,
-                                  }));
-                                  setSelectedLunchCard(primaryCard);
-                                  // Store full aggregated info for buffer support
-                                  setSelectedCardInfo({
-                                    baseName,
-                                    primaryCard,
-                                    allCards: cards,
-                                    regularMeals,
-                                    bufferMeals,
-                                    totalMeals,
-                                    hasBuffer,
-                                  });
-                                  setAutoDetectedCard(primaryCard);
-                                  setPaymentMethod('lunchCard');
-                                  setLunchCardSearch('');
-                                  setAvailableLunchCards([]);
+                                onClick={async () => {
+                                  if (reviewCardId === primaryCard.id) {
+                                    // Toggle off if already reviewing this card
+                                    setReviewCardId(null);
+                                    setReviewCardData(null);
+                                    return;
+                                  }
+                                  setReviewCardId(primaryCard.id);
+                                  setIsLoadingReview(true);
+                                  setReviewCardData(null);
+                                  try {
+                                    const res = await fetch(`/api/lunch/card-history?cardId=${primaryCard.id}`);
+                                    const data = await res.json();
+                                    if (data.success) {
+                                      setReviewCardData({ cardInfo: data.cardInfo, punches: data.punches, totalPunches: data.totalPunches });
+                                    }
+                                  } catch { /* ignore */ }
+                                  setIsLoadingReview(false);
                                 }}
-                                className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white font-['Jost',sans-serif] font-bold rounded-lg text-sm whitespace-nowrap"
+                                className={`px-3 py-1.5 ${reviewCardId === primaryCard.id ? 'bg-gray-500 hover:bg-gray-600' : 'bg-blue-600 hover:bg-blue-700'} text-white font-['Jost',sans-serif] font-bold rounded-lg text-xs whitespace-nowrap`}
                               >
-                                Use This Card
+                                {reviewCardId === primaryCard.id ? '✕ Close' : '📋 Review Card'}
                               </button>
-                            )}
+                            </div>
                           </div>
+                          {/* Punch history panel */}
+                          {reviewCardId === primaryCard.id && (
+                            <div className="mt-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                              {isLoadingReview ? (
+                                <p className="text-blue-600 text-sm font-['Bitter',serif]">Loading punch history...</p>
+                              ) : reviewCardData ? (
+                                <>
+                                  <div className="flex items-center justify-between mb-2">
+                                    <h4 className="font-['Jost',sans-serif] font-bold text-blue-800 text-sm">
+                                      Meal Punch History ({reviewCardData.totalPunches} punch{reviewCardData.totalPunches !== 1 ? 'es' : ''})
+                                    </h4>
+                                    {reviewCardData.cardInfo && (
+                                      <span className="text-xs text-blue-600 font-['Bitter',serif]">
+                                        {reviewCardData.cardInfo.cardType} • Purchased {reviewCardData.cardInfo.purchaseDate}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {reviewCardData.punches.length === 0 ? (
+                                    <p className="text-gray-500 text-sm font-['Bitter',serif]">No punches recorded yet.</p>
+                                  ) : (
+                                    <div className="space-y-1 max-h-48 overflow-y-auto">
+                                      {reviewCardData.punches.map((punch) => (
+                                        <div key={punch.id} className="flex items-center justify-between bg-white px-2 py-1.5 rounded border border-blue-100 text-sm">
+                                          <div className="flex items-center gap-2">
+                                            <span className="font-['Jost',sans-serif] font-bold text-gray-800">
+                                              {new Date(punch.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                            </span>
+                                            <span className={`px-1.5 py-0.5 rounded text-xs font-bold ${
+                                              punch.mealType === 'Delivery' ? 'bg-purple-100 text-purple-700' :
+                                              punch.mealType === 'To Go' ? 'bg-amber-100 text-amber-700' :
+                                              'bg-green-100 text-green-700'
+                                            }`}>
+                                              {punch.mealType}
+                                            </span>
+                                            <span className="text-gray-600 font-['Bitter',serif]">{punch.name}</span>
+                                          </div>
+                                          {punch.notes && (
+                                            <span className="text-xs text-gray-400 font-['Bitter',serif] truncate max-w-[120px]" title={punch.notes}>
+                                              {punch.notes}
+                                            </span>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </>
+                              ) : (
+                                <p className="text-red-500 text-sm font-['Bitter',serif]">Failed to load punch history.</p>
+                              )}
+                            </div>
+                          )}
                         </div>
                       );
                     });

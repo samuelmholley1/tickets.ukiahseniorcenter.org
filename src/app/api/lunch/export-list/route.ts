@@ -246,47 +246,44 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 3. For reservations without explicit lunch card links, look up by name
-    // This helps with handwritten entries that weren't linked to cards
+    // 3. Fetch ALL active lunch cards and SUM remaining meals per name
+    // This ensures customers with multiple cards show the correct total
     if (process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID) {
-      const reservationsWithoutCard = reservations.filter(r => r.LunchCardRemaining === undefined && r.Name);
+      const activeCardsUrl = `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID}?filterByFormula=${encodeURIComponent('{Remaining Meals}>0')}`;
       
-      if (reservationsWithoutCard.length > 0) {
-        // Fetch ALL active lunch cards to do name matching
-        const activeCardsUrl = `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID}?filterByFormula=${encodeURIComponent('{Remaining Meals}>0')}`;
+      const activeCardsResponse = await fetch(activeCardsUrl, {
+        headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}` },
+      });
+      
+      if (activeCardsResponse.ok) {
+        const activeCardsData = await activeCardsResponse.json();
         
-        const activeCardsResponse = await fetch(activeCardsUrl, {
-          headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}` },
-        });
-        
-        if (activeCardsResponse.ok) {
-          const activeCardsData = await activeCardsResponse.json();
+        // Build a map of lowercase name -> {totalRemaining (sum of ALL cards), phone}
+        const nameToInfo = new Map<string, { remaining: number; phone?: string }>();
+        for (const card of activeCardsData.records) {
+          const cardName = (card.fields['Name'] as string || '').toLowerCase().trim();
+          const remaining = card.fields['Remaining Meals'] as number || 0;
+          const phone = card.fields['Phone'] as string;
           
-          // Build a map of lowercase name -> {remaining, phone}
-          const nameToInfo = new Map<string, { remaining: number; phone?: string }>();
-          for (const card of activeCardsData.records) {
-            const cardName = (card.fields['Name'] as string || '').toLowerCase().trim();
-            const remaining = card.fields['Remaining Meals'] as number || 0;
-            const phone = card.fields['Phone'] as string;
-            
-            // If multiple cards for same name, use the one with more remaining meals
-            if (!nameToInfo.has(cardName) || (nameToInfo.get(cardName)?.remaining || 0) < remaining) {
-              nameToInfo.set(cardName, { remaining, phone });
-            }
+          // SUM remaining meals across all cards for the same name
+          const existing = nameToInfo.get(cardName);
+          if (existing) {
+            existing.remaining += remaining;
+            if (!existing.phone && phone) existing.phone = phone;
+          } else {
+            nameToInfo.set(cardName, { remaining, phone });
           }
-          
-          // Match reservations by name
-          for (const res of reservationsWithoutCard) {
-            const resName = res.Name.toLowerCase().trim();
-            if (nameToInfo.has(resName)) {
-              const info = nameToInfo.get(resName)!;
-              res.LunchCardRemaining = info.remaining;
-              // If we found a phone here and don't have one yet, use it?
-              // Actually, populate into cardPhoneMap but we don't have card ID.
-              // We'll set it directly on the object momentarily
-              if (!res.Phone && info.phone) {
-                 res.Phone = info.phone;
-              }
+        }
+        
+        // Override LunchCardRemaining for ALL reservations (not just those without a card link)
+        // This ensures multi-card customers show the sum across all their cards
+        for (const res of reservations) {
+          const resName = res.Name.toLowerCase().trim();
+          if (nameToInfo.has(resName)) {
+            const info = nameToInfo.get(resName)!;
+            res.LunchCardRemaining = info.remaining;
+            if (!res.Phone && info.phone) {
+              res.Phone = info.phone;
             }
           }
         }
@@ -658,9 +655,13 @@ export async function GET(request: NextRequest) {
     // Total pill — full width row
     doc.setFont('helvetica', 'bold');
     let totalPillX = margin;
-    totalPillX += drawPill(`Total: ${totalMealCount}`, totalPillX, y, [80, 80, 80]);
     if (frozenCount > 0) {
-      drawPill(`Frozen Fri: ${frozenCount}`, totalPillX, y, [52, 152, 219]);
+      // Thursday: show separate Thursday and Frozen totals
+      const thursdayOnly = totalMealCount - frozenCount;
+      totalPillX += drawPill(`Thursday Total: ${thursdayOnly}`, totalPillX, y, [80, 80, 80]);
+      drawPill(`Frozen Total: ${frozenCount}`, totalPillX, y, [52, 152, 219]);
+    } else {
+      drawPill(`Total: ${totalMealCount}`, totalPillX, y, [80, 80, 80]);
     }
     y += 0.38;
 

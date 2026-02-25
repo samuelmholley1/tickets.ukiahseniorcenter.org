@@ -2036,6 +2036,15 @@ export default function LunchPage() {
                         <button
                           type="button"
                           onClick={() => {
+                            // Parse name into first/last (same as Lunch Card Lookup button)
+                            const { firstName, lastName } = parseJointName(autoDetectedCardInfo.baseName);
+                            setCustomer(prev => ({
+                              ...prev,
+                              firstName,
+                              lastName,
+                              phone: autoDetectedCardInfo.primaryCard.contactPhone || autoDetectedCardInfo.primaryCard.phone || prev.phone,
+                              email: autoDetectedCardInfo.primaryCard.contactEmail || prev.email,
+                            }));
                             setSelectedLunchCard(autoDetectedCardInfo.primaryCard);
                             setSelectedCardInfo(autoDetectedCardInfo);
                             setPaymentMethod('lunchCard');

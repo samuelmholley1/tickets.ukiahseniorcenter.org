@@ -82,13 +82,13 @@ export default function LunchList() {
   const toGo = reservations.filter(r => r['Meal Type'] === 'To Go');
   const delivery = reservations.filter(r => r['Meal Type'] === 'Delivery');
 
-  // Merged list sorted Z-A by last name
+  // Merged list sorted A-Z by last name
   const sortedReservations = [...reservations].sort((a, b) => {
     const getLastName = (name: string) => {
       const parts = name.trim().split(/\s+/);
       return parts[parts.length - 1].toLowerCase();
     };
-    return getLastName(b.Name).localeCompare(getLastName(a.Name));
+    return getLastName(a.Name).localeCompare(getLastName(b.Name));
   });
 
   const openCancelModal = (reservation: Reservation) => {

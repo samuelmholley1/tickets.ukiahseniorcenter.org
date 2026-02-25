@@ -31,6 +31,7 @@ export default function LunchList() {
   const [modifyDate, setModifyDate] = useState<string>('');
   const [modifyMealType, setModifyMealType] = useState<string>('');
   const [modifyNotes, setModifyNotes] = useState<string[]>([]);
+  const [modifyFreeformNote, setModifyFreeformNote] = useState<string>('');
   const [modifyResult, setModifyResult] = useState<string>('');
   const [modifyError, setModifyError] = useState<string>('');
   const [modifyField, setModifyField] = useState<'date' | 'mealType' | 'notes' | null>(null);
@@ -41,6 +42,18 @@ export default function LunchList() {
   ];
 
   const MEAL_TYPES = ['Dine In', 'To Go', 'Delivery'] as const;
+
+  const PRICE_MAP: Record<string, { member: number; nonMember: number }> = {
+    'Dine In':  { member: 8,  nonMember: 10 },
+    'To Go':    { member: 9,  nonMember: 11 },
+    'Delivery': { member: 12, nonMember: 14 },
+  };
+
+  const getPrice = (mealType: string, memberStatus: string) => {
+    const prices = PRICE_MAP[mealType];
+    if (!prices) return 0;
+    return memberStatus === 'Member' ? prices.member : prices.nonMember;
+  };
 
 
   // Default to next business lunch day (tomorrow, or Monday if Thu-Sun)
@@ -127,7 +140,11 @@ export default function LunchList() {
     setModifyStep('choose');
     setModifyDate(currentDate);
     setModifyMealType(reservation['Meal Type']);
-    setModifyNotes((reservation.Notes || '').split(', ').filter(Boolean));
+    // Separate pill-based notes from free-form notes
+    const existingNotes = (reservation.Notes || '').split(', ').filter(Boolean);
+    const pillNotes = existingNotes.filter(n => SPECIAL_REQUEST_OPTIONS.includes(n));
+    setModifyNotes(pillNotes);
+    setModifyFreeformNote(existingNotes.filter(n => !SPECIAL_REQUEST_OPTIONS.includes(n)).join(', '));
     setModifyField(null);
     setModifyResult('');
     setModifyError('');
@@ -173,7 +190,10 @@ export default function LunchList() {
 
     if (modifyField === 'date') payload.date = modifyDate;
     if (modifyField === 'mealType') payload.mealType = modifyMealType;
-    if (modifyField === 'notes') payload.notes = modifyNotes.join(', ');
+    if (modifyField === 'notes') {
+      const combined = [...modifyNotes, ...(modifyFreeformNote.trim() ? [modifyFreeformNote.trim()] : [])].join(', ');
+      payload.notes = combined;
+    }
 
     try {
       const res = await fetch('/api/lunch/reservation', {
@@ -702,6 +722,9 @@ export default function LunchList() {
                       const isSelected = modifyMealType === type;
                       const isCurrent = modifyTarget['Meal Type'] === type;
                       const emoji = type === 'Dine In' ? '🍽️' : type === 'To Go' ? '📦' : '🚗';
+                      const price = getPrice(type, modifyTarget['Member Status']);
+                      const currentPrice = getPrice(modifyTarget['Meal Type'], modifyTarget['Member Status']);
+                      const priceDiff = price - currentPrice;
                       const color = type === 'Dine In' ? 'blue' : type === 'To Go' ? 'green' : 'yellow';
                       const colors = {
                         blue: { border: 'border-blue-500 bg-blue-50', ring: 'ring-blue-300', text: 'text-blue-800' },
@@ -723,8 +746,13 @@ export default function LunchList() {
                             <span className="text-2xl">{emoji}</span>
                             <div className="flex-1">
                               <div className={`font-bold text-lg ${isSelected ? colors.text : 'text-gray-900'}`}>
-                                {type}
+                                {type} — ${price}
                               </div>
+                              {!isCurrent && priceDiff !== 0 && (
+                                <div className={`text-xs font-bold mt-0.5 ${priceDiff > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                  {priceDiff > 0 ? `+$${priceDiff} more — collect extra` : `-$${Math.abs(priceDiff)} less — refund difference`}
+                                </div>
+                              )}
                             </div>
                             {isCurrent && (
                               <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full font-bold">Current</span>
@@ -789,8 +817,22 @@ export default function LunchList() {
                   <div className="bg-gray-50 rounded-lg p-3 mb-4 border border-gray-200">
                     <div className="text-xs text-gray-500 font-bold mb-1">Preview:</div>
                     <div className="text-sm text-gray-700 font-['Bitter',serif]">
-                      {modifyNotes.length > 0 ? modifyNotes.join(', ') : <span className="italic text-gray-400">No special requests</span>}
+                      {modifyNotes.length > 0 || modifyFreeformNote.trim() ? (
+                        [...modifyNotes, ...(modifyFreeformNote.trim() ? [modifyFreeformNote.trim()] : [])].join(', ')
+                      ) : (
+                        <span className="italic text-gray-400">No special requests</span>
+                      )}
                     </div>
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-xs text-gray-500 font-bold mb-1">Additional note (optional):</label>
+                    <input
+                      type="text"
+                      value={modifyFreeformNote}
+                      onChange={(e) => setModifyFreeformNote(e.target.value)}
+                      placeholder="e.g. Allergic to shellfish"
+                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none text-sm font-['Bitter',serif]"
+                    />
                   </div>
                   <div className="flex gap-3">
                     <button
@@ -822,14 +864,42 @@ export default function LunchList() {
                         <span className="font-bold text-blue-800">{new Date(modifyDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
                       </div>
                     )}
-                    {modifyField === 'mealType' && (
-                      <div className="text-sm text-gray-700">
-                        <span className="font-bold">Meal Type:</span>{' '}
-                        <span className="line-through text-gray-400">{modifyTarget['Meal Type']}</span>
-                        {' → '}
-                        <span className="font-bold text-blue-800">{modifyMealType}</span>
-                      </div>
-                    )}
+                    {modifyField === 'mealType' && (() => {
+                      const oldPrice = getPrice(modifyTarget['Meal Type'], modifyTarget['Member Status']);
+                      const newPrice = getPrice(modifyMealType, modifyTarget['Member Status']);
+                      const diff = newPrice - oldPrice;
+                      const isLunchCard = modifyTarget['Payment Method'] === 'Lunch Card' || modifyTarget['Payment Method'] === 'Comp Card';
+                      return (
+                        <>
+                          <div className="text-sm text-gray-700">
+                            <span className="font-bold">Meal Type:</span>{' '}
+                            <span className="line-through text-gray-400">{modifyTarget['Meal Type']} (${oldPrice})</span>
+                            {' → '}
+                            <span className="font-bold text-blue-800">{modifyMealType} (${newPrice})</span>
+                          </div>
+                          {diff !== 0 && !isLunchCard && (
+                            <div className={`mt-3 p-3 rounded-lg border-2 ${diff > 0 ? 'bg-red-50 border-red-300' : 'bg-green-50 border-green-300'}`}>
+                              <div className={`font-bold text-lg ${diff > 0 ? 'text-red-800' : 'text-green-800'}`}>
+                                {diff > 0 ? `⚠️ Collect $${diff} more from customer` : `💵 Refund $${Math.abs(diff)} to customer`}
+                              </div>
+                              <div className="text-xs text-gray-600 mt-1">
+                                Price changes from ${oldPrice} to ${newPrice}. Handle the ${Math.abs(diff)} difference at the register.
+                              </div>
+                            </div>
+                          )}
+                          {diff !== 0 && isLunchCard && (
+                            <div className="mt-3 p-3 rounded-lg border-2 bg-amber-50 border-amber-300">
+                              <div className="font-bold text-amber-800">
+                                🎫 Lunch Card — no cash action needed
+                              </div>
+                              <div className="text-xs text-gray-600 mt-1">
+                                Lunch cards are 1 punch per meal regardless of type. No additional payment or refund required.
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                     {modifyField === 'notes' && (
                       <div className="text-sm text-gray-700">
                         <span className="font-bold">Special Request:</span>{' '}

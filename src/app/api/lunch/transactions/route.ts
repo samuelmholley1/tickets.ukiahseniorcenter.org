@@ -57,7 +57,7 @@ export async function GET() {
     );
 
     // Fetch recent reservations (date on or after cutoff)
-    const reservationsFilter = encodeURIComponent(`OR(IS_SAME({Date}, '${CUTOFF_DATE}', 'day'), IS_AFTER({Date}, '${CUTOFF_DATE}'))`);
+    const reservationsFilter = encodeURIComponent(`AND(OR(IS_SAME({Date}, '${CUTOFF_DATE}', 'day'), IS_AFTER({Date}, '${CUTOFF_DATE}')), NOT({Cancelled}))`);
     const reservationsResponse = await fetch(
       `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${reservationsTableId}?maxRecords=200&filterByFormula=${reservationsFilter}&sort%5B0%5D%5Bfield%5D=Date&sort%5B0%5D%5Bdirection%5D=desc`,
       {

@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       for (let i = 0; i < linkedReservationIds.length; i += batchSize) {
         const batch = linkedReservationIds.slice(i, i + batchSize);
         const orClauses = batch.map(id => `RECORD_ID()='${id}'`).join(',');
-        const filterFormula = encodeURIComponent(`OR(${orClauses})`);
+        const filterFormula = encodeURIComponent(`AND(OR(${orClauses}), NOT({Cancelled}))`);
         
         const url = `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${reservationsTableId}?filterByFormula=${filterFormula}&sort%5B0%5D%5Bfield%5D=Date&sort%5B0%5D%5Bdirection%5D=desc`;
         

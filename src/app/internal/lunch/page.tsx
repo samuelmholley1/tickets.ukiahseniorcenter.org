@@ -1351,7 +1351,7 @@ export default function LunchPage() {
               setTimeout(() => {
                 const el = recentTransactionsRef.current;
                 if (el) {
-                  const y = el.getBoundingClientRect().top + window.scrollY - 80;
+                  const y = el.getBoundingClientRect().top + window.scrollY - 150;
                   window.scrollTo({ top: y, behavior: 'smooth' });
                 }
               }, 100);
@@ -3483,7 +3483,7 @@ export default function LunchPage() {
                       setTimeout(() => {
                         const el = recentTransactionsRef.current;
                         if (el) {
-                          const y = el.getBoundingClientRect().top + window.scrollY - 80;
+                          const y = el.getBoundingClientRect().top + window.scrollY - 150;
                           window.scrollTo({ top: y, behavior: 'smooth' });
                         }
                       }, 100);

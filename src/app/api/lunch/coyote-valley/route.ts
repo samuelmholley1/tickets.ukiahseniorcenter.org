@@ -186,7 +186,7 @@ async function processDate(date: string): Promise<{ date: string; created: numbe
 }
 
 async function getExistingReservationNames(date: string): Promise<Set<string>> {
-  const filter = `IS_SAME({Date}, '${date}', 'day')`;
+  const filter = `AND(IS_SAME({Date}, '${date}', 'day'), NOT({Cancelled}))`;
   const url = `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_RESERVATIONS_TABLE_ID}?filterByFormula=${encodeURIComponent(filter)}`;
 
   const response = await fetch(url, {

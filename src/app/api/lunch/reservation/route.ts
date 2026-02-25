@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendLunchNotification } from '@/lib/email';
 import { titleCaseName } from '@/lib/nameUtils';
+import { writeAuditLog } from '@/lib/auditLog';
 
 const AIRTABLE_API_BASE = 'https://api.airtable.com/v0';
 
@@ -398,6 +399,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Write audit log entry for creation
+    writeAuditLog({
+      action: 'Created',
+      reservationId: result.id,
+      reservationName: name.trim(),
+      reservationDate: date,
+      mealType: MEAL_TYPE_MAP[mealType],
+      staff: staff.trim(),
+      paymentMethod: PAYMENT_METHOD_MAP[paymentMethod],
+      amount: totalAmount,
+    });
+
     return NextResponse.json({
       success: true,
       recordId: result.id,
@@ -429,7 +442,7 @@ export async function GET(request: NextRequest) {
     let filterFormula = '';
     if (date) {
       // Use IS_SAME for date comparison - Airtable date fields need proper date comparison, not string equality
-      filterFormula = `?filterByFormula=${encodeURIComponent(`IS_SAME({Date}, '${date}', 'day')`)}`;
+      filterFormula = `?filterByFormula=${encodeURIComponent(`AND(IS_SAME({Date}, '${date}', 'day'), NOT({Cancelled}))`)}`;
     }
 
     const response = await fetch(
@@ -537,22 +550,52 @@ export async function DELETE(request: NextRequest) {
       }
     }
 
-    // 3. Delete the reservation record from Airtable
-    const deleteRes = await fetch(
+    // 3. Soft-delete: mark the reservation as cancelled (preserve data for audit trail)
+    const cancelTimestamp = new Date().toISOString();
+    const softDeleteRes = await fetch(
       `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_RESERVATIONS_TABLE_ID}/${reservationId}`,
       {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}` },
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fields: {
+            'Cancelled': true,
+            'Cancelled At': cancelTimestamp,
+            'Cancelled By': staff || '',
+          },
+        }),
       }
     );
 
-    if (!deleteRes.ok) {
-      const errorText = await deleteRes.text();
-      console.error('Failed to delete reservation:', errorText);
-      return NextResponse.json({ error: 'Failed to delete reservation' }, { status: 500 });
+    if (!softDeleteRes.ok) {
+      const errorText = await softDeleteRes.text();
+      console.error('Failed to cancel reservation:', errorText);
+      return NextResponse.json({ error: 'Failed to cancel reservation' }, { status: 500 });
     }
 
     const refundLabel = refundMethod === 'cash' ? 'Cash Refund' : refundMethod === 'lunchCard' ? 'Lunch Card Replenished' : 'Payment Forfeited';
+
+    // Write audit log entry for cancellation
+    const auditRefundMap: Record<string, 'Card Punch Restored' | 'Cash' | 'Forfeit'> = {
+      cash: 'Cash',
+      lunchCard: 'Card Punch Restored',
+      forfeit: 'Forfeit',
+    };
+    writeAuditLog({
+      action: 'Cancelled',
+      reservationId,
+      reservationName: name as string,
+      reservationDate: fields['Date'] as string,
+      mealType: fields['Meal Type'] as string,
+      staff: staff || '',
+      paymentMethod: fields['Payment Method'] as string,
+      amount: amount as number,
+      refundMethod: auditRefundMap[refundMethod],
+      refundAmount: refundMethod === 'forfeit' ? 0 : (amount as number),
+    });
 
     return NextResponse.json({
       success: true,
@@ -655,6 +698,13 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ success: true, message: 'No changes needed', changes: [] });
     }
 
+    // Build audit diff before applying changes
+    const auditDiff: Record<string, { from: unknown; to: unknown }> = {};
+    if (updateFields['Date']) auditDiff['Date'] = { from: currentFields['Date'], to: updateFields['Date'] };
+    if (updateFields['Meal Type']) auditDiff['Meal Type'] = { from: currentFields['Meal Type'], to: updateFields['Meal Type'] };
+    if (updateFields['Notes'] !== undefined) auditDiff['Notes'] = { from: currentFields['Notes'] || '', to: updateFields['Notes'] };
+    if (updateFields['Amount'] !== undefined) auditDiff['Amount'] = { from: currentFields['Amount'], to: updateFields['Amount'] };
+
     // Update the record in Airtable
     const updateRes = await fetch(
       `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_RESERVATIONS_TABLE_ID}/${reservationId}`,
@@ -674,6 +724,20 @@ export async function PATCH(request: NextRequest) {
     }
 
     const updatedRecord = await updateRes.json();
+
+    // Write audit log entry for modification
+    writeAuditLog({
+      action: 'Modified',
+      reservationId,
+      reservationName: currentFields['Name'] as string || 'Unknown',
+      reservationDate: (updateFields['Date'] as string) || (currentFields['Date'] as string),
+      mealType: (updateFields['Meal Type'] as string) || (currentFields['Meal Type'] as string),
+      changedFields: auditDiff,
+      previousValues: changes.join(', '),
+      staff: body.staff || '',
+      paymentMethod: currentFields['Payment Method'] as string,
+      amount: currentFields['Amount'] as number,
+    });
 
     return NextResponse.json({
       success: true,

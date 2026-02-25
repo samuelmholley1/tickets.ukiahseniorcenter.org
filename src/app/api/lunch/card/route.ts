@@ -245,7 +245,7 @@ export async function POST(request: NextRequest) {
       const RESERVATIONS_TABLE_ID = process.env.AIRTABLE_LUNCH_RESERVATIONS_TABLE_ID;
       if (RESERVATIONS_TABLE_ID) {
         // Search for outstanding Staff Override reservations for this customer
-        const overrideFilter = `AND({Name} = '${name.trim().replace(/'/g, "\\'")}', {Payment Method} = 'Staff Override')`;
+        const overrideFilter = `AND({Name} = '${name.trim().replace(/'/g, "\\'")}', {Payment Method} = 'Staff Override', NOT({Cancelled}))`;
         const overrideUrl = `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${RESERVATIONS_TABLE_ID}?filterByFormula=${encodeURIComponent(overrideFilter)}`;
         
         const overrideRes = await fetch(overrideUrl, {
@@ -393,7 +393,7 @@ export async function GET(request: NextRequest) {
           // Query reservations that link to this card ID
           const deductionsRes = await fetch(
             `${AIRTABLE_API_BASE}/${baseId}/${reservationsTableId}?filterByFormula=${encodeURIComponent(
-              `FIND("${id}", ARRAYJOIN({Lunch Card}))`
+              `AND(FIND("${id}", ARRAYJOIN({Lunch Card})), NOT({Cancelled}))`
             )}&sort%5B0%5D%5Bfield%5D=Date&sort%5B0%5D%5Bdirection%5D=desc`,
             {
               headers: {

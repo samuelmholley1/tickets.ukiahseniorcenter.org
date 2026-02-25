@@ -343,6 +343,7 @@ export default function LunchPage() {
   // Generate weeks for calendar display (Mon-Fri columns, 4 weeks ahead + previous weeks)
   // Friday is special: "Chef's Choice (FROZEN)" picked up Thursday
   const [previousWeeksShown, setPreviousWeeksShown] = useState(0);
+  const [nextWeeksShown, setNextWeeksShown] = useState(0);
   
   interface CalendarDay {
     value: string; // YYYY-MM-DD - the actual date of the meal (Friday for frozen)
@@ -412,8 +413,8 @@ export default function LunchPage() {
     const startMonday = new Date(firstMonday);
     startMonday.setDate(firstMonday.getDate() - (previousWeeksShown * 7));
     
-    // Generate previousWeeksShown + 4 weeks
-    const totalWeeks = previousWeeksShown + 4;
+    // Generate previousWeeksShown + 4 base weeks + nextWeeksShown
+    const totalWeeks = previousWeeksShown + 4 + nextWeeksShown;
     for (let week = 0; week < totalWeeks; week++) {
       const weekStart = new Date(startMonday);
       weekStart.setDate(startMonday.getDate() + (week * 7));
@@ -2146,14 +2147,23 @@ export default function LunchPage() {
                     </label>
                   </div>
 
-                  {/* Show Previous Week button */}
-                  <button
-                    type="button"
-                    onClick={() => setPreviousWeeksShown(prev => prev + 1)}
-                    className="w-full mb-2 py-1.5 px-3 bg-gray-100 hover:bg-gray-200 text-gray-600 font-['Jost',sans-serif] font-bold text-sm rounded-lg transition-colors border border-gray-300"
-                  >
-                    ← Show Previous Week
-                  </button>
+                  {/* Show Previous / Next Week toggle buttons */}
+                  <div className="flex gap-2 mb-2">
+                    <button
+                      type="button"
+                      onClick={() => setPreviousWeeksShown(prev => prev > 0 ? prev - 1 : prev + 1)}
+                      className="flex-1 py-1 px-2 text-xs font-['Jost',sans-serif] font-semibold rounded transition-colors border border-dashed border-gray-300 text-gray-400 hover:text-gray-600 hover:border-gray-400 hover:bg-gray-50"
+                    >
+                      {previousWeeksShown > 0 ? `↑ Hide Past Week (${previousWeeksShown})` : '← Show Past Week'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNextWeeksShown(prev => prev > 0 ? prev - 1 : prev + 1)}
+                      className="flex-1 py-1 px-2 text-xs font-['Jost',sans-serif] font-semibold rounded transition-colors border border-dashed border-gray-300 text-gray-400 hover:text-gray-600 hover:border-gray-400 hover:bg-gray-50"
+                    >
+                      {nextWeeksShown > 0 ? `↓ Hide Future Week (${nextWeeksShown})` : 'Show Next Week →'}
+                    </button>
+                  </div>
                   
                   {/* Column Headers: Mon Tue Wed Thu Fri */}
                   <div className="grid grid-cols-5 gap-1 mb-1">
@@ -2274,6 +2284,27 @@ export default function LunchPage() {
                     </div>
                   ))}
                   
+                  {/* Bottom expand buttons */}
+                  <div className="flex gap-2 mt-1">
+                    {previousWeeksShown > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => setPreviousWeeksShown(prev => prev + 1)}
+                        className="py-1 px-2 text-xs font-['Jost',sans-serif] font-semibold rounded transition-colors border border-dashed border-gray-300 text-gray-400 hover:text-gray-600 hover:border-gray-400 hover:bg-gray-50"
+                      >
+                        ← More Past
+                      </button>
+                    )}
+                    {nextWeeksShown > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => setNextWeeksShown(prev => prev + 1)}
+                        className="ml-auto py-1 px-2 text-xs font-['Jost',sans-serif] font-semibold rounded transition-colors border border-dashed border-gray-300 text-gray-400 hover:text-gray-600 hover:border-gray-400 hover:bg-gray-50"
+                      >
+                        More Future →
+                      </button>
+                    )}
+                  </div>
                   <p className="text-sm text-gray-500 mt-2 font-['Bitter',serif]">
                     💡 Click date to select. Use +/− to add more meals per day. <span className="text-blue-600">Blue Friday = frozen meal picked up Thursday.</span> <span className="text-amber-600">Amber = TODAY (click List to see reservations).</span>
                   </p>

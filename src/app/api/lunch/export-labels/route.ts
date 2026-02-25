@@ -441,15 +441,6 @@ export async function GET(request: NextRequest) {
 
       // No border — clean labels for Avery 5160
 
-      // Meal number badge (orange) — top-right corner, rendered for every label that has one
-      if (label.mealNumber) {
-        const badgeSize = 11;
-        doc.setFontSize(badgeSize);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(210, 100, 0); // orange — unique color on labels
-        doc.text(label.mealNumber, x + labelWidth - px, y + py, { align: 'right', baseline: 'top' });
-      }
-
       if (label.isCoyoteValley) {
         // COYOTE VALLEY LABEL
         const hasReqs = label.specialRequests.length > 0;
@@ -523,6 +514,8 @@ export async function GET(request: NextRequest) {
         const hasReqs = label.specialRequests.length > 0;
         const reqText = hasReqs ? label.specialRequests.join(', ') : '';
         const isFrozen = label.isFrozenFriday === true;
+        // Append meal number inline after name (same style as CV route numbers)
+        const displayName = label.mealNumber ? `${label.name} ${label.mealNumber}` : label.name;
 
         // Frozen labels: line 2 = "FROZEN" (yellow highlight). No date row.
         // Hot labels: line 2 = Meal Type (colored), last row = date.
@@ -532,11 +525,11 @@ export async function GET(request: NextRequest) {
             const rowH = maxH / 3;
 
             // Name (bold, black)
-            const nameSize = fitFontSize(label.name, 'bold', Math.min(NAME_MAX_SIZE, 22));
+            const nameSize = fitFontSize(displayName, 'bold', Math.min(NAME_MAX_SIZE, 22));
             doc.setFontSize(nameSize);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(0, 0, 0);
-            doc.text(label.name, x + px, y + py + rowH * 0, { baseline: 'top' });
+            doc.text(displayName, x + px, y + py + rowH * 0, { baseline: 'top' });
 
             // FROZEN (yellow highlight with black text)
             const frozenSize = fitFontSize('FROZEN', 'bold', 20);
@@ -560,11 +553,11 @@ export async function GET(request: NextRequest) {
             const rowH = maxH / 2;
 
             // Name (bold, black)
-            const nameSize = fitFontSize(label.name, 'bold', NAME_MAX_SIZE);
+            const nameSize = fitFontSize(displayName, 'bold', NAME_MAX_SIZE);
             doc.setFontSize(nameSize);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(0, 0, 0);
-            doc.text(label.name, x + px, y + py + rowH * 0, { baseline: 'top' });
+            doc.text(displayName, x + px, y + py + rowH * 0, { baseline: 'top' });
 
             // FROZEN (yellow highlight with black text)
             const frozenSize = fitFontSize('FROZEN', 'bold', 24);
@@ -584,11 +577,11 @@ export async function GET(request: NextRequest) {
             const rowH = maxH / 4;
 
             // Name (bold, black)
-            const nameSize = fitFontSize(label.name, 'bold', Math.min(NAME_MAX_SIZE, 22));
+            const nameSize = fitFontSize(displayName, 'bold', Math.min(NAME_MAX_SIZE, 22));
             doc.setFontSize(nameSize);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(0, 0, 0);
-            doc.text(label.name, x + px, y + py + rowH * 0, { baseline: 'top' });
+            doc.text(displayName, x + px, y + py + rowH * 0, { baseline: 'top' });
 
             // Meal Type (colored)
             const mealSize = fitFontSize(mealType, 'normal', 18);
@@ -617,11 +610,11 @@ export async function GET(request: NextRequest) {
             const rowH = maxH / 3;
 
             // Name (bold, black)
-            const nameSize = fitFontSize(label.name, 'bold', NAME_MAX_SIZE);
+            const nameSize = fitFontSize(displayName, 'bold', NAME_MAX_SIZE);
             doc.setFontSize(nameSize);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(0, 0, 0);
-            doc.text(label.name, x + px, y + py + rowH * 0, { baseline: 'top' });
+            doc.text(displayName, x + px, y + py + rowH * 0, { baseline: 'top' });
 
             // Meal Type (colored)
             const mealSize = fitFontSize(mealType, 'normal', 20);

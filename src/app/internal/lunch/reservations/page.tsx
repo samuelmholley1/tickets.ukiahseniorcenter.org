@@ -25,6 +25,23 @@ export default function LunchList() {
   const [cancelResult, setCancelResult] = useState<string>('');
   const [cancelError, setCancelError] = useState<string>('');
 
+  // Modify modal state
+  const [modifyTarget, setModifyTarget] = useState<Reservation | null>(null);
+  const [modifyStep, setModifyStep] = useState<'choose' | 'date' | 'mealType' | 'notes' | 'confirm' | 'processing' | 'done' | 'error'>('choose');
+  const [modifyDate, setModifyDate] = useState<string>('');
+  const [modifyMealType, setModifyMealType] = useState<string>('');
+  const [modifyNotes, setModifyNotes] = useState<string[]>([]);
+  const [modifyResult, setModifyResult] = useState<string>('');
+  const [modifyError, setModifyError] = useState<string>('');
+  const [modifyField, setModifyField] = useState<'date' | 'mealType' | 'notes' | null>(null);
+
+  const SPECIAL_REQUEST_OPTIONS = [
+    'Vegetarian', 'No Garlic/Onions', 'Gluten-Free', 'Dairy-Free',
+    'No Dessert', 'No Chocolate Dessert', 'In Fridge',
+  ];
+
+  const MEAL_TYPES = ['Dine In', 'To Go', 'Delivery'] as const;
+
 
   // Default to next business lunch day (tomorrow, or Monday if Thu-Sun)
   const [currentDate, setCurrentDate] = useState<string>(() => {
@@ -103,6 +120,88 @@ export default function LunchList() {
     setCancelTarget(null);
     setCancelStep('choose');
     setSelectedRefund(null);
+  };
+
+  const openModifyModal = (reservation: Reservation) => {
+    setModifyTarget(reservation);
+    setModifyStep('choose');
+    setModifyDate(currentDate);
+    setModifyMealType(reservation['Meal Type']);
+    setModifyNotes((reservation.Notes || '').split(', ').filter(Boolean));
+    setModifyField(null);
+    setModifyResult('');
+    setModifyError('');
+  };
+
+  const closeModifyModal = () => {
+    setModifyTarget(null);
+    setModifyStep('choose');
+    setModifyField(null);
+  };
+
+  // Generate weekdays for date picker (4 weeks from current date)
+  const getWeekdays = (): { value: string; label: string; dayName: string }[] => {
+    const days: { value: string; label: string; dayName: string }[] = [];
+    const start = new Date();
+    start.setDate(start.getDate() - 7); // Include last week
+    for (let i = 0; i < 42; i++) { // ~6 weeks
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      const dow = d.getDay();
+      if (dow >= 1 && dow <= 5) { // Mon-Fri
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const value = `${year}-${month}-${day}`;
+        const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+        days.push({ value, label, dayName });
+      }
+    }
+    return days;
+  };
+
+  const handleModify = async () => {
+    if (!modifyTarget || !modifyField) return;
+    setModifyStep('processing');
+
+    const payload: Record<string, unknown> = {
+      reservationId: modifyTarget.id,
+      memberStatus: modifyTarget['Member Status'],
+      staff: 'STAFF',
+    };
+
+    if (modifyField === 'date') payload.date = modifyDate;
+    if (modifyField === 'mealType') payload.mealType = modifyMealType;
+    if (modifyField === 'notes') payload.notes = modifyNotes.join(', ');
+
+    try {
+      const res = await fetch('/api/lunch/reservation', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setModifyResult(data.message);
+        setModifyStep('done');
+        // Update local list with new data
+        if (data.reservation) {
+          // If date changed, the reservation may no longer be on this date's list
+          if (modifyField === 'date' && modifyDate !== currentDate) {
+            setReservations(prev => prev.filter(r => r.id !== modifyTarget.id));
+          } else {
+            setReservations(prev => prev.map(r => r.id === modifyTarget.id ? { id: data.reservation.id, ...data.reservation } : r));
+          }
+        }
+      } else {
+        setModifyError(data.error || 'Failed to modify reservation');
+        setModifyStep('error');
+      }
+    } catch {
+      setModifyError('Network error. Please try again.');
+      setModifyStep('error');
+    }
   };
 
   const handleCancel = async () => {
@@ -264,10 +363,17 @@ export default function LunchList() {
                                                  </span>
                                              </div>
                                          </div>
-                                         <div className="flex items-center gap-3 ml-4 shrink-0">
+                                         <div className="flex items-center gap-2 ml-4 shrink-0">
                                              {item.Amount && item.Amount > 0 && (
                                                  <div className="font-bold text-green-700">${item.Amount}</div>
                                              )}
+                                             <button
+                                                 type="button"
+                                                 onClick={() => openModifyModal(item)}
+                                                 className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 rounded-lg text-sm font-bold border border-blue-200 hover:border-blue-300 transition-all"
+                                             >
+                                                 ✏️ Modify
+                                             </button>
                                              <button
                                                  type="button"
                                                  onClick={() => openCancelModal(item)}
@@ -435,6 +541,360 @@ export default function LunchList() {
                     </button>
                     <button
                       onClick={closeCancelModal}
+                      className="flex-1 px-4 py-3 bg-red-100 hover:bg-red-200 text-red-700 font-bold rounded-xl transition-all"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modify Reservation Modal */}
+      {modifyTarget && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden max-h-[90vh] flex flex-col">
+            {/* Header */}
+            <div className="bg-blue-600 px-6 py-4 flex items-center justify-between shrink-0">
+              <h2 className="text-white font-bold text-xl font-['Jost',sans-serif]">✏️ Modify Reservation</h2>
+              <button onClick={closeModifyModal} className="text-white/80 hover:text-white text-2xl font-bold leading-none">&times;</button>
+            </div>
+
+            <div className="p-6 overflow-y-auto">
+              {/* Reservation info */}
+              <div className="bg-gray-50 rounded-lg p-4 mb-5 border border-gray-200">
+                <div className="font-bold text-gray-900 text-lg">{modifyTarget.Name}</div>
+                <div className="text-sm text-gray-600 mt-1">
+                  {modifyTarget['Meal Type']} &bull; {modifyTarget['Member Status']} &bull; {modifyTarget['Payment Method']}
+                </div>
+                {modifyTarget.Notes && (
+                  <p className="text-sm text-gray-500 mt-1 italic">&quot;{modifyTarget.Notes}&quot;</p>
+                )}
+              </div>
+
+              {/* Step: Choose what to modify */}
+              {modifyStep === 'choose' && (
+                <>
+                  <p className="text-gray-700 font-medium mb-4">What would you like to change?</p>
+                  <div className="space-y-3">
+                    <button
+                      onClick={() => { setModifyField('date'); setModifyStep('date'); }}
+                      className="w-full text-left p-4 rounded-xl border-2 border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition-all group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">📅</span>
+                        <div>
+                          <div className="font-bold text-gray-900 group-hover:text-blue-800">Change Date</div>
+                          <div className="text-sm text-gray-500">Move this reservation to a different weekday</div>
+                        </div>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => { setModifyField('mealType'); setModifyStep('mealType'); }}
+                      className="w-full text-left p-4 rounded-xl border-2 border-gray-200 hover:border-green-400 hover:bg-green-50 transition-all group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">🍽️</span>
+                        <div>
+                          <div className="font-bold text-gray-900 group-hover:text-green-800">Change Meal Type</div>
+                          <div className="text-sm text-gray-500">Switch between Dine In, To Go, or Delivery</div>
+                        </div>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => { setModifyField('notes'); setModifyStep('notes'); }}
+                      className="w-full text-left p-4 rounded-xl border-2 border-gray-200 hover:border-purple-400 hover:bg-purple-50 transition-all group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">📝</span>
+                        <div>
+                          <div className="font-bold text-gray-900 group-hover:text-purple-800">Change Special Request</div>
+                          <div className="text-sm text-gray-500">Add or change dietary preferences and notes</div>
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* Step: Pick new date */}
+              {modifyStep === 'date' && (
+                <>
+                  <p className="text-gray-700 font-medium mb-3">Select a new date (Mon–Fri only):</p>
+                  <div className="grid grid-cols-5 gap-1 mb-1">
+                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map(d => (
+                      <div key={d} className="text-center font-['Jost',sans-serif] font-bold text-xs text-gray-500 py-1">{d}</div>
+                    ))}
+                  </div>
+                  {(() => {
+                    const weekdays = getWeekdays();
+                    // Group by week (Mon start)
+                    const weeks: { value: string; label: string; dayName: string }[][] = [];
+                    let currentWeek: { value: string; label: string; dayName: string }[] = [];
+                    for (const day of weekdays) {
+                      if (day.dayName === 'Mon' && currentWeek.length > 0) {
+                        weeks.push(currentWeek);
+                        currentWeek = [];
+                      }
+                      currentWeek.push(day);
+                    }
+                    if (currentWeek.length > 0) weeks.push(currentWeek);
+
+                    return weeks.map((week, wi) => (
+                      <div key={wi} className="grid grid-cols-5 gap-1 mb-1">
+                        {week.map(day => {
+                          const isCurrentDate = day.value === currentDate;
+                          const isSelected = day.value === modifyDate;
+                          return (
+                            <button
+                              key={day.value}
+                              type="button"
+                              onClick={() => setModifyDate(day.value)}
+                              className={`py-2 px-1 rounded-lg text-center transition-all text-sm font-['Jost',sans-serif] font-semibold ${
+                                isSelected
+                                  ? 'bg-blue-600 text-white ring-2 ring-blue-400'
+                                  : isCurrentDate
+                                    ? 'bg-amber-50 text-amber-800 border-2 border-amber-300 hover:border-amber-400'
+                                    : 'bg-gray-50 text-gray-700 border border-gray-200 hover:border-blue-400 hover:bg-blue-50'
+                              }`}
+                            >
+                              <div className="text-xs opacity-70">{day.dayName}</div>
+                              <div>{new Date(day.value + 'T12:00:00').getDate()}</div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ));
+                  })()}
+                  <div className="flex gap-3 mt-4">
+                    <button
+                      onClick={() => { setModifyStep('choose'); setModifyField(null); }}
+                      className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-all"
+                    >
+                      ← Back
+                    </button>
+                    <button
+                      onClick={() => setModifyStep('confirm')}
+                      disabled={modifyDate === currentDate}
+                      className={`flex-1 px-4 py-3 font-bold rounded-xl transition-all ${
+                        modifyDate === currentDate
+                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          : 'bg-blue-600 hover:bg-blue-700 text-white'
+                      }`}
+                    >
+                      Move to {modifyDate !== currentDate ? new Date(modifyDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : '...'}
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* Step: Pick meal type */}
+              {modifyStep === 'mealType' && (
+                <>
+                  <p className="text-gray-700 font-medium mb-4">Select the new meal type:</p>
+                  <div className="space-y-3">
+                    {MEAL_TYPES.map(type => {
+                      const isSelected = modifyMealType === type;
+                      const isCurrent = modifyTarget['Meal Type'] === type;
+                      const emoji = type === 'Dine In' ? '🍽️' : type === 'To Go' ? '📦' : '🚗';
+                      const color = type === 'Dine In' ? 'blue' : type === 'To Go' ? 'green' : 'yellow';
+                      const colors = {
+                        blue: { border: 'border-blue-500 bg-blue-50', ring: 'ring-blue-300', text: 'text-blue-800' },
+                        green: { border: 'border-green-500 bg-green-50', ring: 'ring-green-300', text: 'text-green-800' },
+                        yellow: { border: 'border-yellow-500 bg-yellow-50', ring: 'ring-yellow-300', text: 'text-yellow-800' },
+                      }[color];
+                      return (
+                        <button
+                          key={type}
+                          type="button"
+                          onClick={() => setModifyMealType(type)}
+                          className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+                            isSelected
+                              ? `${colors.border} ring-2 ${colors.ring}`
+                              : 'border-gray-200 hover:border-gray-400 bg-white'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl">{emoji}</span>
+                            <div className="flex-1">
+                              <div className={`font-bold text-lg ${isSelected ? colors.text : 'text-gray-900'}`}>
+                                {type}
+                              </div>
+                            </div>
+                            {isCurrent && (
+                              <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full font-bold">Current</span>
+                            )}
+                            {isSelected && !isCurrent && (
+                              <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded-full font-bold">Selected</span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="flex gap-3 mt-4">
+                    <button
+                      onClick={() => { setModifyStep('choose'); setModifyField(null); }}
+                      className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-all"
+                    >
+                      ← Back
+                    </button>
+                    <button
+                      onClick={() => setModifyStep('confirm')}
+                      disabled={modifyMealType === modifyTarget['Meal Type']}
+                      className={`flex-1 px-4 py-3 font-bold rounded-xl transition-all ${
+                        modifyMealType === modifyTarget['Meal Type']
+                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          : 'bg-blue-600 hover:bg-blue-700 text-white'
+                      }`}
+                    >
+                      Change to {modifyMealType}
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* Step: Special request pills */}
+              {modifyStep === 'notes' && (
+                <>
+                  <p className="text-gray-700 font-medium mb-4">Select special requests:</p>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {SPECIAL_REQUEST_OPTIONS.map(option => {
+                      const isActive = modifyNotes.includes(option);
+                      return (
+                        <button
+                          key={option}
+                          type="button"
+                          onClick={() => {
+                            setModifyNotes(prev =>
+                              isActive ? prev.filter(n => n !== option) : [...prev, option]
+                            );
+                          }}
+                          className={`px-4 py-2 rounded-full text-sm font-bold font-['Jost',sans-serif] transition-all border-2 ${
+                            isActive
+                              ? 'bg-purple-600 text-white border-purple-600'
+                              : 'bg-white text-gray-700 border-gray-300 hover:border-purple-400 hover:bg-purple-50'
+                          }`}
+                        >
+                          {isActive ? '✓ ' : ''}{option}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3 mb-4 border border-gray-200">
+                    <div className="text-xs text-gray-500 font-bold mb-1">Preview:</div>
+                    <div className="text-sm text-gray-700 font-['Bitter',serif]">
+                      {modifyNotes.length > 0 ? modifyNotes.join(', ') : <span className="italic text-gray-400">No special requests</span>}
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => { setModifyStep('choose'); setModifyField(null); }}
+                      className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-all"
+                    >
+                      ← Back
+                    </button>
+                    <button
+                      onClick={() => setModifyStep('confirm')}
+                      className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all"
+                    >
+                      Save Special Request
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* Step: Confirm */}
+              {modifyStep === 'confirm' && modifyField && (
+                <>
+                  <div className="p-4 rounded-xl border-2 bg-blue-50 border-blue-300 mb-5">
+                    <div className="font-bold text-lg mb-2 text-blue-900">Summary of Change</div>
+                    {modifyField === 'date' && (
+                      <div className="text-sm text-gray-700">
+                        <span className="font-bold">Date:</span>{' '}
+                        <span className="line-through text-gray-400">{new Date(currentDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+                        {' → '}
+                        <span className="font-bold text-blue-800">{new Date(modifyDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+                      </div>
+                    )}
+                    {modifyField === 'mealType' && (
+                      <div className="text-sm text-gray-700">
+                        <span className="font-bold">Meal Type:</span>{' '}
+                        <span className="line-through text-gray-400">{modifyTarget['Meal Type']}</span>
+                        {' → '}
+                        <span className="font-bold text-blue-800">{modifyMealType}</span>
+                      </div>
+                    )}
+                    {modifyField === 'notes' && (
+                      <div className="text-sm text-gray-700">
+                        <span className="font-bold">Special Request:</span>{' '}
+                        {modifyTarget.Notes && <span className="line-through text-gray-400">{modifyTarget.Notes}</span>}
+                        {modifyTarget.Notes && ' → '}
+                        <span className="font-bold text-blue-800">{modifyNotes.length > 0 ? modifyNotes.join(', ') : '(none)'}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setModifyStep(modifyField)}
+                      className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-all"
+                    >
+                      ← Back
+                    </button>
+                    <button
+                      onClick={handleModify}
+                      className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all"
+                    >
+                      Confirm Change
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* Step: Processing */}
+              {modifyStep === 'processing' && (
+                <div className="text-center py-6">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-3"></div>
+                  <p className="text-gray-600 font-medium">Applying changes...</p>
+                </div>
+              )}
+
+              {/* Step: Done */}
+              {modifyStep === 'done' && (
+                <div className="text-center py-4">
+                  <div className="text-4xl mb-3">✅</div>
+                  <p className="text-green-800 font-bold text-lg mb-2">Reservation Modified</p>
+                  <p className="text-gray-600 mb-5">{modifyResult}</p>
+                  <button
+                    onClick={closeModifyModal}
+                    className="px-6 py-3 bg-[#427d78] hover:bg-[#356560] text-white font-bold rounded-xl transition-all"
+                  >
+                    Done
+                  </button>
+                </div>
+              )}
+
+              {/* Step: Error */}
+              {modifyStep === 'error' && (
+                <div className="text-center py-4">
+                  <div className="text-4xl mb-3">❌</div>
+                  <p className="text-red-800 font-bold text-lg mb-2">Modification Failed</p>
+                  <p className="text-gray-600 mb-5">{modifyError}</p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setModifyStep('choose')}
+                      className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-all"
+                    >
+                      Try Again
+                    </button>
+                    <button
+                      onClick={closeModifyModal}
                       className="flex-1 px-4 py-3 bg-red-100 hover:bg-red-200 text-red-700 font-bold rounded-xl transition-all"
                     >
                       Close

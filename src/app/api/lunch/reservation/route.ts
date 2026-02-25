@@ -570,3 +570,126 @@ export async function DELETE(request: NextRequest) {
     );
   }
 }
+
+// Modify a reservation (change date, meal type, or notes/special request)
+export async function PATCH(request: NextRequest) {
+  try {
+    if (!process.env.AIRTABLE_API_KEY || !process.env.AIRTABLE_BASE_ID || !process.env.AIRTABLE_LUNCH_RESERVATIONS_TABLE_ID) {
+      throw new Error('Airtable environment variables not configured');
+    }
+
+    const body = await request.json();
+    const { reservationId, date, mealType, notes, memberStatus } = body as {
+      reservationId: string;
+      date?: string; // YYYY-MM-DD
+      mealType?: string; // 'Dine In' | 'To Go' | 'Delivery'
+      notes?: string;
+      memberStatus?: string; // 'Member' | 'Non-Member' (needed for price recalculation)
+      staff?: string;
+    };
+
+    if (!reservationId) {
+      return NextResponse.json({ error: 'reservationId is required' }, { status: 400 });
+    }
+
+    // First fetch the current record to get existing values for price recalculation
+    const fetchRes = await fetch(
+      `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_RESERVATIONS_TABLE_ID}/${reservationId}`,
+      { headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}` } }
+    );
+
+    if (!fetchRes.ok) {
+      throw new Error('Reservation not found');
+    }
+
+    const currentRecord = await fetchRes.json();
+    const currentFields = currentRecord.fields;
+
+    // Build update fields
+    const updateFields: Record<string, unknown> = {};
+    const changes: string[] = [];
+
+    if (date && date !== currentFields['Date']) {
+      // Validate date is Mon-Fri
+      const dateObj = new Date(date + 'T12:00:00');
+      const dayOfWeek = dateObj.getDay();
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        return NextResponse.json({ error: 'Date must be Monday through Friday' }, { status: 400 });
+      }
+      updateFields['Date'] = date;
+      changes.push(`Date: ${currentFields['Date']} → ${date}`);
+    }
+
+    if (mealType && mealType !== currentFields['Meal Type']) {
+      // Validate meal type
+      const validTypes = ['Dine In', 'To Go', 'Delivery'];
+      if (!validTypes.includes(mealType)) {
+        return NextResponse.json({ error: 'Invalid meal type' }, { status: 400 });
+      }
+      updateFields['Meal Type'] = mealType;
+      changes.push(`Meal Type: ${currentFields['Meal Type']} → ${mealType}`);
+
+      // Recalculate price based on new meal type and current member status
+      const effectiveMemberStatus = memberStatus || currentFields['Member Status'];
+      const isMember = effectiveMemberStatus === 'Member';
+      const priceMap: Record<string, { member: number; nonMember: number }> = {
+        'Dine In':   { member: 8,  nonMember: 10 },
+        'To Go':     { member: 9,  nonMember: 11 },
+        'Delivery':  { member: 12, nonMember: 14 },
+      };
+      const newPrice = isMember ? priceMap[mealType].member : priceMap[mealType].nonMember;
+      const paymentMethod = currentFields['Payment Method'];
+      // Only recalculate for non-card payments (cards don't change price in Airtable)
+      if (paymentMethod !== 'Lunch Card' && paymentMethod !== 'Comp Card') {
+        updateFields['Amount'] = newPrice;
+        changes.push(`Amount: $${currentFields['Amount']} → $${newPrice}`);
+      }
+    }
+
+    if (notes !== undefined && notes !== currentFields['Notes']) {
+      updateFields['Notes'] = notes.trim().substring(0, 1000);
+      changes.push(`Notes: "${currentFields['Notes'] || ''}" → "${notes.trim()}"`);
+    }
+
+    if (Object.keys(updateFields).length === 0) {
+      return NextResponse.json({ success: true, message: 'No changes needed', changes: [] });
+    }
+
+    // Update the record in Airtable
+    const updateRes = await fetch(
+      `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_RESERVATIONS_TABLE_ID}/${reservationId}`,
+      {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fields: updateFields }),
+      }
+    );
+
+    if (!updateRes.ok) {
+      const errorData = await updateRes.json();
+      throw new Error(`Airtable update failed: ${JSON.stringify(errorData)}`);
+    }
+
+    const updatedRecord = await updateRes.json();
+
+    return NextResponse.json({
+      success: true,
+      message: `Reservation modified: ${changes.join(', ')}`,
+      changes,
+      reservation: {
+        id: updatedRecord.id,
+        ...updatedRecord.fields,
+      },
+    });
+
+  } catch (error) {
+    console.error('Modify reservation error:', error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to modify reservation' },
+      { status: 500 }
+    );
+  }
+}

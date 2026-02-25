@@ -431,22 +431,47 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Auto-number meals when someone has both a Thursday hot meal and a Friday frozen meal
-    // Prepend "#1" to hot meal notes and "#2" to frozen meal notes so kitchen knows which is which
-    if (isThursday && fridayFrozenReservations.length > 0) {
+    // Auto-number meals for anyone with multiple reservations (any day)
+    // On Thursday: hot meals numbered first, then frozen meals continue the sequence
+    {
       const normalizeName = (n: string) => n.toLowerCase().replace(/\s+/g, ' ').trim();
-      const frozenNames = new Set(fridayFrozenReservations.map(r => normalizeName(r.Name)));
       
+      // Count hot meals per person
+      const hotByName = new Map<string, Reservation[]>();
       for (const res of reservations) {
-        if (frozenNames.has(normalizeName(res.Name))) {
-          const existingNotes = (res.Notes || '').replace(/^#1\s*\|?\s*/, '').trim();
-          res.Notes = existingNotes ? `#1 | ${existingNotes}` : '#1';
-        }
+        const key = normalizeName(res.Name);
+        if (!hotByName.has(key)) hotByName.set(key, []);
+        hotByName.get(key)!.push(res);
       }
+      // Count frozen meals per person (Thursday only)
+      const frozenByName = new Map<string, Reservation[]>();
       for (const res of fridayFrozenReservations) {
-        if (reservations.some(r => normalizeName(r.Name) === normalizeName(res.Name))) {
-          const existingNotes = (res.Notes || '').replace(/^#2\s*\|?\s*/, '').trim();
-          res.Notes = existingNotes ? `#2 | ${existingNotes}` : '#2';
+        const key = normalizeName(res.Name);
+        if (!frozenByName.has(key)) frozenByName.set(key, []);
+        frozenByName.get(key)!.push(res);
+      }
+      
+      const allNames = new Set([...hotByName.keys(), ...frozenByName.keys()]);
+      
+      for (const name of allNames) {
+        const hotMeals = hotByName.get(name) || [];
+        const frozenMeals = frozenByName.get(name) || [];
+        const totalMeals = hotMeals.length + frozenMeals.length;
+        
+        if (totalMeals < 2) continue; // No numbering needed for single meals
+        
+        // Number hot meals first: #1, #2, ...
+        let counter = 1;
+        for (const res of hotMeals) {
+          const existingNotes = (res.Notes || '').replace(/^#\d+\s*\|?\s*/, '').trim();
+          res.Notes = existingNotes ? `#${counter} | ${existingNotes}` : `#${counter}`;
+          counter++;
+        }
+        // Then frozen meals continue: #N+1, #N+2, ...
+        for (const res of frozenMeals) {
+          const existingNotes = (res.Notes || '').replace(/^#\d+\s*\|?\s*/, '').trim();
+          res.Notes = existingNotes ? `#${counter} | ${existingNotes}` : `#${counter}`;
+          counter++;
         }
       }
     }
@@ -472,6 +497,7 @@ export async function GET(request: NextRequest) {
     // Remove any CV reservations from the data (they're always hardcoded as 9 delivery meals)
     const nonCvReservations = nonContainerReservations.filter(r => !isCoyoteValley(r.Name));
     const CV_HARDCODED_COUNT = 9; // Always 9 Coyote Valley delivery meals
+    const CV_FROZEN_COUNT = isThursday ? 9 : 0; // On Thursday, CV also gets 9 frozen meals
 
     // Format date for display
     const dateObj = new Date(date + 'T12:00:00');
@@ -486,9 +512,9 @@ export async function GET(request: NextRequest) {
     // Include frozen Friday meals in the counts
     const dineInCount = nonCvReservations.filter(r => r['Meal Type'] === 'Dine In').length;
     const toGoCount = nonCvReservations.filter(r => r['Meal Type'] === 'To Go').length;
-    const deliveryCount = nonCvReservations.filter(r => r['Meal Type'] === 'Delivery').length + CV_HARDCODED_COUNT;
+    const deliveryCount = nonCvReservations.filter(r => r['Meal Type'] === 'Delivery').length + CV_HARDCODED_COUNT + CV_FROZEN_COUNT;
     const totalMealCount = dineInCount + toGoCount + deliveryCount;
-    const frozenCount = nonCvReservations.filter(r => r.isFrozenFriday).length;
+    const frozenCount = nonCvReservations.filter(r => r.isFrozenFriday).length + CV_FROZEN_COUNT;
 
     // Load logo
     const logoBase64 = await getUSCLogo();
@@ -684,7 +710,12 @@ export async function GET(request: NextRequest) {
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bolditalic');
     doc.setTextColor(120, 80, 0);
-    doc.text(`Coyote Valley #s 1-9 are included in today's labels and totals. Tribe Prepaid -- not listed individually.`, margin, y);
+    doc.text(
+      isThursday
+        ? `Coyote Valley #s 1-9 (hot + frozen) are included in today's labels and totals. Tribe Prepaid -- not listed individually.`
+        : `Coyote Valley #s 1-9 are included in today's labels and totals. Tribe Prepaid -- not listed individually.`,
+      margin, y
+    );
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(0, 0, 0);
     y += 0.3;

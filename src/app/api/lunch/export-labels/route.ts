@@ -248,23 +248,47 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Auto-number meals when someone has both a Thursday hot meal and a Friday frozen meal
-    // Prepend "#1" to hot meal notes and "#2" to frozen meal notes so kitchen knows which is which
-    if (isThursday && fridayFrozenReservations.length > 0) {
+    // Auto-number meals for anyone with multiple reservations (any day)
+    // On Thursday: hot meals numbered first, then frozen meals continue the sequence
+    {
       const normalizeName = (n: string) => n.toLowerCase().replace(/\s+/g, ' ').trim();
-      const frozenNames = new Set(fridayFrozenReservations.map(r => normalizeName(r.Name)));
-      const hotNames = new Set(labelReservations.map(r => normalizeName(r.Name)));
       
+      // Count total meals per person (hot + frozen)
+      const hotByName = new Map<string, Reservation[]>();
       for (const res of labelReservations) {
-        if (frozenNames.has(normalizeName(res.Name))) {
-          const existingNotes = (res.Notes || '').replace(/^#1\s*\|?\s*/, '').trim();
-          res.Notes = existingNotes ? `#1 | ${existingNotes}` : '#1';
-        }
+        const key = normalizeName(res.Name);
+        if (!hotByName.has(key)) hotByName.set(key, []);
+        hotByName.get(key)!.push(res);
       }
+      const frozenByName = new Map<string, Reservation[]>();
       for (const res of fridayFrozenReservations) {
-        if (hotNames.has(normalizeName(res.Name))) {
-          const existingNotes = (res.Notes || '').replace(/^#2\s*\|?\s*/, '').trim();
-          res.Notes = existingNotes ? `#2 | ${existingNotes}` : '#2';
+        const key = normalizeName(res.Name);
+        if (!frozenByName.has(key)) frozenByName.set(key, []);
+        frozenByName.get(key)!.push(res);
+      }
+      
+      // Get all unique names
+      const allNames = new Set([...hotByName.keys(), ...frozenByName.keys()]);
+      
+      for (const name of allNames) {
+        const hotMeals = hotByName.get(name) || [];
+        const frozenMeals = frozenByName.get(name) || [];
+        const totalMeals = hotMeals.length + frozenMeals.length;
+        
+        if (totalMeals < 2) continue; // No numbering needed for single meals
+        
+        // Number hot meals first: #1, #2, ...
+        let counter = 1;
+        for (const res of hotMeals) {
+          const existingNotes = (res.Notes || '').replace(/^#\d+\s*\|?\s*/, '').trim();
+          res.Notes = existingNotes ? `#${counter} | ${existingNotes}` : `#${counter}`;
+          counter++;
+        }
+        // Then frozen meals continue: #N+1, #N+2, ...
+        for (const res of frozenMeals) {
+          const existingNotes = (res.Notes || '').replace(/^#\d+\s*\|?\s*/, '').trim();
+          res.Notes = existingNotes ? `#${counter} | ${existingNotes}` : `#${counter}`;
+          counter++;
         }
       }
     }
@@ -297,6 +321,23 @@ export async function GET(request: NextRequest) {
         specialRequests: [],
         inFridge: false,
       });
+    }
+
+    // On Thursday, also add FROZEN labels for each Coyote Valley customer
+    if (isThursday) {
+      for (const cv of COYOTE_VALLEY_ROUTE) {
+        allLabels.push({
+          isCoyoteValley: true,
+          isFrozenFriday: true,
+          routeId: cv.routeId,
+          name: cv.name,
+          address: cv.address,
+          mealType: 'Delivery',
+          memberStatus: 'Member',
+          specialRequests: [],
+          inFridge: false,
+        });
+      }
     }
     
     // Other labels from database (Thursday hot meals)
@@ -393,8 +434,30 @@ export async function GET(request: NextRequest) {
         // COYOTE VALLEY LABEL
         const hasReqs = label.specialRequests.length > 0;
         const reqText = hasReqs ? label.specialRequests.join(', ') : '';
+        const isCvFrozen = label.isFrozenFriday === true;
 
-        if (hasReqs) {
+        if (isCvFrozen) {
+          // FROZEN Coyote Valley label: Route ID + FROZEN (yellow highlight)
+          const rowH = maxH / 2;
+
+          // Route ID (bold, black)
+          const idSize = fitFontSize(label.routeId || '', 'bold', 26);
+          doc.setFontSize(idSize);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(0, 0, 0);
+          doc.text(label.routeId || '', x + px, y + py + rowH * 0, { baseline: 'top' });
+
+          // FROZEN (yellow highlight with black text)
+          const frozenSize = fitFontSize('FROZEN', 'bold', 24);
+          doc.setFontSize(frozenSize);
+          doc.setFont('helvetica', 'bold');
+          const frozenW = doc.getTextWidth('FROZEN');
+          const frozenH = frozenSize / 72;
+          doc.setFillColor(255, 255, 0);
+          doc.rect(x + px - 0.02, y + py + rowH * 1 - 0.02, frozenW + 0.04, frozenH + 0.06, 'F');
+          doc.setTextColor(0, 0, 0);
+          doc.text('FROZEN', x + px, y + py + rowH * 1, { baseline: 'top' });
+        } else if (hasReqs) {
           // 3 rows: Route ID, Special Requests, Date - split height into 3
           const rowH = maxH / 3;
 

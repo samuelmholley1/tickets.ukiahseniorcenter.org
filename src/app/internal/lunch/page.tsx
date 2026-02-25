@@ -1465,8 +1465,9 @@ export default function LunchPage() {
                   if (dateInput?.value) {
                     const d = new Date(dateInput.value + 'T12:00:00');
                     const day = d.getDay();
-                    if (day === 0 || day === 5 || day === 6) {
-                      alert('Warning: Lunch is closed on Fridays, Saturdays, and Sundays. There may be no reservations for this date.');
+                    if (day < 1 || day > 4) {
+                      alert('PDF downloads are only available for Monday through Thursday.');
+                      return;
                     }
                     window.open(`/api/lunch/export-list?date=${dateInput.value}`, '_blank');
                   }
@@ -1482,8 +1483,9 @@ export default function LunchPage() {
                   if (dateInput?.value) {
                     const d = new Date(dateInput.value + 'T12:00:00');
                     const day = d.getDay();
-                    if (day === 0 || day === 5 || day === 6) {
-                      alert('Warning: Lunch is closed on Fridays, Saturdays, and Sundays. There may be no reservations for this date.');
+                    if (day < 1 || day > 4) {
+                      alert('PDF downloads are only available for Monday through Thursday.');
+                      return;
                     }
                     window.open(`/api/lunch/export-labels?date=${dateInput.value}`, '_blank');
                   }

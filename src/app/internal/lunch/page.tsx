@@ -1347,7 +1347,15 @@ export default function LunchPage() {
         ) : (
           <button
             type="button"
-            onClick={() => recentTransactionsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            onClick={() => {
+              setTimeout(() => {
+                const el = recentTransactionsRef.current;
+                if (el) {
+                  const y = el.getBoundingClientRect().top + window.scrollY - 80;
+                  window.scrollTo({ top: y, behavior: 'smooth' });
+                }
+              }, 100);
+            }}
             className="px-4 py-3 rounded-full bg-[#427d78] hover:bg-[#5eb3a1] text-white shadow-lg font-['Jost',sans-serif] font-bold text-sm transition-all"
           >
             ⬇ Jump to Recent Transactions
@@ -3034,7 +3042,7 @@ export default function LunchPage() {
                   </div>
                 </div>
                 <div>
-                  <div className="text-white/80 font-['Bitter',serif] text-sm" style={{ marginBottom: '4px' }}>Details</div>
+                  <div className="text-white/80 font-['Bitter',serif] text-sm" style={{ marginBottom: '4px' }}>Meal Date &amp; Details</div>
                   <div className="text-white font-['Jost',sans-serif] font-bold text-lg whitespace-nowrap">
                     {transactionType === 'individual' 
                       ? `${isMember === 'member' ? 'Member' : 'Non-Member'} - ${mealType === 'dineIn' ? 'Dine In' : mealType === 'pickup' ? 'To Go' : 'Delivery'}`
@@ -3215,7 +3223,7 @@ export default function LunchPage() {
                     <tr className="bg-gray-100">
                       <th className="text-left p-2 font-['Jost',sans-serif]">Purchase Time</th>
                       <th className="text-left p-2 font-['Jost',sans-serif]">Name</th>
-                      <th className="text-left p-2 font-['Jost',sans-serif]">Details</th>
+                      <th className="text-left p-2 font-['Jost',sans-serif]">Meal Date &amp; Details</th>
                       <th className="text-right p-2 pr-4 font-['Jost',sans-serif]">Amount</th>
                       <th className="text-left p-2 pl-4 font-['Jost',sans-serif] leading-tight">Payment<br/>Method</th>
                       <th className="text-center p-2 font-['Jost',sans-serif]">Staff</th>
@@ -3471,7 +3479,11 @@ export default function LunchPage() {
                     onClick={() => {
                       resetForm();
                       setTimeout(() => {
-                        recentTransactionsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        const el = recentTransactionsRef.current;
+                        if (el) {
+                          const y = el.getBoundingClientRect().top + window.scrollY - 80;
+                          window.scrollTo({ top: y, behavior: 'smooth' });
+                        }
                       }, 100);
                     }}
                     className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-['Jost',sans-serif] font-bold text-lg rounded-xl transition-colors shadow-lg"
@@ -3723,20 +3735,40 @@ export default function LunchPage() {
                         )}
                       </div>
 
-                      {/* Checks listing */}
+                      {/* Checks listing — grouped by person name */}
                       {(() => {
                         const checkTxs = selectedTxs.filter(tx => tx.paymentMethod === 'Check' || tx.paymentMethod === 'Cash & Check');
                         if (checkTxs.length === 0) return null;
+                        // Group check transactions by person name
+                        const groupedChecks: Array<{ name: string; totalAmount: number; count: number; method: string }> = [];
+                        const groupMap = new Map<string, { totalAmount: number; count: number; method: string }>();
+                        for (const tx of checkTxs) {
+                          const key = tx.name;
+                          const existing = groupMap.get(key);
+                          if (existing) {
+                            existing.totalAmount += tx.amount;
+                            existing.count += 1;
+                            // If mixed methods, show "Check" as default
+                            if (existing.method !== tx.paymentMethod) existing.method = 'Check';
+                          } else {
+                            const entry = { totalAmount: tx.amount, count: 1, method: tx.paymentMethod };
+                            groupMap.set(key, entry);
+                          }
+                        }
+                        groupMap.forEach((val, name) => groupedChecks.push({ name, ...val }));
                         return (
                           <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
                             <h4 className="font-['Jost',sans-serif] font-bold text-blue-800 text-sm mb-2">
-                              📝 Checks to Account For ({checkTxs.length})
+                              📝 Checks to Account For ({groupedChecks.length} check{groupedChecks.length !== 1 ? 's' : ''})
                             </h4>
                             <div className="space-y-1">
-                              {checkTxs.map(tx => (
-                                <div key={tx.id} className="flex justify-between text-sm font-['Bitter',serif]">
-                                  <span className="text-blue-800 font-semibold">{tx.name}</span>
-                                  <span className="text-blue-700 font-bold">${tx.amount.toFixed(2)} <span className="text-blue-500 text-xs">({tx.paymentMethod})</span></span>
+                              {groupedChecks.map(g => (
+                                <div key={g.name} className="flex justify-between text-sm font-['Bitter',serif]">
+                                  <span className="text-blue-800 font-semibold">
+                                    {g.name}
+                                    {g.count > 1 && <span className="text-blue-500 text-xs ml-1">({g.count} meals)</span>}
+                                  </span>
+                                  <span className="text-blue-700 font-bold">${g.totalAmount.toFixed(2)} <span className="text-blue-500 text-xs">({g.method})</span></span>
                                 </div>
                               ))}
                             </div>

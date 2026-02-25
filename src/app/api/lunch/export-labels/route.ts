@@ -479,11 +479,11 @@ export async function GET(request: NextRequest) {
           doc.setTextColor(0, 0, 0);
           doc.text(label.routeId || '', x + px, y + py + rowH * 0, { baseline: 'top' });
 
-          // Special Requests (red, bold)
+          // Special Requests (purple, bold)
           const reqSize = fitFontSize(reqText, 'bold', 18);
           doc.setFontSize(reqSize);
           doc.setFont('helvetica', 'bold');
-          doc.setTextColor(180, 0, 0);
+          doc.setTextColor(140, 0, 180);
           doc.text(reqText, x + px, y + py + rowH * 1, { baseline: 'top' });
 
           // Date (gray)
@@ -542,11 +542,11 @@ export async function GET(request: NextRequest) {
             doc.setTextColor(0, 0, 0);
             doc.text('FROZEN', x + px, y + py + rowH * 1, { baseline: 'top' });
 
-            // Special Requests (red, bold)
+            // Special Requests (purple, bold)
             const reqSize = fitFontSize(reqText, 'bold', 16);
             doc.setFontSize(reqSize);
             doc.setFont('helvetica', 'bold');
-            doc.setTextColor(180, 0, 0);
+            doc.setTextColor(140, 0, 180);
             doc.text(reqText, x + px, y + py + rowH * 2, { baseline: 'top' });
           } else {
             // 2 rows: Name, FROZEN
@@ -592,11 +592,11 @@ export async function GET(request: NextRequest) {
             else doc.setTextColor(0, 120, 0);
             doc.text(mealType, x + px, y + py + rowH * 1, { baseline: 'top' });
 
-            // Special Requests (red, bold)
+            // Special Requests (purple, bold)
             const reqSize = fitFontSize(reqText, 'bold', 16);
             doc.setFontSize(reqSize);
             doc.setFont('helvetica', 'bold');
-            doc.setTextColor(180, 0, 0);
+            doc.setTextColor(140, 0, 180);
             doc.text(reqText, x + px, y + py + rowH * 2, { baseline: 'top' });
 
             // Date (gray)

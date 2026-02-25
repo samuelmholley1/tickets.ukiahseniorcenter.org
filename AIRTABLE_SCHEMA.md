@@ -1,9 +1,9 @@
 # Airtable Schema Documentation
 
-**Last Updated:** February 17, 2026  
-**Verified Against Live API:** February 17, 2026  
+**Last Updated:** February 25, 2026  
+**Verified Against Live API:** February 25, 2026  
 **Base:** Ukiah Senior Center `appZ6HE5luAFV0Ot2`  
-**Total Tables:** 18
+**Total Tables:** 19
 
 ---
 
@@ -14,7 +14,8 @@
 3. [DONATIONS_NEW](#donations-new-table) — Current donation records
 4. [Lunch Reservations](#lunch-reservations-table) — Tracks daily lunch reservations and walk-ins for the dining room
 5. [Lunch Cards](#lunch-cards-table) — Prepaid meal cards
-6. [Kitchen Data](#kitchen-data-table) — Tracks daily grocery donation weights by source (Safeway, Lucky) and kitchen temperatures
+6. [Reservation Audit Log](#reservation-audit-log-table) — Append-only change tracking for all reservation mutations
+7. [Kitchen Data](#kitchen-data-table) — Tracks daily grocery donation weights by source (Safeway, Lucky) and kitchen temperatures
 7. [Volunteers](#volunteers-table) — Volunteer applications and management
 8. [USC Utilization](#usc-utilization-table) — Monthly utilization statistics for all senior center programs
 9. [QuickBooks Tokens](#quickbooks-tokens-table) — Stores QBO OAuth tokens
@@ -126,7 +127,7 @@
 | Meal Type | singleSelect | `fldzecVd4frivHpmH` | Options: Dine In, To Go, Delivery |
 | Member Status | singleSelect | `fldATOzjeLVG9GPJb` | Options: Member, Non-Member |
 | Amount | currency | `fldKYeUtZSYqVm4e7` | Precision: 2, Symbol: $ |
-| Payment Method | singleSelect | `fldWpJr7qNTNHWOjA` | Options: Cash, Check, Card (Zeffy), Lunch Card, Comp Card, Cash & Check, Tribe Prepaid |
+| Payment Method | singleSelect | `fldWpJr7qNTNHWOjA` | Options: Cash, Check, Card (Zeffy), Lunch Card, Comp Card, Cash & Check, Staff Override |
 | Notes | multilineText | `fldx3XxP8B2ntgkaF` |  |
 | Staff | singleLineText | `fld6ZwzViB6JkH3t4` |  |
 | Status | singleSelect | `fldPnM2BmRVtBqGFt` | Options: Reserved, Picked Up, No Show |
@@ -134,6 +135,10 @@
 | Frozen Friday | checkbox | `fldrsjUPo2F2lw6iE` | Blue check |
 | Comp Card Number | singleLineText | `fld4DV4TYQES3WCTd` | Comp card number for comp card payments |
 | Contact | multipleRecordLinks | `fldkvInhOIVlZQPIc` | → tbl3PQZzXGpT991dH |
+| Cancelled | checkbox | `fldzvhzOAOeQe6eRz` | Soft-delete flag. All queries filter with `NOT({Cancelled})` |
+| Cancelled At | dateTime | `fldEsn9H0jLITskAm` | ISO timestamp when reservation was cancelled |
+| Cancelled By | singleLineText | `flddR0Vge7i4A2YZE` | Staff initials who cancelled the reservation |
+| Payment Comment | singleLineText | `fldRC8Gmi9cbvij7C` | Staff Override reason or payment notes |
 
 ---
 
@@ -146,12 +151,12 @@
 |-------|------|----------|-------|
 | Name | singleLineText | `fldWRjDjKxfiLCrgO` | Primary field |
 | Phone | phoneNumber | `fldHLWpmwl1WWQ2Bk` |  |
-| Card Type | singleSelect | `fldB9eGNWBFzAGOQY` | Options: 5 Meals, 10 Meals, 15 Meals, 20 Meals, 25 Meals, Dine In, Pick Up, Delivery. **New cards use service type (Dine In/Pick Up/Delivery). Old quantity labels are legacy.** |
+| Card Type | singleSelect | `fldB9eGNWBFzAGOQY` | Options: Dine In, Pick Up, Delivery, To Go. **Legacy quantity labels (5/10/15/20/25 Meals) have been removed.** |
 | Member Status | singleSelect | `fldgQsh8qisnZQH9w` | Options: Member, Non-Member |
 | Total Meals | number | `fld6KG8tUilL4kK7R` | Integer |
 | Remaining Meals | number | `fldGORkkcsuks2p7r` | Integer |
 | Amount Paid | currency | `fldrUUtMVVUJ4dgvZ` | Precision: 2, Symbol: $ |
-| Payment Method | singleSelect | `fldglSQb9N5g6DcT4` | Options: Cash, Check, Card (Zeffy), Cash & Check, Comp Card |
+| Payment Method | singleSelect | `fldglSQb9N5g6DcT4` | Options: Cash, Check, Card (Zeffy), Cash & Check |
 | Purchase Date | date | `fldSP4yFOHvXdXlB0` | Format: local date |
 | Staff | singleLineText | `fldl4gMfEJzfIOfEV` |  |
 | Lunch Reservations | multipleRecordLinks | `fldwIDDsgWFqsqomj` | → tblF83nL5KPuPUDqx |
@@ -160,6 +165,30 @@
 | Include Frozen Friday | checkbox | `fldUSO6r9iyXCVb1f` | Blue check |
 | Contact | multipleRecordLinks | `fld7KPOaKxDUjO6jl` | → tbl3PQZzXGpT991dH |
 | Lunch Card ID | singleLineText | `fldZ1gMEGiAVOELly` |  |
+
+---
+
+## Reservation Audit Log Table
+
+**Table ID:** `tblBWztjSIDPdYAqb`  
+**Env Var:** `AIRTABLE_LUNCH_AUDIT_LOG_TABLE_ID`  
+**Purpose:** Append-only audit trail for all reservation mutations. Tracks who changed what, when, and the before/after values. Never delete records from this table.
+
+| Field | Type | Field ID | Notes |
+|-------|------|----------|-------|
+| Summary | singleLineText | `fldgqKnwWZ5GQhmxG` | Primary field. Auto-generated: e.g., "Created To Go for Val Parker on 2/25" |
+| Action | singleSelect | `fld41CYLq44h89RPw` | Options: Created, Modified, Cancelled, Refunded |
+| Reservation Name | singleLineText | `fldB1yW9ehVqvgQLT` | Customer name from the reservation |
+| Reservation Date | date | `fld5E4RXLIUV7Ge9K` | Format: ISO (YYYY-MM-DD) |
+| Meal Type | singleLineText | `fldSqMmG9knifFzRr` | Dine In, To Go, or Delivery |
+| Changed Fields | multilineText | `fldj1QarvMLeVzRI0` | JSON object of changed fields (for Modified actions) |
+| Previous Values | multilineText | `fldMBxJXLiiYTR5q4` | Human-readable summary of before→after changes |
+| Staff | singleLineText | `fld7M5amhWEkjopq3` | Staff initials who made the change |
+| Refund Method | singleSelect | `fldYrd5R608Rnc0kR` | Options: Card Punch Restored, Cash, Forfeit, No Refund |
+| Refund Amount | currency | `fldWgCdWNgp1I5Lch` | Precision: 2, Symbol: $. Dollar amount refunded (if applicable) |
+| Reservation ID | singleLineText | `fldqDDXezwHNsrCnx` | Airtable record ID of the reservation |
+| Payment Method | singleLineText | `fldxSHiPmGvt4S4YG` | Payment method at time of action |
+| Amount | currency | `fldcW1YcubuSXp4bY` | Precision: 2, Symbol: $. Dollar amount at time of action |
 
 ---
 
@@ -545,6 +574,7 @@
 
 | Date | Change |
 |------|--------|
+| February 25, 2026 | Added Reservation Audit Log table (`tblBWztjSIDPdYAqb`). Added soft-delete fields (Cancelled, Cancelled At, Cancelled By) to Lunch Reservations. All reservation queries now filter with `NOT({Cancelled})`. Created via Node.js scripts using Airtable REST API. |
 | February 8, 2026 | Auto-synced from Airtable Metadata API via `scripts/sync-airtable-schema.mjs`. |
 
 ---

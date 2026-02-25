@@ -248,19 +248,30 @@ export async function GET(request: NextRequest) {
 
     // 3. Fetch ALL active lunch cards and SUM remaining meals per name
     // This ensures customers with multiple cards show the correct total
+    // IMPORTANT: Must paginate — Airtable returns max 100 records per page
     if (process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID) {
-      const activeCardsUrl = `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID}?filterByFormula=${encodeURIComponent('{Remaining Meals}>0')}`;
+      const allActiveCards: Array<{ id: string; fields: Record<string, unknown> }> = [];
+      let activeCardsOffset: string | undefined = undefined;
+      const activeCardsBaseUrl = `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID}?filterByFormula=${encodeURIComponent('{Remaining Meals}>0')}`;
       
-      const activeCardsResponse = await fetch(activeCardsUrl, {
-        headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}` },
-      });
-      
-      if (activeCardsResponse.ok) {
-        const activeCardsData = await activeCardsResponse.json();
+      do {
+        let activeCardsUrl = activeCardsBaseUrl;
+        if (activeCardsOffset) activeCardsUrl += `&offset=${activeCardsOffset}`;
         
+        const activeCardsResponse = await fetch(activeCardsUrl, {
+          headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}` },
+        });
+        
+        if (!activeCardsResponse.ok) break;
+        const activeCardsData = await activeCardsResponse.json();
+        allActiveCards.push(...activeCardsData.records);
+        activeCardsOffset = activeCardsData.offset;
+      } while (activeCardsOffset);
+      
+      if (allActiveCards.length > 0) {
         // Build a map of lowercase name -> {totalRemaining (sum of ALL cards), phone}
         const nameToInfo = new Map<string, { remaining: number; phone?: string }>();
-        for (const card of activeCardsData.records) {
+        for (const card of allActiveCards) {
           const cardName = (card.fields['Name'] as string || '').toLowerCase().trim();
           const remaining = card.fields['Remaining Meals'] as number || 0;
           const phone = card.fields['Phone'] as string;
@@ -310,16 +321,26 @@ export async function GET(request: NextRequest) {
     const existingNames = new Set(reservations.map(r => r.Name.toLowerCase().trim()));
     
     if (isWeekday && process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID) {
-      // Fetch all active weekly delivery customers
+      // Fetch all active weekly delivery customers (paginated)
       const weeklyFilter = `AND({Weekly Delivery}, {Remaining Meals} > 0)`;
-      const weeklyUrl = `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID}?filterByFormula=${encodeURIComponent(weeklyFilter)}`;
+      const weeklyBaseUrl = `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${process.env.AIRTABLE_LUNCH_CARDS_TABLE_ID}?filterByFormula=${encodeURIComponent(weeklyFilter)}`;
       
-      const weeklyResponse = await fetch(weeklyUrl, {
-        headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}` },
-      });
+      const allWeeklyRecords: Array<{ id: string; fields: Record<string, unknown> }> = [];
+      let weeklyOffset: string | undefined = undefined;
+      do {
+        let weeklyUrl = weeklyBaseUrl;
+        if (weeklyOffset) weeklyUrl += `&offset=${weeklyOffset}`;
+        const weeklyResponse = await fetch(weeklyUrl, {
+          headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}` },
+        });
+        if (!weeklyResponse.ok) break;
+        const weeklyPage = await weeklyResponse.json();
+        allWeeklyRecords.push(...weeklyPage.records);
+        weeklyOffset = weeklyPage.offset;
+      } while (weeklyOffset);
       
-      if (weeklyResponse.ok) {
-        const weeklyData = await weeklyResponse.json();
+      if (allWeeklyRecords.length > 0) {
+        const weeklyData = { records: allWeeklyRecords };
         
         for (const card of weeklyData.records) {
           const cardName = card.fields['Name'] as string || 'Unknown';
@@ -656,10 +677,21 @@ export async function GET(request: NextRequest) {
     doc.setFont('helvetica', 'bold');
     let totalPillX = margin;
     if (frozenCount > 0) {
-      // Thursday: show separate Thursday and Frozen totals
+      // Thursday: Thursday Meals + Frozen Meals = Grand Total
       const thursdayOnly = totalMealCount - frozenCount;
-      totalPillX += drawPill(`Thursday Total: ${thursdayOnly}`, totalPillX, y, [80, 80, 80]);
-      drawPill(`Frozen Total: ${frozenCount}`, totalPillX, y, [52, 152, 219]);
+      totalPillX += drawPill(`Thursday Meals: ${thursdayOnly}`, totalPillX, y, [80, 80, 80]);
+      // "+" text between pills
+      doc.setFontSize(11);
+      doc.setTextColor(80, 80, 80);
+      doc.text('+', totalPillX + 0.02, y);
+      totalPillX += 0.18;
+      totalPillX += drawPill(`Frozen Meals: ${frozenCount}`, totalPillX, y, [52, 152, 219]);
+      // "=" text between pills
+      doc.setFontSize(11);
+      doc.setTextColor(80, 80, 80);
+      doc.text('=', totalPillX + 0.02, y);
+      totalPillX += 0.18;
+      drawPill(`Grand Total: ${totalMealCount}`, totalPillX, y, [66, 125, 120]);
     } else {
       drawPill(`Total: ${totalMealCount}`, totalPillX, y, [80, 80, 80]);
     }

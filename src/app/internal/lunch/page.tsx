@@ -14,6 +14,7 @@ interface LunchCard {
   totalMeals: number;
   remainingMeals: number;
   memberStatus: string;
+  purchaseDate?: string;   // From Airtable Purchase Date field
   contactEmail?: string;   // From linked Contact record
   contactPhone?: string;   // From linked Contact record
 }
@@ -1669,135 +1670,150 @@ export default function LunchPage() {
                     });
                     
                     return Array.from(grouped.entries()).map(([baseName, cards]) => {
-                      // Calculate totals
+                      // Separate regular and buffer cards
                       const regularCards = cards.filter(c => !c.name.includes('[BUFFER]'));
                       const bufferCards = cards.filter(c => c.name.includes('[BUFFER]'));
                       const regularMeals = regularCards.reduce((sum, c) => sum + c.remainingMeals, 0);
                       const bufferMeals = bufferCards.reduce((sum, c) => sum + c.remainingMeals, 0);
                       const totalMeals = regularMeals + bufferMeals;
-                      
-                      // Use the first card with meals for selection (prefer regular over buffer)
-                      const primaryCard = regularCards.find(c => c.remainingMeals > 0) || 
-                                         bufferCards.find(c => c.remainingMeals > 0) || 
-                                         cards[0];
-                      
                       const hasBuffer = bufferCards.length > 0 && bufferMeals > 0;
                       
-                      const isLowBalance = totalMeals === 2 || totalMeals === 3;
+                      // Filter: hide 0-remaining cards if there are active cards for this person
+                      const activeRegularCards = regularCards.filter(c => c.remainingMeals > 0);
+                      const visibleCards = activeRegularCards.length > 0
+                        ? activeRegularCards // Hide 0-balance cards when active ones exist
+                        : regularCards.slice(0, 1); // No active cards: show most recent 0-balance
+                      
+                      // Sort visible cards by purchase date descending (newest first)
+                      visibleCards.sort((a, b) => {
+                        const dateA = a.purchaseDate ? new Date(a.purchaseDate).getTime() : 0;
+                        const dateB = b.purchaseDate ? new Date(b.purchaseDate).getTime() : 0;
+                        return dateB - dateA;
+                      });
+                      
+                      const showMultiCardHeader = visibleCards.length > 1 || hasBuffer;
 
                       return (
-                        <div
-                          key={baseName}
-                          className={`w-full text-left p-3 rounded-lg border-2 ${isLowBalance ? 'bg-yellow-100 border-yellow-400' : 'bg-white border-amber-200'}`}
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <div className="font-['Jost',sans-serif] font-bold text-gray-800">{baseName}</div>
-                              <div className="font-['Bitter',serif] text-sm text-gray-600">
-                                📞 {primaryCard.phone} • {primaryCard.totalMeals}-meal {primaryCard.cardType} • {primaryCard.memberStatus}
-                              </div>
-                              <div className="font-['Jost',sans-serif] font-bold text-lg mt-1">
-                                <span className={totalMeals > 0 ? 'text-green-600' : 'text-red-600'}>
-                                  {totalMeals} meals remaining
-                                </span>
-                                {hasBuffer && (
-                                  <span className="text-amber-600 text-sm ml-2">
-                                    ({regularMeals} paid + {bufferMeals} buffer)
-                                  </span>
-                                )}
-                              </div>
-                              {hasBuffer && (
-                                <div className="text-xs text-amber-700 mt-1 bg-amber-50 px-2 py-1 rounded inline-block">
-                                  ⚡ Weekly buyer - buffer refreshes on card purchase
-                                </div>
-                              )}
+                        <div key={baseName}>
+                          {/* Multi-card name header with combined total */}
+                          {showMultiCardHeader && (
+                            <div className="flex items-center gap-2 mb-1 px-1">
+                              <span className="font-['Jost',sans-serif] font-bold text-gray-700">{baseName}</span>
+                              <span className="text-sm font-['Bitter',serif] text-gray-500">
+                                — {totalMeals} meals across {visibleCards.length + bufferCards.filter(c => c.remainingMeals > 0).length} card{visibleCards.length + bufferCards.filter(c => c.remainingMeals > 0).length !== 1 ? 's' : ''}
+                              </span>
                             </div>
-                            <div className="flex flex-col gap-1">
-                              {totalMeals > 0 && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    // Parse name into first/last (supports joint names like "Mary Snyder & Don Burgess")
-                                    const { firstName, lastName } = parseJointName(baseName);
-                                    // Auto-populate everything (use contact info if available)
-                                    setCustomer(prev => ({
-                                      ...prev,
-                                      firstName,
-                                      lastName,
-                                      phone: primaryCard.contactPhone || primaryCard.phone || prev.phone,
-                                      email: primaryCard.contactEmail || prev.email,
-                                    }));
-                                    setSelectedLunchCard(primaryCard);
-                                    // Store full aggregated info for buffer support
-                                    setSelectedCardInfo({
-                                      baseName,
-                                      primaryCard,
-                                      allCards: cards,
-                                      regularMeals,
-                                      bufferMeals,
-                                      totalMeals,
-                                      hasBuffer,
-                                    });
-                                    setAutoDetectedCard(primaryCard);
-                                    setPaymentMethod('lunchCard');
-                                    setLunchCardSearch('');
-                                    setAvailableLunchCards([]);
-                                  }}
-                                  className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white font-['Jost',sans-serif] font-bold rounded-lg text-sm whitespace-nowrap"
+                          )}
+                          
+                          {/* Each card shown separately */}
+                          <div className="space-y-2">
+                            {visibleCards.map((card) => {
+                              const isLowBalance = card.remainingMeals === 2 || card.remainingMeals === 3;
+                              const purchaseDateStr = card.purchaseDate
+                                ? new Date(card.purchaseDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                                : 'N/A';
+
+                              return (
+                                <div
+                                  key={card.id}
+                                  className={`w-full text-left p-3 rounded-lg border-2 ${isLowBalance ? 'bg-yellow-100 border-yellow-400' : 'bg-white border-amber-200'}`}
                                 >
-                                  Use This Card
-                                </button>
-                              )}
-                              <button
-                                type="button"
-                                onClick={async () => {
-                                  if (reviewCardId === primaryCard.id) {
-                                    // Toggle off if already reviewing this card
-                                    setReviewCardId(null);
-                                    setReviewCardData(null);
-                                    return;
-                                  }
-                                  setReviewCardId(primaryCard.id);
-                                  setIsLoadingReview(true);
-                                  setReviewCardData(null);
-                                  try {
-                                    const res = await fetch(`/api/lunch/card-history?cardId=${primaryCard.id}`);
-                                    const data = await res.json();
-                                    if (data.success) {
-                                      setReviewCardData({ cardInfo: data.cardInfo, punches: data.punches, totalPunches: data.totalPunches });
-                                    }
-                                  } catch { /* ignore */ }
-                                  setIsLoadingReview(false);
-                                }}
-                                className={`px-3 py-1.5 ${reviewCardId === primaryCard.id ? 'bg-gray-500 hover:bg-gray-600' : 'bg-blue-600 hover:bg-blue-700'} text-white font-['Jost',sans-serif] font-bold rounded-lg text-xs whitespace-nowrap`}
-                              >
-                                {reviewCardId === primaryCard.id ? '✕ Close' : '📋 Review Card'}
-                              </button>
-                            </div>
-                          </div>
-                          {/* Punch history panel */}
-                          {reviewCardId === primaryCard.id && (
-                            <div className="mt-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
-                              {isLoadingReview ? (
-                                <p className="text-blue-600 text-sm font-['Bitter',serif]">Loading punch history...</p>
-                              ) : reviewCardData ? (
-                                <>
-                                  <div className="flex items-center justify-between mb-2">
-                                    <h4 className="font-['Jost',sans-serif] font-bold text-blue-800 text-sm">
-                                      Meal Punch History ({reviewCardData.totalPunches} punch{reviewCardData.totalPunches !== 1 ? 'es' : ''})
-                                    </h4>
-                                    {reviewCardData.cardInfo && (
-                                      <span className="text-xs text-blue-600 font-['Bitter',serif]">
-                                        {reviewCardData.cardInfo.cardType} • Purchased {reviewCardData.cardInfo.purchaseDate}
-                                      </span>
-                                    )}
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div>
+                                      {!showMultiCardHeader && (
+                                        <div className="font-['Jost',sans-serif] font-bold text-gray-800">{baseName}</div>
+                                      )}
+                                      <div className="font-['Bitter',serif] text-sm text-gray-600">
+                                        📞 {card.phone} • {card.totalMeals}-meal {card.cardType} • Purchased {purchaseDateStr}
+                                      </div>
+                                      <div className="font-['Jost',sans-serif] font-bold text-lg mt-1">
+                                        <span className={card.remainingMeals > 0 ? 'text-green-600' : 'text-red-600'}>
+                                          {card.remainingMeals} meals remaining
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                      {card.remainingMeals > 0 && (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const { firstName, lastName } = parseJointName(baseName);
+                                            setCustomer(prev => ({
+                                              ...prev,
+                                              firstName,
+                                              lastName,
+                                              phone: card.contactPhone || card.phone || prev.phone,
+                                              email: card.contactEmail || prev.email,
+                                            }));
+                                            setSelectedLunchCard(card);
+                                            setSelectedCardInfo({
+                                              baseName,
+                                              primaryCard: card,
+                                              allCards: cards,
+                                              regularMeals,
+                                              bufferMeals,
+                                              totalMeals,
+                                              hasBuffer,
+                                            });
+                                            setAutoDetectedCard(card);
+                                            setPaymentMethod('lunchCard');
+                                            setLunchCardSearch('');
+                                            setAvailableLunchCards([]);
+                                          }}
+                                          className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white font-['Jost',sans-serif] font-bold rounded-lg text-sm whitespace-nowrap"
+                                        >
+                                          Use This Card
+                                        </button>
+                                      )}
+                                      <button
+                                        type="button"
+                                        onClick={async () => {
+                                          if (reviewCardId === card.id) {
+                                            setReviewCardId(null);
+                                            setReviewCardData(null);
+                                            return;
+                                          }
+                                          setReviewCardId(card.id);
+                                          setIsLoadingReview(true);
+                                          setReviewCardData(null);
+                                          try {
+                                            const res = await fetch(`/api/lunch/card-history?cardId=${card.id}`);
+                                            const data = await res.json();
+                                            if (data.success) {
+                                              setReviewCardData({ cardInfo: data.cardInfo, punches: data.punches, totalPunches: data.totalPunches });
+                                            }
+                                          } catch { /* ignore */ }
+                                          setIsLoadingReview(false);
+                                        }}
+                                        className={`px-3 py-1.5 ${reviewCardId === card.id ? 'bg-gray-500 hover:bg-gray-600' : 'bg-blue-600 hover:bg-blue-700'} text-white font-['Jost',sans-serif] font-bold rounded-lg text-xs whitespace-nowrap`}
+                                      >
+                                        {reviewCardId === card.id ? '✕ Close' : '📋 Review Card'}
+                                      </button>
+                                    </div>
                                   </div>
-                                  {reviewCardData.punches.length === 0 ? (
-                                    <p className="text-gray-500 text-sm font-['Bitter',serif]">No punches recorded yet.</p>
-                                  ) : (
-                                    <div className="space-y-1 max-h-48 overflow-y-auto">
-                                      {reviewCardData.punches.map((punch) => (
-                                        <div key={punch.id} className="flex items-center justify-between bg-white px-2 py-1.5 rounded border border-blue-100 text-sm">
+                                  {/* Punch history panel for this specific card */}
+                                  {reviewCardId === card.id && (
+                                    <div className="mt-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                      {isLoadingReview ? (
+                                        <p className="text-blue-600 text-sm font-['Bitter',serif]">Loading punch history...</p>
+                                      ) : reviewCardData ? (
+                                        <>
+                                          <div className="flex items-center justify-between mb-2">
+                                            <h4 className="font-['Jost',sans-serif] font-bold text-blue-800 text-sm">
+                                              Meal Punch History ({reviewCardData.totalPunches} punch{reviewCardData.totalPunches !== 1 ? 'es' : ''})
+                                            </h4>
+                                            {reviewCardData.cardInfo && (
+                                              <span className="text-xs text-blue-600 font-['Bitter',serif]">
+                                                {reviewCardData.cardInfo.cardType} • Purchased {reviewCardData.cardInfo.purchaseDate}
+                                              </span>
+                                            )}
+                                          </div>
+                                          {reviewCardData.punches.length === 0 ? (
+                                            <p className="text-gray-500 text-sm font-['Bitter',serif]">No punches recorded yet.</p>
+                                          ) : (
+                                            <div className="space-y-1 max-h-48 overflow-y-auto">
+                                              {reviewCardData.punches.map((punch) => (
+                                                <div key={punch.id} className="flex items-center justify-between bg-white px-2 py-1.5 rounded border border-blue-100 text-sm">
                                           <div className="flex items-center gap-2">
                                             <span className="font-['Jost',sans-serif] font-bold text-gray-800">
                                               {new Date(punch.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
@@ -1817,15 +1833,89 @@ export default function LunchPage() {
                                             </span>
                                           )}
                                         </div>
-                                      ))}
+                                              ))}
+                                            </div>
+                                          )}
+                                        </>
+                                      ) : (
+                                        <p className="text-red-500 text-sm font-['Bitter',serif]">Failed to load punch history.</p>
+                                      )}
                                     </div>
                                   )}
-                                </>
-                              ) : (
-                                <p className="text-red-500 text-sm font-['Bitter',serif]">Failed to load punch history.</p>
-                              )}
-                            </div>
-                          )}
+                                </div>
+                              );
+                            })}
+                            
+                            {/* Buffer cards (if any) shown as a separate entry */}
+                            {hasBuffer && bufferCards.filter(c => c.remainingMeals > 0).map((card) => (
+                              <div
+                                key={card.id}
+                                className="w-full text-left p-3 rounded-lg border-2 bg-amber-50 border-amber-300"
+                              >
+                                <div className="flex items-start justify-between gap-2">
+                                  <div>
+                                    <div className="font-['Bitter',serif] text-sm text-amber-700">
+                                      ⚡ Buffer Card • {card.remainingMeals} buffer meals
+                                    </div>
+                                    <div className="text-xs text-amber-600 mt-1">
+                                      Refreshes on card purchase
+                                    </div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={async () => {
+                                      if (reviewCardId === card.id) {
+                                        setReviewCardId(null);
+                                        setReviewCardData(null);
+                                        return;
+                                      }
+                                      setReviewCardId(card.id);
+                                      setIsLoadingReview(true);
+                                      setReviewCardData(null);
+                                      try {
+                                        const res = await fetch(`/api/lunch/card-history?cardId=${card.id}`);
+                                        const data = await res.json();
+                                        if (data.success) {
+                                          setReviewCardData({ cardInfo: data.cardInfo, punches: data.punches, totalPunches: data.totalPunches });
+                                        }
+                                      } catch { /* ignore */ }
+                                      setIsLoadingReview(false);
+                                    }}
+                                    className={`px-3 py-1.5 ${reviewCardId === card.id ? 'bg-gray-500 hover:bg-gray-600' : 'bg-blue-600 hover:bg-blue-700'} text-white font-['Jost',sans-serif] font-bold rounded-lg text-xs whitespace-nowrap`}
+                                  >
+                                    {reviewCardId === card.id ? '✕ Close' : '📋 Review'}
+                                  </button>
+                                </div>
+                                {reviewCardId === card.id && (
+                                  <div className="mt-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                    {isLoadingReview ? (
+                                      <p className="text-blue-600 text-sm font-['Bitter',serif]">Loading...</p>
+                                    ) : reviewCardData ? (
+                                      <>
+                                        <h4 className="font-['Jost',sans-serif] font-bold text-blue-800 text-sm mb-1">
+                                          Buffer Punches ({reviewCardData.totalPunches})
+                                        </h4>
+                                        {reviewCardData.punches.length === 0 ? (
+                                          <p className="text-gray-500 text-sm">No punches.</p>
+                                        ) : (
+                                          <div className="space-y-1 max-h-48 overflow-y-auto">
+                                            {reviewCardData.punches.map((punch) => (
+                                              <div key={punch.id} className="flex items-center gap-2 bg-white px-2 py-1 rounded border text-sm">
+                                                <span className="font-bold">{new Date(punch.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                                                <span className="text-gray-600">{punch.mealType}</span>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <p className="text-red-500 text-sm">Failed to load.</p>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       );
                     });

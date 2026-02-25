@@ -10,6 +10,36 @@ const AIRTABLE_API_BASE = 'https://api.airtable.com/v0';
 
 import { titleCaseName } from '@/lib/nameUtils';
 
+// Convert "First Last" → "Last, First" for PDF list display
+// Joint: "Mary Snyder & Don Burgess" → "Snyder, Mary & Burgess, Don"
+// Joint same-last: "Mary & Don Smith" → "Smith, Mary & Don"
+function toLastFirst(name: string): string {
+  if (!name) return name;
+  if (name.includes(' & ')) {
+    const parts = name.split(/\s*&\s*/);
+    if (parts.length === 2) {
+      const aParts = parts[0].trim().split(/\s+/);
+      const bParts = parts[1].trim().split(/\s+/);
+      const aFirst = aParts[0] || '';
+      const aLast = aParts.slice(1).join(' ');
+      const bFirst = bParts[0] || '';
+      const bLast = bParts.slice(1).join(' ');
+      // "Mary & Don Smith" — shared last name
+      if (!aLast && bLast) return `${bLast}, ${aFirst} & ${bFirst}`;
+      // "Mary Snyder & Don Burgess" — different last names
+      if (aLast && bLast) return `${aLast}, ${aFirst} & ${bLast}, ${bFirst}`;
+      // "Mary Snyder & Don" — second shares first's last
+      if (aLast && !bLast) return `${aLast}, ${aFirst} & ${bFirst}`;
+      // "Mary & Don" — no last names
+      return name;
+    }
+  }
+  const words = name.trim().split(/\s+/);
+  if (words.length <= 1) return name;
+  const last = words.pop()!;
+  return `${last}, ${words.join(' ')}`;
+}
+
 interface Reservation {
   id: string;
   Name: string;
@@ -763,7 +793,7 @@ export async function GET(request: NextRequest) {
       const key = res.Name.toLowerCase().trim();
       const count = (nameOccurrenceCount.get(key) || 0) + 1;
       nameOccurrenceCount.set(key, count);
-      displayNames.push(count > 1 ? `${res.Name} #${count}` : res.Name);
+      displayNames.push(count > 1 ? `${toLastFirst(res.Name)} #${count}` : toLastFirst(res.Name));
     }
     // Go back and fix first occurrences for names that appear more than once → "Name #1"
     const nameSecondPass = new Map<string, number>();
@@ -773,7 +803,7 @@ export async function GET(request: NextRequest) {
       const seen = (nameSecondPass.get(key) || 0) + 1;
       nameSecondPass.set(key, seen);
       if (totalForName > 1) {
-        displayNames[i] = `${nonCvReservations[i].Name} #${seen}`;
+        displayNames[i] = `${toLastFirst(nonCvReservations[i].Name)} #${seen}`;
       }
     }
 
@@ -1047,9 +1077,10 @@ export async function GET(request: NextRequest) {
         doc.text(String(index + 1), margin + 0.1, y + 0.12);
         
         // Name (truncate to prevent column overflow)
-        const overrideName = res.Name.length > 26 ? res.Name.substring(0, 24) + '...' : res.Name;
+        const overrideName = toLastFirst(res.Name);
+        const overrideNameTrunc = overrideName.length > 26 ? overrideName.substring(0, 24) + '...' : overrideName;
         doc.setFont('helvetica', 'bold');
-        doc.text(overrideName, margin + 0.35, y + 0.12);
+        doc.text(overrideNameTrunc, margin + 0.35, y + 0.12);
         doc.setFont('helvetica', 'normal');
         
         // Meal Type

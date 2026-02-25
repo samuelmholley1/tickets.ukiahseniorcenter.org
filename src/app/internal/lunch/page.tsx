@@ -2147,23 +2147,18 @@ export default function LunchPage() {
                     </label>
                   </div>
 
-                  {/* Show Previous / Next Week toggle buttons */}
-                  <div className="flex gap-2 mb-2">
-                    <button
-                      type="button"
-                      onClick={() => setPreviousWeeksShown(prev => prev > 0 ? prev - 1 : prev + 1)}
-                      className="flex-1 py-1 px-2 text-xs font-['Jost',sans-serif] font-semibold rounded transition-colors border border-dashed border-gray-300 text-gray-400 hover:text-gray-600 hover:border-gray-400 hover:bg-gray-50"
-                    >
-                      {previousWeeksShown > 0 ? `↑ Hide Past Week (${previousWeeksShown})` : '← Show Past Week'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setNextWeeksShown(prev => prev > 0 ? prev - 1 : prev + 1)}
-                      className="flex-1 py-1 px-2 text-xs font-['Jost',sans-serif] font-semibold rounded transition-colors border border-dashed border-gray-300 text-gray-400 hover:text-gray-600 hover:border-gray-400 hover:bg-gray-50"
-                    >
-                      {nextWeeksShown > 0 ? `↓ Hide Future Week (${nextWeeksShown})` : 'Show Next Week →'}
-                    </button>
-                  </div>
+                  {/* Show Past Week button (top) */}
+                  <button
+                    type="button"
+                    onClick={() => setPreviousWeeksShown(prev => prev > 0 ? prev - 1 : prev + 1)}
+                    className={`w-full mb-2 py-1.5 px-3 text-xs font-['Jost',sans-serif] font-semibold rounded-lg transition-colors ${
+                      previousWeeksShown > 0
+                        ? 'bg-[#427d78] text-white hover:bg-[#365f5c]'
+                        : 'bg-[#e0f0ef] text-[#427d78] hover:bg-[#c5e3e0] border border-[#a3d1cc]'
+                    }`}
+                  >
+                    {previousWeeksShown > 0 ? `↑ Hide Past Week${previousWeeksShown > 1 ? ` (${previousWeeksShown})` : ''}` : '← Show Past Week'}
+                  </button>
                   
                   {/* Column Headers: Mon Tue Wed Thu Fri */}
                   <div className="grid grid-cols-5 gap-1 mb-1">
@@ -2284,27 +2279,42 @@ export default function LunchPage() {
                     </div>
                   ))}
                   
-                  {/* Bottom expand buttons */}
-                  <div className="flex gap-2 mt-1">
-                    {previousWeeksShown > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => setPreviousWeeksShown(prev => prev + 1)}
-                        className="py-1 px-2 text-xs font-['Jost',sans-serif] font-semibold rounded transition-colors border border-dashed border-gray-300 text-gray-400 hover:text-gray-600 hover:border-gray-400 hover:bg-gray-50"
-                      >
-                        ← More Past
-                      </button>
-                    )}
-                    {nextWeeksShown > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => setNextWeeksShown(prev => prev + 1)}
-                        className="ml-auto py-1 px-2 text-xs font-['Jost',sans-serif] font-semibold rounded transition-colors border border-dashed border-gray-300 text-gray-400 hover:text-gray-600 hover:border-gray-400 hover:bg-gray-50"
-                      >
-                        More Future →
-                      </button>
-                    )}
-                  </div>
+                  {/* Show Next Week button (bottom) */}
+                  <button
+                    type="button"
+                    onClick={() => setNextWeeksShown(prev => prev > 0 ? prev - 1 : prev + 1)}
+                    className={`w-full mt-1 py-1.5 px-3 text-xs font-['Jost',sans-serif] font-semibold rounded-lg transition-colors ${
+                      nextWeeksShown > 0
+                        ? 'bg-[#427d78] text-white hover:bg-[#365f5c]'
+                        : 'bg-[#e0f0ef] text-[#427d78] hover:bg-[#c5e3e0] border border-[#a3d1cc]'
+                    }`}
+                  >
+                    {nextWeeksShown > 0 ? `↓ Hide Future Week${nextWeeksShown > 1 ? ` (${nextWeeksShown})` : ''}` : 'Show Next Week →'}
+                  </button>
+
+                  {/* Extra expand buttons when already showing extra weeks */}
+                  {(previousWeeksShown > 1 || nextWeeksShown > 1) && (
+                    <div className="flex gap-2 mt-1">
+                      {previousWeeksShown > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setPreviousWeeksShown(prev => prev + 1)}
+                          className="py-1 px-2 text-xs font-['Jost',sans-serif] font-semibold rounded transition-colors bg-[#e0f0ef] text-[#427d78] hover:bg-[#c5e3e0]"
+                        >
+                          ← More Past
+                        </button>
+                      )}
+                      {nextWeeksShown > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setNextWeeksShown(prev => prev + 1)}
+                          className="ml-auto py-1 px-2 text-xs font-['Jost',sans-serif] font-semibold rounded transition-colors bg-[#e0f0ef] text-[#427d78] hover:bg-[#c5e3e0]"
+                        >
+                          More Future →
+                        </button>
+                      )}
+                    </div>
+                  )}
                   <p className="text-sm text-gray-500 mt-2 font-['Bitter',serif]">
                     💡 Click date to select. Use +/− to add more meals per day. <span className="text-blue-600">Blue Friday = frozen meal picked up Thursday.</span> <span className="text-amber-600">Amber = TODAY (click List to see reservations).</span>
                   </p>

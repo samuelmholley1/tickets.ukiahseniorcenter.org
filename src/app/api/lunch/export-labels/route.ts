@@ -304,6 +304,7 @@ export async function GET(request: NextRequest) {
       memberStatus: string;
       specialRequests: string[];
       inFridge: boolean;
+      mealNumber?: string; // e.g. "#1", "#2" — rendered in orange
     }
     
     const allLabels: LabelData[] = [];
@@ -345,6 +346,8 @@ export async function GET(request: NextRequest) {
       const notes = cleanNotes(res.Notes || '');
       const specialReqs = extractSpecialRequests(notes, res.Name);
       if (res.InFridge && !specialReqs.includes('In Fridge')) specialReqs.push('In Fridge');
+      const mealNumEntry = specialReqs.find(r => /^Meal #\d+$/.test(r));
+      const filteredReqs = specialReqs.filter(r => !/^Meal #\d+$/.test(r));
       
       allLabels.push({
         isCoyoteValley: false,
@@ -352,8 +355,9 @@ export async function GET(request: NextRequest) {
         name: res.Name,
         mealType: res['Meal Type'],
         memberStatus: res['Member Status'],
-        specialRequests: specialReqs,
+        specialRequests: filteredReqs,
         inFridge: res.InFridge || false,
+        mealNumber: mealNumEntry ? mealNumEntry.replace('Meal ', '') : undefined,
       });
     }
     
@@ -362,6 +366,8 @@ export async function GET(request: NextRequest) {
       const notes = cleanNotes(res.Notes || '');
       const specialReqs = extractSpecialRequests(notes, res.Name);
       if (res.InFridge && !specialReqs.includes('In Fridge')) specialReqs.push('In Fridge');
+      const mealNumEntry = specialReqs.find(r => /^Meal #\d+$/.test(r));
+      const filteredReqs = specialReqs.filter(r => !/^Meal #\d+$/.test(r));
       
       allLabels.push({
         isCoyoteValley: false,
@@ -369,8 +375,9 @@ export async function GET(request: NextRequest) {
         name: res.Name,
         mealType: res['Meal Type'],
         memberStatus: res['Member Status'],
-        specialRequests: specialReqs,
+        specialRequests: filteredReqs,
         inFridge: res.InFridge || false,
+        mealNumber: mealNumEntry ? mealNumEntry.replace('Meal ', '') : undefined,
       });
     }
 
@@ -415,6 +422,10 @@ export async function GET(request: NextRequest) {
       return minSize;
     }
 
+    // Cap regular-label name sizes at whatever "COYOTE VALLEY #1" renders at,
+    // so shorter names don't blow up larger than that reference label.
+    const NAME_MAX_SIZE = fitFontSize('COYOTE VALLEY #1', 'bold', 28);
+
     // Draw each label
     sortedLabels.forEach((label, index) => {
       if (index > 0 && index % labelsPerPage === 0) {
@@ -429,6 +440,15 @@ export async function GET(request: NextRequest) {
       const y = topMargin + row * labelHeight;
 
       // No border — clean labels for Avery 5160
+
+      // Meal number badge (orange) — top-right corner, rendered for every label that has one
+      if (label.mealNumber) {
+        const badgeSize = 11;
+        doc.setFontSize(badgeSize);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(210, 100, 0); // orange — unique color on labels
+        doc.text(label.mealNumber, x + labelWidth - px, y + py, { align: 'right', baseline: 'top' });
+      }
 
       if (label.isCoyoteValley) {
         // COYOTE VALLEY LABEL
@@ -512,7 +532,7 @@ export async function GET(request: NextRequest) {
             const rowH = maxH / 3;
 
             // Name (bold, black)
-            const nameSize = fitFontSize(label.name, 'bold', 22);
+            const nameSize = fitFontSize(label.name, 'bold', Math.min(NAME_MAX_SIZE, 22));
             doc.setFontSize(nameSize);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(0, 0, 0);
@@ -540,7 +560,7 @@ export async function GET(request: NextRequest) {
             const rowH = maxH / 2;
 
             // Name (bold, black)
-            const nameSize = fitFontSize(label.name, 'bold', 26);
+            const nameSize = fitFontSize(label.name, 'bold', NAME_MAX_SIZE);
             doc.setFontSize(nameSize);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(0, 0, 0);
@@ -564,7 +584,7 @@ export async function GET(request: NextRequest) {
             const rowH = maxH / 4;
 
             // Name (bold, black)
-            const nameSize = fitFontSize(label.name, 'bold', 22);
+            const nameSize = fitFontSize(label.name, 'bold', Math.min(NAME_MAX_SIZE, 22));
             doc.setFontSize(nameSize);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(0, 0, 0);
@@ -597,7 +617,7 @@ export async function GET(request: NextRequest) {
             const rowH = maxH / 3;
 
             // Name (bold, black)
-            const nameSize = fitFontSize(label.name, 'bold', 26);
+            const nameSize = fitFontSize(label.name, 'bold', NAME_MAX_SIZE);
             doc.setFontSize(nameSize);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(0, 0, 0);

@@ -6,6 +6,21 @@ const AIRTABLE_API_BASE = 'https://api.airtable.com/v0';
 
 import { titleCaseName } from '@/lib/nameUtils';
 
+// Expand compact joint name to full names for labels
+// "Mary & Don Snyder & Burgess" → "Mary Snyder & Don Burgess"
+function expandJointName(name: string): string {
+  if (!name || !name.includes(' & ')) return name;
+  const parts = name.split(/\s*&\s*/);
+  if (parts.length !== 3) return name;
+  const first1 = parts[0].trim();            // "Mary"
+  const midWords = parts[1].trim().split(/\s+/); // ["Don","Snyder"]
+  const last2 = parts[2].trim();             // "Burgess"
+  if (midWords.length < 2) return name;
+  const first2 = midWords[0];                // "Don"
+  const last1 = midWords.slice(1).join(' '); // "Snyder"
+  return `${first1} ${last1} & ${first2} ${last2}`;
+}
+
 /**
  * Avery 5160 Label Specifications (standard mailing labels)
  * Sheet: 8.5" x 11" letter
@@ -352,7 +367,7 @@ export async function GET(request: NextRequest) {
       allLabels.push({
         isCoyoteValley: false,
         isFrozenFriday: false,
-        name: res.Name,
+        name: expandJointName(res.Name),
         mealType: res['Meal Type'],
         memberStatus: res['Member Status'],
         specialRequests: filteredReqs,
@@ -372,7 +387,7 @@ export async function GET(request: NextRequest) {
       allLabels.push({
         isCoyoteValley: false,
         isFrozenFriday: true,
-        name: res.Name,
+        name: expandJointName(res.Name),
         mealType: res['Meal Type'],
         memberStatus: res['Member Status'],
         specialRequests: filteredReqs,

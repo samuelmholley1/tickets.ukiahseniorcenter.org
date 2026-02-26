@@ -13,10 +13,23 @@ import { titleCaseName } from '@/lib/nameUtils';
 // Convert "First Last" → "Last, First" for PDF list display
 // Joint: "Mary Snyder & Don Burgess" → "Snyder, Mary & Burgess, Don"
 // Joint same-last: "Mary & Don Smith" → "Smith, Mary & Don"
+// Compact joint: "Mary & Don Snyder & Burgess" → "Snyder, Mary & Burgess, Don"
 function toLastFirst(name: string): string {
   if (!name) return name;
   if (name.includes(' & ')) {
     const parts = name.split(/\s*&\s*/);
+    // "Mary & Don Snyder & Burgess" → 3 parts: ["Mary","Don Snyder","Burgess"]
+    // Means: First1 & First2-Last1 & Last2 → Person1=First1 Last1, Person2=First2 Last2
+    if (parts.length === 3) {
+      const first1 = parts[0].trim();
+      const midWords = parts[1].trim().split(/\s+/);
+      const last2 = parts[2].trim();
+      if (midWords.length >= 2) {
+        const first2 = midWords[0];
+        const last1 = midWords.slice(1).join(' ');
+        return `${last1}, ${first1} & ${last2}, ${first2}`;
+      }
+    }
     if (parts.length === 2) {
       const aParts = parts[0].trim().split(/\s+/);
       const bParts = parts[1].trim().split(/\s+/);

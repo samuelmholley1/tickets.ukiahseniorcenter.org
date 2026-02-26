@@ -3449,7 +3449,6 @@ export default function LunchPage() {
                       <th className="text-right p-2 pr-4 font-['Jost',sans-serif]">Amount</th>
                       <th className="text-left p-2 pl-4 font-['Jost',sans-serif] leading-tight">Payment<br/>Method</th>
                       <th className="text-center p-2 font-['Jost',sans-serif]">Staff</th>
-                      <th className="text-center p-2 font-['Jost',sans-serif]">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="font-['Bitter',serif]">
@@ -3484,9 +3483,6 @@ export default function LunchPage() {
                           ? `❌ CANCELLED • ${tx.date || ''} • ${tx.mealType}`
                           : `${tx.date || ''}${tx.isFrozenFriday ? ' 🧊' : ''} • ${tx.mealType} • ${tx.memberStatus}`;
                       
-                      // Show cancel/modify buttons only for active (non-cancelled) reservations
-                      const showActions = tx.type === 'reservation' && !tx.cancelled;
-                      
                       return (
                         <tr key={tx.id} className={`border-b ${typeBg}`}>
                           <td className="p-2 text-xs text-gray-600 whitespace-nowrap">{timeStr}</td>
@@ -3499,28 +3495,6 @@ export default function LunchPage() {
                           </td>
                           <td className="p-2 pl-4 text-xs">{isCancellation ? 'Refund' : tx.paymentMethod}</td>
                           <td className="p-2 text-center text-xs font-bold text-gray-600">{tx.staff}</td>
-                          <td className="p-2 text-center whitespace-nowrap">
-                            {showActions && (
-                              <div className="flex gap-1 justify-center">
-                                <button
-                                  type="button"
-                                  onClick={() => openModifyModal(tx)}
-                                  className="px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 rounded font-['Jost',sans-serif] font-bold transition-colors"
-                                  title="Modify reservation"
-                                >
-                                  ✏️
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => openCancelModal(tx)}
-                                  className="px-2 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded font-['Jost',sans-serif] font-bold transition-colors"
-                                  title="Cancel reservation"
-                                >
-                                  ✕
-                                </button>
-                              </div>
-                            )}
-                          </td>
                         </tr>
                       );
                     })}

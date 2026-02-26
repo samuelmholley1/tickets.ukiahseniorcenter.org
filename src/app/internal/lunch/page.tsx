@@ -694,15 +694,6 @@ export default function LunchPage() {
     }
   }, []);
 
-  // Open cancel modal for a reservation
-  const openCancelModal = useCallback((tx: LunchTransaction) => {
-    setCancelTarget(tx);
-    setCancelRefundMethod(tx.paymentMethod === 'Lunch Card' ? 'lunchCard' : 'forfeit');
-    setCancelStaff('');
-    setCancelError('');
-    setShowCancelModal(true);
-  }, []);
-
   // Execute cancellation
   const handleCancelReservation = useCallback(async () => {
     if (!cancelTarget) return;
@@ -733,16 +724,6 @@ export default function LunchPage() {
       setIsCancelling(false);
     }
   }, [cancelTarget, cancelRefundMethod, cancelStaff, fetchRecentTransactions]);
-
-  // Open modify modal for a reservation
-  const openModifyModal = useCallback((tx: LunchTransaction) => {
-    setModifyTarget(tx);
-    setModifyMealType(tx.mealType);
-    setModifyNotes(tx.notes || '');
-    setModifyStaff('');
-    setModifyError('');
-    setShowModifyModal(true);
-  }, []);
 
   // Execute modification
   const handleModifyReservation = useCallback(async () => {
@@ -1276,7 +1257,8 @@ export default function LunchPage() {
       if (!checkNumber) errors.push('Check number is required for cash/check split');
     }
     return errors;
-  }, [customer, staffInitials, transactionType, selectedDates, paymentMethod, selectedLunchCard, mealType, compCardNumbers, checkNumber, paymentComment, cashAmount, checkAmount, getTotalMeals, getTotalMealsFromDateMeals, getTotal]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customer, staffInitials, transactionType, selectedDates, paymentMethod, selectedLunchCard, mealType, compCardNumbers, checkNumber, paymentComment, cashAmount, checkAmount]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

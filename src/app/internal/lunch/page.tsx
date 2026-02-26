@@ -658,6 +658,10 @@ export default function LunchPage() {
   // Paginated transactions display
   const [visibleTxCount, setVisibleTxCount] = useState(50);
 
+  // Validation error modal
+  const [showValidationModal, setShowValidationModal] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
   // Cancel reservation modal state
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<LunchTransaction | null>(null);
@@ -1243,14 +1247,47 @@ export default function LunchPage() {
     }
   };
 
+  // Collect all form validation errors
+  const getValidationErrors = useCallback((): string[] => {
+    const errors: string[] = [];
+    if (!customer.firstName) errors.push('First name is required');
+    if (!customer.lastName) errors.push('Last name is required');
+    if (!staffInitials) errors.push('Staff/Volunteer initials are required');
+    if (transactionType === 'individual' && selectedDates.length === 0) errors.push('Select at least one meal date');
+    if (transactionType === 'lunchCard' && !customer.phone) errors.push('Phone number is required for lunch card purchases');
+    if (paymentMethod === 'lunchCard' && !selectedLunchCard) errors.push('Select a lunch card to deduct from');
+    if (paymentMethod === 'lunchCard' && selectedLunchCard && selectedLunchCard.remainingMeals < getTotalMeals()) {
+      errors.push(`Not enough meals on card (${selectedLunchCard.remainingMeals} remaining, need ${getTotalMeals()})`);
+    }
+    if (paymentMethod === 'lunchCard' && selectedLunchCard && !isCardTypeCompatible(selectedLunchCard.cardType, mealType)) {
+      errors.push(getCardTypeMismatchMessage(selectedLunchCard.cardType || '', mealType));
+    }
+    if (paymentMethod === 'compCard') {
+      const needed = transactionType === 'individual' ? getTotalMealsFromDateMeals() : 1;
+      const missing = compCardNumbers.slice(0, needed).filter(n => !n.trim()).length;
+      if (missing > 0) errors.push(`Enter all ${needed} comp card number(s)`);
+    }
+    if (paymentMethod === 'check' && !checkNumber) errors.push('Check number is required');
+    if (paymentMethod === 'staffOverride' && !paymentComment.trim()) errors.push('Payment comment is required for Staff Override');
+    if (paymentMethod === 'cashCheckSplit') {
+      const total = getTotal();
+      const splitSum = parseFloat(cashAmount || '0') + parseFloat(checkAmount || '0');
+      if (Math.abs(splitSum - total) >= 0.01) errors.push(`Cash + Check amounts must equal $${total.toFixed(2)} (currently $${splitSum.toFixed(2)})`);
+      if (!checkNumber) errors.push('Check number is required for cash/check split');
+    }
+    return errors;
+  }, [customer, staffInitials, transactionType, selectedDates, paymentMethod, selectedLunchCard, mealType, compCardNumbers, checkNumber, paymentComment, cashAmount, checkAmount, getTotalMeals, getTotalMealsFromDateMeals, getTotal]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Show confirmation before submitting
     if (!showConfirmation) {
-      // Validate staffOverride requires comment
-      if (paymentMethod === 'staffOverride' && !paymentComment.trim()) {
-        alert('Payment comment is required for Staff Override');
+      // Validate all fields — show modal with errors if incomplete
+      const errors = getValidationErrors();
+      if (errors.length > 0) {
+        setValidationErrors(errors);
+        setShowValidationModal(true);
         return;
       }
 
@@ -3344,26 +3381,11 @@ export default function LunchPage() {
               </div>
             )}
 
-            {/* Submit Button */}
+            {/* Submit Button — always clickable, validates on click */}
             {!showConfirmation && !submitResult && (
               <button
                 type="submit"
-                disabled={
-                  isSubmitting || 
-                  !customer.firstName || 
-                  !customer.lastName || 
-                  !staffInitials ||
-                  (transactionType === 'individual' && selectedDates.length === 0) ||
-                  (transactionType === 'lunchCard' && !customer.phone) ||
-                  (paymentMethod === 'lunchCard' && !selectedLunchCard) ||
-                  (paymentMethod === 'lunchCard' && !!selectedLunchCard && selectedLunchCard.remainingMeals < getTotalMeals()) ||
-                  (paymentMethod === 'lunchCard' && !!selectedLunchCard && !isCardTypeCompatible(selectedLunchCard.cardType, mealType)) ||
-                  (paymentMethod === 'compCard' && compCardNumbers.some((n, i) => i < (transactionType === 'individual' ? getTotalMealsFromDateMeals() : 1) && !n.trim())) ||
-                  (paymentMethod === 'check' && !checkNumber) ||
-                  (paymentMethod === 'staffOverride' && !paymentComment.trim()) ||
-                  (paymentMethod === 'cashCheckSplit' && Math.abs((parseFloat(cashAmount || '0') + parseFloat(checkAmount || '0')) - getTotal()) >= 0.01) ||
-                  (paymentMethod === 'cashCheckSplit' && !checkNumber)
-                }
+                disabled={isSubmitting}
                 className="w-full bg-[#427d78] hover:bg-[#5eb3a1] disabled:bg-gray-400 text-white font-['Jost',sans-serif] font-bold text-xl py-4 rounded-lg transition-colors shadow-lg"
               >
                 {isSubmitting 
@@ -4145,6 +4167,38 @@ export default function LunchPage() {
                   ✓ Apply Payment
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Validation Errors Modal */}
+      {showValidationModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setShowValidationModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="bg-gradient-to-r from-red-500 to-red-600 p-4 flex items-center gap-3">
+              <span className="text-3xl">⚠️</span>
+              <h3 className="font-['Jost',sans-serif] font-bold text-white text-xl">Fix Before Proceeding</h3>
+            </div>
+            <div className="p-5">
+              <p className="font-['Bitter',serif] text-gray-600 text-sm mb-3">
+                Please correct the following before submitting:
+              </p>
+              <ul className="space-y-2 mb-5">
+                {validationErrors.map((err, i) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <span className="text-red-500 mt-0.5 flex-shrink-0">✕</span>
+                    <span className="font-['Bitter',serif] text-gray-800 text-sm">{err}</span>
+                  </li>
+                ))}
+              </ul>
+              <button
+                type="button"
+                onClick={() => setShowValidationModal(false)}
+                className="w-full px-4 py-3 bg-[#427d78] hover:bg-[#5eb3a1] text-white font-['Jost',sans-serif] font-bold rounded-lg transition-colors shadow"
+              >
+                OK, Got It
+              </button>
             </div>
           </div>
         </div>

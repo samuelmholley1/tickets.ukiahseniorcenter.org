@@ -497,6 +497,9 @@ export async function DELETE(request: NextRequest) {
     if (!refundMethod) {
       return NextResponse.json({ error: 'Refund method is required' }, { status: 400 });
     }
+    if (!staff || !staff.trim()) {
+      return NextResponse.json({ error: 'Staff initials are required for cancellations' }, { status: 400 });
+    }
 
     // 1. Fetch the reservation to get details (payment method, lunch card link, amount)
     const fetchRes = await fetch(
@@ -633,6 +636,9 @@ export async function PATCH(request: NextRequest) {
 
     if (!reservationId) {
       return NextResponse.json({ error: 'reservationId is required' }, { status: 400 });
+    }
+    if (!body.staff || !(body.staff as string).trim()) {
+      return NextResponse.json({ error: 'Staff initials are required for modifications' }, { status: 400 });
     }
 
     // First fetch the current record to get existing values for price recalculation

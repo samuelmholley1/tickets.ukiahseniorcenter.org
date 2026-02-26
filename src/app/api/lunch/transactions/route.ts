@@ -10,7 +10,7 @@ interface AirtableRecord {
 
 export interface LunchTransaction {
   id: string;
-  type: 'lunch_card' | 'reservation';
+  type: 'lunch_card' | 'reservation' | 'cancellation';
   createdAt: string;
   name: string;
   date?: string; // Only for reservations
@@ -26,6 +26,10 @@ export interface LunchTransaction {
   // Reservation-specific
   notes?: string;
   isFrozenFriday?: boolean;
+  // Cancel/modify tracking
+  cancelled?: boolean;
+  cancelledAt?: string;
+  cancelledBy?: string;
 }
 
 export async function GET() {
@@ -56,8 +60,8 @@ export async function GET() {
       }
     );
 
-    // Fetch recent reservations (date on or after cutoff)
-    const reservationsFilter = encodeURIComponent(`AND(OR(IS_SAME({Date}, '${CUTOFF_DATE}', 'day'), IS_AFTER({Date}, '${CUTOFF_DATE}')), NOT({Cancelled}))`);
+    // Fetch recent reservations (date on or after cutoff) — include cancelled for audit trail
+    const reservationsFilter = encodeURIComponent(`OR(IS_SAME({Date}, '${CUTOFF_DATE}', 'day'), IS_AFTER({Date}, '${CUTOFF_DATE}'))`);
     const reservationsResponse = await fetch(
       `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${reservationsTableId}?maxRecords=200&filterByFormula=${reservationsFilter}&sort%5B0%5D%5Bfield%5D=Date&sort%5B0%5D%5Bdirection%5D=desc`,
       {
@@ -96,6 +100,11 @@ export async function GET() {
 
     // Process reservations
     for (const record of reservationsData.records as AirtableRecord[]) {
+      const isCancelled = !!(record.fields['Cancelled']);
+      const cancelledAt = (record.fields['Cancelled At'] as string) || '';
+      const cancelledBy = (record.fields['Cancelled By'] as string) || '';
+
+      // Always push the original reservation row
       transactions.push({
         id: record.id,
         type: 'reservation',
@@ -109,7 +118,30 @@ export async function GET() {
         staff: (record.fields['Staff'] as string) || '',
         notes: (record.fields['Notes'] as string) || '',
         isFrozenFriday: ((record.fields['Notes'] as string) || '').includes('FROZEN FRIDAY'),
+        cancelled: isCancelled,
+        cancelledAt: cancelledAt,
+        cancelledBy: cancelledBy,
       });
+
+      // For cancelled reservations, also emit a cancellation event row
+      if (isCancelled && cancelledAt) {
+        transactions.push({
+          id: `${record.id}-cancel`,
+          type: 'cancellation',
+          createdAt: cancelledAt,
+          name: (record.fields['Name'] as string) || 'Unknown',
+          date: (record.fields['Date'] as string) || '',
+          mealType: (record.fields['Meal Type'] as string) || '',
+          memberStatus: (record.fields['Member Status'] as string) || '',
+          amount: -((record.fields['Amount'] as number) || 0),
+          paymentMethod: (record.fields['Payment Method'] as string) || '',
+          staff: cancelledBy,
+          notes: '',
+          cancelled: true,
+          cancelledAt: cancelledAt,
+          cancelledBy: cancelledBy,
+        });
+      }
     }
 
     // Sort by createdAt descending (most recent first)

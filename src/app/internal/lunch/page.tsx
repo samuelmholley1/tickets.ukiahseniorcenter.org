@@ -266,7 +266,7 @@ interface Contact {
 // Transaction log entry from API
 interface LunchTransaction {
   id: string;
-  type: 'lunch_card' | 'reservation';
+  type: 'lunch_card' | 'reservation' | 'cancellation';
   createdAt: string;
   name: string;
   date?: string;
@@ -280,6 +280,9 @@ interface LunchTransaction {
   phone?: string;
   notes?: string;
   isFrozenFriday?: boolean;
+  cancelled?: boolean;
+  cancelledAt?: string;
+  cancelledBy?: string;
 }
 
 export default function LunchPage() {
@@ -655,6 +658,23 @@ export default function LunchPage() {
   // Paginated transactions display
   const [visibleTxCount, setVisibleTxCount] = useState(50);
 
+  // Cancel reservation modal state
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelTarget, setCancelTarget] = useState<LunchTransaction | null>(null);
+  const [cancelRefundMethod, setCancelRefundMethod] = useState<'cash' | 'lunchCard' | 'forfeit'>('forfeit');
+  const [cancelStaff, setCancelStaff] = useState('');
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState('');
+
+  // Modify reservation modal state
+  const [showModifyModal, setShowModifyModal] = useState(false);
+  const [modifyTarget, setModifyTarget] = useState<LunchTransaction | null>(null);
+  const [modifyMealType, setModifyMealType] = useState('');
+  const [modifyNotes, setModifyNotes] = useState('');
+  const [modifyStaff, setModifyStaff] = useState('');
+  const [isModifying, setIsModifying] = useState(false);
+  const [modifyError, setModifyError] = useState('');
+
   // Fetch recent transactions
   const fetchRecentTransactions = useCallback(async () => {
     try {
@@ -669,6 +689,94 @@ export default function LunchPage() {
       setIsLoadingTransactions(false);
     }
   }, []);
+
+  // Open cancel modal for a reservation
+  const openCancelModal = useCallback((tx: LunchTransaction) => {
+    setCancelTarget(tx);
+    setCancelRefundMethod(tx.paymentMethod === 'Lunch Card' ? 'lunchCard' : 'forfeit');
+    setCancelStaff('');
+    setCancelError('');
+    setShowCancelModal(true);
+  }, []);
+
+  // Execute cancellation
+  const handleCancelReservation = useCallback(async () => {
+    if (!cancelTarget) return;
+    if (!cancelStaff.trim()) {
+      setCancelError('Staff initials are required');
+      return;
+    }
+    setIsCancelling(true);
+    setCancelError('');
+    try {
+      const res = await fetch('/api/lunch/reservation', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reservationId: cancelTarget.id,
+          refundMethod: cancelRefundMethod,
+          staff: cancelStaff.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to cancel');
+      setShowCancelModal(false);
+      setCancelTarget(null);
+      fetchRecentTransactions();
+    } catch (error) {
+      setCancelError(error instanceof Error ? error.message : 'Failed to cancel');
+    } finally {
+      setIsCancelling(false);
+    }
+  }, [cancelTarget, cancelRefundMethod, cancelStaff, fetchRecentTransactions]);
+
+  // Open modify modal for a reservation
+  const openModifyModal = useCallback((tx: LunchTransaction) => {
+    setModifyTarget(tx);
+    setModifyMealType(tx.mealType);
+    setModifyNotes(tx.notes || '');
+    setModifyStaff('');
+    setModifyError('');
+    setShowModifyModal(true);
+  }, []);
+
+  // Execute modification
+  const handleModifyReservation = useCallback(async () => {
+    if (!modifyTarget) return;
+    if (!modifyStaff.trim()) {
+      setModifyError('Staff initials are required');
+      return;
+    }
+    // Check if anything actually changed
+    if (modifyMealType === modifyTarget.mealType && modifyNotes === (modifyTarget.notes || '')) {
+      setModifyError('No changes made');
+      return;
+    }
+    setIsModifying(true);
+    setModifyError('');
+    try {
+      const res = await fetch('/api/lunch/reservation', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reservationId: modifyTarget.id,
+          mealType: modifyMealType !== modifyTarget.mealType ? modifyMealType : undefined,
+          notes: modifyNotes !== (modifyTarget.notes || '') ? modifyNotes : undefined,
+          memberStatus: modifyTarget.memberStatus,
+          staff: modifyStaff.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to modify');
+      setShowModifyModal(false);
+      setModifyTarget(null);
+      fetchRecentTransactions();
+    } catch (error) {
+      setModifyError(error instanceof Error ? error.message : 'Failed to modify');
+    } finally {
+      setIsModifying(false);
+    }
+  }, [modifyTarget, modifyMealType, modifyNotes, modifyStaff, fetchRecentTransactions]);
 
   // Handle $1 container charge — show modal first
   const openContainerModal = useCallback(() => {
@@ -3319,6 +3427,7 @@ export default function LunchPage() {
                       <th className="text-right p-2 pr-4 font-['Jost',sans-serif]">Amount</th>
                       <th className="text-left p-2 pl-4 font-['Jost',sans-serif] leading-tight">Payment<br/>Method</th>
                       <th className="text-center p-2 font-['Jost',sans-serif]">Staff</th>
+                      <th className="text-center p-2 font-['Jost',sans-serif]">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="font-['Bitter',serif]">
@@ -3334,23 +3443,62 @@ export default function LunchPage() {
                       });
                       
                       const isCard = tx.type === 'lunch_card';
-                      const typeBg = isCard ? 'bg-green-50' : 'bg-amber-50';
+                      const isCancellation = tx.type === 'cancellation';
+                      const isCancelledOriginal = tx.type === 'reservation' && tx.cancelled;
+                      
+                      // Row background: green for cards, red tint for cancellation events, muted for cancelled originals, amber for active reservations
+                      const typeBg = isCard
+                        ? 'bg-green-50'
+                        : isCancellation
+                          ? 'bg-red-50'
+                          : isCancelledOriginal
+                            ? 'bg-gray-100 opacity-60'
+                            : 'bg-amber-50';
                       
                       // Details column content
                       const details = isCard
                         ? `${tx.cardType} • ${tx.memberStatus}`
-                        : `${tx.date || ''}${tx.isFrozenFriday ? ' 🧊' : ''} • ${tx.mealType} • ${tx.memberStatus}`;
+                        : isCancellation
+                          ? `❌ CANCELLED • ${tx.date || ''} • ${tx.mealType}`
+                          : `${tx.date || ''}${tx.isFrozenFriday ? ' 🧊' : ''} • ${tx.mealType} • ${tx.memberStatus}`;
+                      
+                      // Show cancel/modify buttons only for active (non-cancelled) reservations
+                      const showActions = tx.type === 'reservation' && !tx.cancelled;
                       
                       return (
                         <tr key={tx.id} className={`border-b ${typeBg}`}>
                           <td className="p-2 text-xs text-gray-600 whitespace-nowrap">{timeStr}</td>
-                          <td className="p-2 font-semibold">{tx.name}</td>
-                          <td className="p-2 text-gray-600 text-xs">{details}</td>
-                          <td className="p-2 pr-4 text-right font-bold">
-                            {tx.amount > 0 ? `$${tx.amount.toFixed(2)}` : ''}
+                          <td className={`p-2 font-semibold ${isCancelledOriginal ? 'line-through text-gray-400' : ''} ${isCancellation ? 'text-red-700' : ''}`}>{tx.name}</td>
+                          <td className={`p-2 text-xs ${isCancelledOriginal ? 'line-through text-gray-400' : isCancellation ? 'text-red-700 font-semibold' : 'text-gray-600'}`}>{details}</td>
+                          <td className={`p-2 pr-4 text-right font-bold ${isCancellation ? 'text-red-600' : ''}`}>
+                            {isCancellation
+                              ? (tx.amount !== 0 ? `-$${Math.abs(tx.amount).toFixed(2)}` : '')
+                              : (tx.amount > 0 ? `$${tx.amount.toFixed(2)}` : '')}
                           </td>
-                          <td className="p-2 pl-4 text-xs">{tx.paymentMethod}</td>
+                          <td className="p-2 pl-4 text-xs">{isCancellation ? 'Refund' : tx.paymentMethod}</td>
                           <td className="p-2 text-center text-xs font-bold text-gray-600">{tx.staff}</td>
+                          <td className="p-2 text-center whitespace-nowrap">
+                            {showActions && (
+                              <div className="flex gap-1 justify-center">
+                                <button
+                                  type="button"
+                                  onClick={() => openModifyModal(tx)}
+                                  className="px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 rounded font-['Jost',sans-serif] font-bold transition-colors"
+                                  title="Modify reservation"
+                                >
+                                  ✏️
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => openCancelModal(tx)}
+                                  className="px-2 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded font-['Jost',sans-serif] font-bold transition-colors"
+                                  title="Cancel reservation"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            )}
+                          </td>
                         </tr>
                       );
                     })}
@@ -4042,6 +4190,180 @@ export default function LunchPage() {
                   className="flex-1 px-4 py-3 bg-orange-500 hover:bg-orange-600 text-white font-['Jost',sans-serif] font-bold rounded-lg transition-all shadow"
                 >
                   ✓ Confirm
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Reservation Modal */}
+      {showCancelModal && cancelTarget && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+            <div className="bg-gradient-to-r from-red-600 to-red-500 p-5 flex items-center justify-center">
+              <h3 className="font-['Jost',sans-serif] font-bold text-white text-xl">
+                ✕ Cancel Reservation
+              </h3>
+            </div>
+            <div className="p-6">
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
+                <p className="font-['Bitter',serif] text-gray-800 font-semibold text-lg">{cancelTarget.name}</p>
+                <p className="font-['Bitter',serif] text-gray-600 text-sm">
+                  {cancelTarget.date} &bull; {cancelTarget.mealType} &bull; {cancelTarget.memberStatus}
+                </p>
+                <p className="font-['Jost',sans-serif] font-bold text-red-700 text-lg mt-1">
+                  ${cancelTarget.amount.toFixed(2)} &bull; {cancelTarget.paymentMethod}
+                </p>
+              </div>
+
+              <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">Refund Method *</label>
+              <div className="space-y-2 mb-4">
+                {cancelTarget.paymentMethod === 'Lunch Card' && (
+                  <label className="flex items-center gap-2 p-2 rounded-lg border cursor-pointer hover:bg-blue-50 transition-colors">
+                    <input
+                      type="radio"
+                      name="refundMethod"
+                      value="lunchCard"
+                      checked={cancelRefundMethod === 'lunchCard'}
+                      onChange={() => setCancelRefundMethod('lunchCard')}
+                    />
+                    <span className="font-['Bitter',serif] text-sm">🔄 Return meal to Lunch Card</span>
+                  </label>
+                )}
+                <label className="flex items-center gap-2 p-2 rounded-lg border cursor-pointer hover:bg-green-50 transition-colors">
+                  <input
+                    type="radio"
+                    name="refundMethod"
+                    value="cash"
+                    checked={cancelRefundMethod === 'cash'}
+                    onChange={() => setCancelRefundMethod('cash')}
+                  />
+                  <span className="font-['Bitter',serif] text-sm">💵 Cash refund (${cancelTarget.amount.toFixed(2)})</span>
+                </label>
+                <label className="flex items-center gap-2 p-2 rounded-lg border cursor-pointer hover:bg-gray-50 transition-colors">
+                  <input
+                    type="radio"
+                    name="refundMethod"
+                    value="forfeit"
+                    checked={cancelRefundMethod === 'forfeit'}
+                    onChange={() => setCancelRefundMethod('forfeit')}
+                  />
+                  <span className="font-['Bitter',serif] text-sm">🚫 No refund (forfeit)</span>
+                </label>
+              </div>
+
+              <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">Staff Initials *</label>
+              <input
+                type="text"
+                maxLength={4}
+                value={cancelStaff}
+                onChange={(e) => setCancelStaff(e.target.value.toUpperCase())}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-red-500 focus:outline-none font-['Bitter',serif] text-lg uppercase"
+                style={{ maxWidth: '120px' }}
+                placeholder="Initials"
+                autoFocus
+              />
+
+              {cancelError && (
+                <div className="mt-3 p-2 bg-red-100 text-red-700 rounded-lg text-sm font-['Bitter',serif]">
+                  {cancelError}
+                </div>
+              )}
+
+              <div className="flex gap-3 mt-5">
+                <button
+                  type="button"
+                  onClick={() => { setShowCancelModal(false); setCancelTarget(null); }}
+                  className="flex-1 px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-['Jost',sans-serif] font-bold rounded-lg transition-all"
+                  disabled={isCancelling}
+                >
+                  Go Back
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancelReservation}
+                  disabled={isCancelling || !cancelStaff.trim()}
+                  className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-['Jost',sans-serif] font-bold rounded-lg transition-all shadow"
+                >
+                  {isCancelling ? '⏳ Cancelling...' : '✕ Cancel Reservation'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modify Reservation Modal */}
+      {showModifyModal && modifyTarget && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-500 p-5 flex items-center justify-center">
+              <h3 className="font-['Jost',sans-serif] font-bold text-white text-xl">
+                ✏️ Modify Reservation
+              </h3>
+            </div>
+            <div className="p-6">
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+                <p className="font-['Bitter',serif] text-gray-800 font-semibold text-lg">{modifyTarget.name}</p>
+                <p className="font-['Bitter',serif] text-gray-600 text-sm">
+                  {modifyTarget.date} &bull; {modifyTarget.paymentMethod}
+                </p>
+              </div>
+
+              <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">Meal Type</label>
+              <select
+                value={modifyMealType}
+                onChange={(e) => setModifyMealType(e.target.value)}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none font-['Bitter',serif] text-lg mb-4"
+              >
+                <option value="Dine In">Dine In</option>
+                <option value="To Go">To Go</option>
+                <option value="Delivery">Delivery</option>
+              </select>
+
+              <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">Notes / Special Request</label>
+              <input
+                type="text"
+                value={modifyNotes}
+                onChange={(e) => setModifyNotes(e.target.value)}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none font-['Bitter',serif] mb-4"
+                placeholder="e.g. No onions, extra sauce..."
+              />
+
+              <label className="block font-['Bitter',serif] text-gray-700 font-medium mb-2">Staff Initials *</label>
+              <input
+                type="text"
+                maxLength={4}
+                value={modifyStaff}
+                onChange={(e) => setModifyStaff(e.target.value.toUpperCase())}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none font-['Bitter',serif] text-lg uppercase"
+                style={{ maxWidth: '120px' }}
+                placeholder="Initials"
+              />
+
+              {modifyError && (
+                <div className="mt-3 p-2 bg-red-100 text-red-700 rounded-lg text-sm font-['Bitter',serif]">
+                  {modifyError}
+                </div>
+              )}
+
+              <div className="flex gap-3 mt-5">
+                <button
+                  type="button"
+                  onClick={() => { setShowModifyModal(false); setModifyTarget(null); }}
+                  className="flex-1 px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-['Jost',sans-serif] font-bold rounded-lg transition-all"
+                  disabled={isModifying}
+                >
+                  Go Back
+                </button>
+                <button
+                  type="button"
+                  onClick={handleModifyReservation}
+                  disabled={isModifying || !modifyStaff.trim()}
+                  className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-['Jost',sans-serif] font-bold rounded-lg transition-all shadow"
+                >
+                  {isModifying ? '⏳ Saving...' : '✓ Save Changes'}
                 </button>
               </div>
             </div>

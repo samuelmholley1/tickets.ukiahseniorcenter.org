@@ -779,7 +779,15 @@ export async function GET(request: NextRequest) {
     };
 
     const leftBottom = drawDietaryColumn(colLeft, `Dine In: ${dineInCount}`, [66, 125, 120], dineInDiet);
-    const rightBottom = drawDietaryColumn(colRight, `Pick Up & Delivery: ${pickupDeliveryTotal}`, [230, 126, 34], pickupDiet, `(${toGoCount} Pick Up / ${deliveryCount} Delivery)`);
+    // On Thursday: separate hot and frozen counts for Pick Up & Delivery
+    let rightSubNote: string;
+    if (frozenCount > 0) {
+      const hotPickupDelivery = pickupDeliveryTotal - frozenCount;
+      rightSubNote = `(${hotPickupDelivery} Hot / ${frozenCount} Frozen)  •  (${toGoCount} Pick Up / ${deliveryCount} Delivery)`;
+    } else {
+      rightSubNote = `(${toGoCount} Pick Up / ${deliveryCount} Delivery)`;
+    }
+    const rightBottom = drawDietaryColumn(colRight, `Pick Up & Delivery: ${pickupDeliveryTotal}`, [230, 126, 34], pickupDiet, rightSubNote);
     y = Math.max(leftBottom, rightBottom) + 0.18;
 
     // CV note line — always shown

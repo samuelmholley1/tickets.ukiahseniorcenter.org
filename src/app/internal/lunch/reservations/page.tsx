@@ -30,8 +30,9 @@ export default function LunchList() {
   const [lookupSearch, setLookupSearch] = useState('');
   const [lookupResults, setLookupResults] = useState<Reservation[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [showLookupPanel, setShowLookupPanel] = useState(false);
+  const [showLookupModal, setShowLookupModal] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showPastReservations, setShowPastReservations] = useState(false);
   
   // Bulk modification state
   const [showBulkModal, setShowBulkModal] = useState(false);
@@ -152,15 +153,15 @@ export default function LunchList() {
   };
 
   // Customer lookup handlers
-  const handleLookup = async () => {
+  const handleLookup = async (includePast?: boolean) => {
     if (!lookupSearch.trim()) return;
     setIsSearching(true);
-    setShowLookupPanel(true);
     setSelectedIds(new Set());
     setBulkResults({ success: 0, failed: 0, messages: [] });
     
+    const futureOnly = includePast !== undefined ? !includePast : !showPastReservations;
     try {
-      const res = await fetch(`/api/lunch/reservation?search=${encodeURIComponent(lookupSearch.trim())}&futureOnly=true`);
+      const res = await fetch(`/api/lunch/reservation?search=${encodeURIComponent(lookupSearch.trim())}${futureOnly ? '&futureOnly=true' : ''}`);
       const data = await res.json();
       if (res.ok && data.success) {
         setLookupResults(data.reservations || []);
@@ -472,121 +473,14 @@ export default function LunchList() {
             </div>
           </div>
 
-          {/* Customer Lookup Panel */}
-          <div className="bg-teal-50 rounded-xl p-6 mb-8 border border-teal-200">
-            <div className="flex flex-wrap gap-4 items-center justify-between mb-4">
-              <div>
-                <h3 className="font-bold text-teal-900 text-lg">Customer Lookup</h3>
-                <p className="text-teal-700 text-sm">Search by last name to view and manage all future reservations</p>
-              </div>
-              <div className="flex gap-2 items-center">
-                <input
-                  type="text"
-                  value={lookupSearch}
-                  onChange={(e) => setLookupSearch(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleLookup()}
-                  placeholder="Last name..."
-                  className="px-4 py-2 border-2 border-teal-300 rounded-lg focus:outline-none focus:border-teal-500 text-gray-800"
-                />
-                <button
-                  onClick={handleLookup}
-                  disabled={isSearching || !lookupSearch.trim()}
-                  className="px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:bg-teal-400 text-white rounded-lg font-bold shadow-md flex items-center gap-2"
-                >
-                  {isSearching ? '...' : '🔍 Look Up'}
-                </button>
-                {showLookupPanel && (
-                  <button
-                    onClick={() => { setShowLookupPanel(false); setLookupResults([]); setSelectedIds(new Set()); }}
-                    className="px-3 py-2 text-teal-600 hover:text-teal-800 font-bold"
-                  >
-                    ✕ Close
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Lookup Results */}
-            {showLookupPanel && (
-              <div className="bg-white rounded-lg border border-teal-200 overflow-hidden">
-                {lookupResults.length === 0 ? (
-                  <div className="p-8 text-center text-gray-500">
-                    {isSearching ? 'Searching...' : `No future reservations found for "${lookupSearch}"`}
-                  </div>
-                ) : (
-                  <>
-                    <div className="bg-teal-100 px-4 py-2 flex justify-between items-center">
-                      <span className="font-bold text-teal-900">
-                        {lookupResults.length} reservation{lookupResults.length !== 1 ? 's' : ''} found
-                      </span>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={selectedIds.size === lookupResults.length ? deselectAll : selectAll}
-                          className="text-sm px-3 py-1 bg-teal-200 hover:bg-teal-300 text-teal-800 rounded font-bold"
-                        >
-                          {selectedIds.size === lookupResults.length ? 'Deselect All' : 'Select All'}
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <div className="divide-y divide-gray-100 max-h-80 overflow-y-auto">
-                      {lookupResults.map(r => {
-                        const typeColors = { 'Dine In': 'blue', 'To Go': 'green', 'Delivery': 'yellow' } as const;
-                        const color = typeColors[r['Meal Type'] as keyof typeof typeColors] || 'gray';
-                        return (
-                          <label key={r.id} className="flex items-center gap-4 p-3 hover:bg-gray-50 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={selectedIds.has(r.id)}
-                              onChange={() => toggleSelection(r.id)}
-                              className="w-5 h-5 rounded border-2 border-teal-400 text-teal-600"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-3">
-                                <span className="font-bold text-gray-900">{r.Name}</span>
-                                <span className={`text-xs px-2 py-0.5 rounded font-bold bg-${color}-100 text-${color}-800`}>
-                                  {r['Meal Type']}
-                                </span>
-                                <span className="text-xs text-gray-500">{r['Payment Method']}</span>
-                              </div>
-                              <div className="text-sm text-gray-600 mt-0.5">
-                                📅 {r.Date ? new Date(r.Date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : 'No date'}
-                                {r.Notes && <span className="ml-2 italic text-gray-500">&quot;{r.Notes}&quot;</span>}
-                              </div>
-                            </div>
-                          </label>
-                        );
-                      })}
-                    </div>
-
-                    {/* Bulk Action Buttons */}
-                    {selectedIds.size > 0 && (
-                      <div className="bg-gray-50 px-4 py-3 flex gap-2 items-center border-t border-gray-200">
-                        <span className="text-sm text-gray-600 mr-2">{selectedIds.size} selected:</span>
-                        <button
-                          onClick={() => openBulkModal('changeDate')}
-                          className="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded font-bold text-sm"
-                        >
-                          📅 Change Date
-                        </button>
-                        <button
-                          onClick={() => openBulkModal('changeMealType')}
-                          className="px-3 py-1.5 bg-green-100 hover:bg-green-200 text-green-800 rounded font-bold text-sm"
-                        >
-                          🍽️ Change Meal Type
-                        </button>
-                        <button
-                          onClick={() => openBulkModal('cancel')}
-                          className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-800 rounded font-bold text-sm"
-                        >
-                          ✕ Cancel Selected
-                        </button>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
+          {/* Customer Lookup Button */}
+          <div className="flex justify-center mb-8">
+            <button
+              onClick={() => setShowLookupModal(true)}
+              className="px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-bold shadow-lg flex items-center gap-2 text-lg"
+            >
+              🔍 Customer Lookup
+            </button>
           </div>
 
           {isLoading ? (
@@ -1347,6 +1241,157 @@ export default function LunchList() {
                       {bulkAction === 'cancel' ? 'Cancel Reservations' : 'Apply Changes'}
                     </button>
                   </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Customer Lookup Modal */}
+      {showLookupModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="bg-teal-600 px-6 py-4 flex items-center justify-between shrink-0">
+              <h2 className="text-white font-bold text-xl font-['Jost',sans-serif]">🔍 Customer Lookup</h2>
+              <button
+                onClick={() => { setShowLookupModal(false); setLookupResults([]); setSelectedIds(new Set()); setLookupSearch(''); setShowPastReservations(false); }}
+                className="text-white/80 hover:text-white text-2xl font-bold leading-none"
+              >&times;</button>
+            </div>
+
+            <div className="p-6 flex flex-col overflow-hidden">
+              {/* Search input */}
+              <div className="flex gap-2 items-center mb-4">
+                <input
+                  type="text"
+                  value={lookupSearch}
+                  onChange={(e) => setLookupSearch(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleLookup()}
+                  placeholder="Search by last name..."
+                  className="flex-1 px-4 py-2.5 border-2 border-teal-300 rounded-lg focus:outline-none focus:border-teal-500 text-gray-800 text-lg"
+                  autoFocus
+                />
+                <button
+                  onClick={() => handleLookup()}
+                  disabled={isSearching || !lookupSearch.trim()}
+                  className="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 disabled:bg-teal-400 text-white rounded-lg font-bold shadow-md"
+                >
+                  {isSearching ? '...' : 'Search'}
+                </button>
+              </div>
+
+              {/* Results area */}
+              {lookupResults.length > 0 || isSearching ? (
+                <div className="flex flex-col overflow-hidden flex-1">
+                  {/* Results header with count + controls */}
+                  <div className="bg-teal-50 px-4 py-2 rounded-t-lg border border-teal-200 border-b-0 flex justify-between items-center shrink-0">
+                    <span className="font-bold text-teal-900">
+                      {isSearching ? 'Searching...' : `${lookupResults.length} reservation${lookupResults.length !== 1 ? 's' : ''} found`}
+                    </span>
+                    <div className="flex gap-2 items-center">
+                      <button
+                        onClick={() => {
+                          const next = !showPastReservations;
+                          setShowPastReservations(next);
+                          handleLookup(!next);
+                        }}
+                        className={`text-sm px-3 py-1 rounded font-bold transition-all ${
+                          showPastReservations
+                            ? 'bg-amber-200 text-amber-800 hover:bg-amber-300'
+                            : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                        }`}
+                      >
+                        {showPastReservations ? '📋 Showing All' : '📋 View Past'}
+                      </button>
+                      {lookupResults.length > 0 && (
+                        <button
+                          onClick={selectedIds.size === lookupResults.length ? deselectAll : selectAll}
+                          className="text-sm px-3 py-1 bg-teal-200 hover:bg-teal-300 text-teal-800 rounded font-bold"
+                        >
+                          {selectedIds.size === lookupResults.length ? 'Deselect All' : 'Select All'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Scrollable results list */}
+                  <div className="border border-teal-200 rounded-b-lg overflow-y-auto max-h-[50vh] divide-y divide-gray-100">
+                    {lookupResults.map(r => {
+                      const isPast = r.Date && new Date(r.Date + 'T12:00:00') < new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }).split(',')[0] + 'T00:00:00');
+                      const typeColor = r['Meal Type'] === 'Dine In' ? 'blue' : r['Meal Type'] === 'To Go' ? 'green' : 'yellow';
+                      const typeBg = { blue: 'bg-blue-100 text-blue-800', green: 'bg-green-100 text-green-800', yellow: 'bg-yellow-100 text-yellow-800' }[typeColor] || 'bg-gray-100 text-gray-700';
+                      return (
+                        <label key={r.id} className={`flex items-center gap-4 p-3 hover:bg-gray-50 cursor-pointer ${isPast ? 'opacity-60' : ''}`}>
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(r.id)}
+                            onChange={() => toggleSelection(r.id)}
+                            className="w-5 h-5 rounded border-2 border-teal-400 text-teal-600 shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-3 flex-wrap">
+                              <span className="font-bold text-gray-900">{r.Name}</span>
+                              <span className={`text-xs px-2 py-0.5 rounded font-bold ${typeBg}`}>
+                                {r['Meal Type']}
+                              </span>
+                              <span className="text-xs text-gray-500">{r['Payment Method']}</span>
+                              {isPast && <span className="text-xs px-2 py-0.5 rounded bg-gray-200 text-gray-600 font-bold">PAST</span>}
+                            </div>
+                            <div className="text-sm text-gray-600 mt-0.5">
+                              📅 {r.Date ? new Date(r.Date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : 'No date'}
+                              {r.Notes && <span className="ml-2 italic text-gray-500">&quot;{r.Notes}&quot;</span>}
+                              {r.Amount != null && r.Amount > 0 && <span className="ml-2 font-bold text-green-700">${r.Amount}</span>}
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+
+                  {/* Bulk Action Buttons */}
+                  {selectedIds.size > 0 && (
+                    <div className="bg-gray-50 px-4 py-3 flex gap-2 items-center border border-gray-200 rounded-lg mt-3 flex-wrap shrink-0">
+                      <span className="text-sm text-gray-600 mr-2 font-bold">{selectedIds.size} selected:</span>
+                      <button
+                        onClick={() => openBulkModal('changeDate')}
+                        className="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded font-bold text-sm"
+                      >
+                        📅 Change Date
+                      </button>
+                      <button
+                        onClick={() => openBulkModal('changeMealType')}
+                        className="px-3 py-1.5 bg-green-100 hover:bg-green-200 text-green-800 rounded font-bold text-sm"
+                      >
+                        🍽️ Change Meal Type
+                      </button>
+                      <button
+                        onClick={() => openBulkModal('cancel')}
+                        className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-800 rounded font-bold text-sm"
+                      >
+                        ✕ Cancel Selected
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : lookupSearch.trim() && !isSearching ? (
+                <div className="text-center py-8 text-gray-500">
+                  No {showPastReservations ? '' : 'future '}reservations found for &quot;{lookupSearch}&quot;
+                  {!showPastReservations && (
+                    <div className="mt-3">
+                      <button
+                        onClick={() => { setShowPastReservations(true); handleLookup(true); }}
+                        className="text-sm px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg font-bold"
+                      >
+                        📋 Try including past reservations
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-400">
+                  Enter a last name and press Search
                 </div>
               )}
             </div>

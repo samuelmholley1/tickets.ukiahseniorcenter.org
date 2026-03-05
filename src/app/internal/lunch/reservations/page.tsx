@@ -9,6 +9,7 @@ import { SiteFooterContent } from '@/components/SiteFooterContent';
 interface Reservation {
   id: string;
   Name: string;
+  Date?: string;
   'Meal Type': string;
   'Member Status': string;
   'Payment Method': string;
@@ -24,6 +25,21 @@ export default function LunchList() {
   const [selectedRefund, setSelectedRefund] = useState<'cash' | 'lunchCard' | 'forfeit' | null>(null);
   const [cancelResult, setCancelResult] = useState<string>('');
   const [cancelError, setCancelError] = useState<string>('');
+
+  // Customer lookup state
+  const [lookupSearch, setLookupSearch] = useState('');
+  const [lookupResults, setLookupResults] = useState<Reservation[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showLookupPanel, setShowLookupPanel] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  
+  // Bulk modification state
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [bulkAction, setBulkAction] = useState<'cancel' | 'changeDate' | 'changeMealType' | null>(null);
+  const [bulkNewDate, setBulkNewDate] = useState('');
+  const [bulkNewMealType, setBulkNewMealType] = useState('');
+  const [bulkProcessing, setBulkProcessing] = useState(false);
+  const [bulkResults, setBulkResults] = useState<{ success: number; failed: number; messages: string[] }>({ success: 0, failed: 0, messages: [] });
 
   // Modify modal state
   const [modifyTarget, setModifyTarget] = useState<Reservation | null>(null);
@@ -133,6 +149,134 @@ export default function LunchList() {
     setCancelTarget(null);
     setCancelStep('choose');
     setSelectedRefund(null);
+  };
+
+  // Customer lookup handlers
+  const handleLookup = async () => {
+    if (!lookupSearch.trim()) return;
+    setIsSearching(true);
+    setShowLookupPanel(true);
+    setSelectedIds(new Set());
+    setBulkResults({ success: 0, failed: 0, messages: [] });
+    
+    try {
+      const res = await fetch(`/api/lunch/reservation?search=${encodeURIComponent(lookupSearch.trim())}&futureOnly=true`);
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setLookupResults(data.reservations || []);
+      } else {
+        setLookupResults([]);
+      }
+    } catch {
+      setLookupResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const toggleSelection = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    setSelectedIds(new Set(lookupResults.map(r => r.id)));
+  };
+
+  const deselectAll = () => {
+    setSelectedIds(new Set());
+  };
+
+  const openBulkModal = (action: 'cancel' | 'changeDate' | 'changeMealType') => {
+    setBulkAction(action);
+    setBulkNewDate(currentDate);
+    setBulkNewMealType('Dine In');
+    setShowBulkModal(true);
+    setBulkResults({ success: 0, failed: 0, messages: [] });
+  };
+
+  const closeBulkModal = () => {
+    setShowBulkModal(false);
+    setBulkAction(null);
+    setBulkProcessing(false);
+  };
+
+  const executeBulkAction = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkProcessing(true);
+    const results = { success: 0, failed: 0, messages: [] as string[] };
+
+    for (const id of selectedIds) {
+      const reservation = lookupResults.find(r => r.id === id);
+      if (!reservation) continue;
+
+      try {
+        if (bulkAction === 'cancel') {
+          const res = await fetch('/api/lunch/reservation', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              reservationId: id,
+              refundMethod: 'forfeit',
+              staff: 'STAFF',
+            }),
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            results.success++;
+            results.messages.push(`✓ ${reservation.Name} (${reservation.Date}) cancelled`);
+          } else {
+            results.failed++;
+            results.messages.push(`✗ ${reservation.Name} (${reservation.Date}): ${data.error || 'Failed'}`);
+          }
+        } else if (bulkAction === 'changeDate' || bulkAction === 'changeMealType') {
+          const payload: Record<string, unknown> = {
+            reservationId: id,
+            memberStatus: reservation['Member Status'],
+            staff: 'STAFF',
+          };
+          if (bulkAction === 'changeDate') payload.date = bulkNewDate;
+          if (bulkAction === 'changeMealType') payload.mealType = bulkNewMealType;
+
+          const res = await fetch('/api/lunch/reservation', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            results.success++;
+            const changeDesc = bulkAction === 'changeDate' ? `date→${bulkNewDate}` : `type→${bulkNewMealType}`;
+            results.messages.push(`✓ ${reservation.Name} (${reservation.Date}) ${changeDesc}`);
+          } else {
+            results.failed++;
+            results.messages.push(`✗ ${reservation.Name} (${reservation.Date}): ${data.error || 'Failed'}`);
+          }
+        }
+      } catch {
+        results.failed++;
+        results.messages.push(`✗ ${reservation.Name}: Network error`);
+      }
+    }
+
+    setBulkResults(results);
+    setBulkProcessing(false);
+
+    // Refresh lookup after bulk operations
+    if (results.success > 0) {
+      handleLookup();
+      // Force refresh the daily list by toggling date momentarily
+      const saved = currentDate;
+      setCurrentDate('');
+      setTimeout(() => setCurrentDate(saved), 0);
+    }
   };
 
   const openModifyModal = (reservation: Reservation) => {
@@ -326,6 +470,123 @@ export default function LunchList() {
                 🏷️ Download Labels
               </a>
             </div>
+          </div>
+
+          {/* Customer Lookup Panel */}
+          <div className="bg-teal-50 rounded-xl p-6 mb-8 border border-teal-200">
+            <div className="flex flex-wrap gap-4 items-center justify-between mb-4">
+              <div>
+                <h3 className="font-bold text-teal-900 text-lg">Customer Lookup</h3>
+                <p className="text-teal-700 text-sm">Search by last name to view and manage all future reservations</p>
+              </div>
+              <div className="flex gap-2 items-center">
+                <input
+                  type="text"
+                  value={lookupSearch}
+                  onChange={(e) => setLookupSearch(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleLookup()}
+                  placeholder="Last name..."
+                  className="px-4 py-2 border-2 border-teal-300 rounded-lg focus:outline-none focus:border-teal-500 text-gray-800"
+                />
+                <button
+                  onClick={handleLookup}
+                  disabled={isSearching || !lookupSearch.trim()}
+                  className="px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:bg-teal-400 text-white rounded-lg font-bold shadow-md flex items-center gap-2"
+                >
+                  {isSearching ? '...' : '🔍 Look Up'}
+                </button>
+                {showLookupPanel && (
+                  <button
+                    onClick={() => { setShowLookupPanel(false); setLookupResults([]); setSelectedIds(new Set()); }}
+                    className="px-3 py-2 text-teal-600 hover:text-teal-800 font-bold"
+                  >
+                    ✕ Close
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Lookup Results */}
+            {showLookupPanel && (
+              <div className="bg-white rounded-lg border border-teal-200 overflow-hidden">
+                {lookupResults.length === 0 ? (
+                  <div className="p-8 text-center text-gray-500">
+                    {isSearching ? 'Searching...' : `No future reservations found for "${lookupSearch}"`}
+                  </div>
+                ) : (
+                  <>
+                    <div className="bg-teal-100 px-4 py-2 flex justify-between items-center">
+                      <span className="font-bold text-teal-900">
+                        {lookupResults.length} reservation{lookupResults.length !== 1 ? 's' : ''} found
+                      </span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={selectedIds.size === lookupResults.length ? deselectAll : selectAll}
+                          className="text-sm px-3 py-1 bg-teal-200 hover:bg-teal-300 text-teal-800 rounded font-bold"
+                        >
+                          {selectedIds.size === lookupResults.length ? 'Deselect All' : 'Select All'}
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div className="divide-y divide-gray-100 max-h-80 overflow-y-auto">
+                      {lookupResults.map(r => {
+                        const typeColors = { 'Dine In': 'blue', 'To Go': 'green', 'Delivery': 'yellow' } as const;
+                        const color = typeColors[r['Meal Type'] as keyof typeof typeColors] || 'gray';
+                        return (
+                          <label key={r.id} className="flex items-center gap-4 p-3 hover:bg-gray-50 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.has(r.id)}
+                              onChange={() => toggleSelection(r.id)}
+                              className="w-5 h-5 rounded border-2 border-teal-400 text-teal-600"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-3">
+                                <span className="font-bold text-gray-900">{r.Name}</span>
+                                <span className={`text-xs px-2 py-0.5 rounded font-bold bg-${color}-100 text-${color}-800`}>
+                                  {r['Meal Type']}
+                                </span>
+                                <span className="text-xs text-gray-500">{r['Payment Method']}</span>
+                              </div>
+                              <div className="text-sm text-gray-600 mt-0.5">
+                                📅 {r.Date ? new Date(r.Date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : 'No date'}
+                                {r.Notes && <span className="ml-2 italic text-gray-500">&quot;{r.Notes}&quot;</span>}
+                              </div>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+
+                    {/* Bulk Action Buttons */}
+                    {selectedIds.size > 0 && (
+                      <div className="bg-gray-50 px-4 py-3 flex gap-2 items-center border-t border-gray-200">
+                        <span className="text-sm text-gray-600 mr-2">{selectedIds.size} selected:</span>
+                        <button
+                          onClick={() => openBulkModal('changeDate')}
+                          className="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded font-bold text-sm"
+                        >
+                          📅 Change Date
+                        </button>
+                        <button
+                          onClick={() => openBulkModal('changeMealType')}
+                          className="px-3 py-1.5 bg-green-100 hover:bg-green-200 text-green-800 rounded font-bold text-sm"
+                        >
+                          🍽️ Change Meal Type
+                        </button>
+                        <button
+                          onClick={() => openBulkModal('cancel')}
+                          className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-800 rounded font-bold text-sm"
+                        >
+                          ✕ Cancel Selected
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           {isLoading ? (
@@ -968,6 +1229,122 @@ export default function LunchList() {
                       className="flex-1 px-4 py-3 bg-red-100 hover:bg-red-200 text-red-700 font-bold rounded-xl transition-all"
                     >
                       Close
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Action Modal */}
+      {showBulkModal && bulkAction && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+            {/* Header */}
+            <div className={`px-6 py-4 flex items-center justify-between ${
+              bulkAction === 'cancel' ? 'bg-red-600' : 
+              bulkAction === 'changeDate' ? 'bg-blue-600' : 'bg-green-600'
+            }`}>
+              <h2 className="text-white font-bold text-xl font-['Jost',sans-serif]">
+                {bulkAction === 'cancel' && `Cancel ${selectedIds.size} Reservation${selectedIds.size !== 1 ? 's' : ''}`}
+                {bulkAction === 'changeDate' && `Change Date for ${selectedIds.size} Reservation${selectedIds.size !== 1 ? 's' : ''}`}
+                {bulkAction === 'changeMealType' && `Change Meal Type for ${selectedIds.size} Reservation${selectedIds.size !== 1 ? 's' : ''}`}
+              </h2>
+              <button onClick={closeBulkModal} className="text-white/80 hover:text-white text-2xl font-bold leading-none">&times;</button>
+            </div>
+
+            <div className="p-6">
+              {bulkResults.messages.length > 0 ? (
+                /* Results view */
+                <div>
+                  <div className="mb-4 text-center">
+                    <div className="text-lg font-bold text-gray-800">
+                      {bulkResults.success > 0 && <span className="text-green-600">{bulkResults.success} succeeded</span>}
+                      {bulkResults.success > 0 && bulkResults.failed > 0 && ', '}
+                      {bulkResults.failed > 0 && <span className="text-red-600">{bulkResults.failed} failed</span>}
+                    </div>
+                  </div>
+                  <div className="max-h-60 overflow-y-auto bg-gray-50 rounded-lg p-3 text-sm space-y-1 mb-4">
+                    {bulkResults.messages.map((msg, i) => (
+                      <div key={i} className={msg.startsWith('✓') ? 'text-green-700' : 'text-red-600'}>
+                        {msg}
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    onClick={closeBulkModal}
+                    className="w-full px-4 py-3 bg-[#427d78] hover:bg-[#356560] text-white font-bold rounded-xl"
+                  >
+                    Done
+                  </button>
+                </div>
+              ) : bulkProcessing ? (
+                /* Processing view */
+                <div className="text-center py-6">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#427d78] mx-auto mb-3"></div>
+                  <p className="text-gray-600 font-medium">Processing {selectedIds.size} reservation{selectedIds.size !== 1 ? 's' : ''}...</p>
+                </div>
+              ) : (
+                /* Confirmation view */
+                <div>
+                  {bulkAction === 'cancel' && (
+                    <>
+                      <p className="text-gray-700 mb-4">
+                        This will cancel {selectedIds.size} reservation{selectedIds.size !== 1 ? 's' : ''} without refund (forfeit).
+                      </p>
+                      <p className="text-sm text-gray-500 mb-6">
+                        For refunds, cancel reservations individually from the daily list.
+                      </p>
+                    </>
+                  )}
+                  {bulkAction === 'changeDate' && (
+                    <div className="mb-6">
+                      <label className="block text-gray-700 font-bold mb-2">New Date</label>
+                      <input
+                        type="date"
+                        value={bulkNewDate}
+                        onChange={(e) => setBulkNewDate(e.target.value)}
+                        className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                      />
+                    </div>
+                  )}
+                  {bulkAction === 'changeMealType' && (
+                    <div className="mb-6">
+                      <label className="block text-gray-700 font-bold mb-2">New Meal Type</label>
+                      <div className="space-y-2">
+                        {['Dine In', 'To Go', 'Delivery'].map(type => (
+                          <button
+                            key={type}
+                            onClick={() => setBulkNewMealType(type)}
+                            className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
+                              bulkNewMealType === type 
+                                ? 'border-green-500 bg-green-50 text-green-800' 
+                                : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            <span className="font-bold">{type}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex gap-3">
+                    <button
+                      onClick={closeBulkModal}
+                      className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={executeBulkAction}
+                      className={`flex-1 px-4 py-3 text-white font-bold rounded-xl ${
+                        bulkAction === 'cancel' ? 'bg-red-600 hover:bg-red-700' :
+                        bulkAction === 'changeDate' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'
+                      }`}
+                    >
+                      {bulkAction === 'cancel' ? 'Cancel Reservations' : 'Apply Changes'}
                     </button>
                   </div>
                 </div>

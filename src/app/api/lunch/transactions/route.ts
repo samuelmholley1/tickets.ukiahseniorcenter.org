@@ -46,42 +46,42 @@ export async function GET() {
     }
 
     // Only show records from 2/17/2026 onwards (fresh start after 2-week gap)
-    // Use IS_ON_OR_AFTER to include the cutoff date itself
     const CUTOFF_DATE = '2026-02-17';
 
-    // Fetch recent lunch cards (purchased on or after cutoff)
-    const cardsFilter = encodeURIComponent(`OR(IS_SAME({Purchase Date}, '${CUTOFF_DATE}', 'day'), IS_AFTER({Purchase Date}, '${CUTOFF_DATE}'))`);
-    const cardsResponse = await fetch(
-      `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${lunchCardsTableId}?maxRecords=200&filterByFormula=${cardsFilter}&sort%5B0%5D%5Bfield%5D=Purchase%20Date&sort%5B0%5D%5Bdirection%5D=desc`,
-      {
-        headers: {
-          'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
-        },
-      }
-    );
+    // Helper: fetch ALL pages from Airtable (100 records per page)
+    async function fetchAllPages(tableId: string, filter: string, sortField: string): Promise<AirtableRecord[]> {
+      const allRecords: AirtableRecord[] = [];
+      let offset: string | undefined;
+      do {
+        const url = new URL(`${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${tableId}`);
+        url.searchParams.set('filterByFormula', filter);
+        url.searchParams.set('sort[0][field]', sortField);
+        url.searchParams.set('sort[0][direction]', 'desc');
+        if (offset) url.searchParams.set('offset', offset);
 
-    // Fetch recent reservations (date on or after cutoff) — include cancelled for audit trail
-    const reservationsFilter = encodeURIComponent(`OR(IS_SAME({Date}, '${CUTOFF_DATE}', 'day'), IS_AFTER({Date}, '${CUTOFF_DATE}'))`);
-    const reservationsResponse = await fetch(
-      `${AIRTABLE_API_BASE}/${process.env.AIRTABLE_BASE_ID}/${reservationsTableId}?maxRecords=200&filterByFormula=${reservationsFilter}&sort%5B0%5D%5Bfield%5D=Date&sort%5B0%5D%5Bdirection%5D=desc`,
-      {
-        headers: {
-          'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
-        },
-      }
-    );
-
-    if (!cardsResponse.ok || !reservationsResponse.ok) {
-      throw new Error('Failed to fetch transactions');
+        const resp = await fetch(url.toString(), {
+          headers: { 'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}` },
+        });
+        if (!resp.ok) throw new Error(`Airtable fetch failed: ${resp.status}`);
+        const data = await resp.json();
+        allRecords.push(...(data.records || []));
+        offset = data.offset;
+      } while (offset);
+      return allRecords;
     }
 
-    const cardsData = await cardsResponse.json();
-    const reservationsData = await reservationsResponse.json();
+    // Fetch ALL lunch cards (purchased on or after cutoff)
+    const cardsFilter = `OR(IS_SAME({Purchase Date}, '${CUTOFF_DATE}', 'day'), IS_AFTER({Purchase Date}, '${CUTOFF_DATE}'))`;
+    const cardsRecords = await fetchAllPages(lunchCardsTableId, cardsFilter, 'Purchase Date');
+
+    // Fetch ALL reservations (date on or after cutoff) — include cancelled for audit trail
+    const reservationsFilter = `OR(IS_SAME({Date}, '${CUTOFF_DATE}', 'day'), IS_AFTER({Date}, '${CUTOFF_DATE}'))`;
+    const reservationsRecords = await fetchAllPages(reservationsTableId, reservationsFilter, 'Date');
 
     const transactions: LunchTransaction[] = [];
 
     // Process lunch cards
-    for (const record of cardsData.records as AirtableRecord[]) {
+    for (const record of cardsRecords) {
       transactions.push({
         id: record.id,
         type: 'lunch_card',
@@ -99,7 +99,7 @@ export async function GET() {
     }
 
     // Process reservations
-    for (const record of reservationsData.records as AirtableRecord[]) {
+    for (const record of reservationsRecords) {
       const isCancelled = !!(record.fields['Cancelled']);
       const cancelledAt = (record.fields['Cancelled At'] as string) || '';
       const cancelledBy = (record.fields['Cancelled By'] as string) || '';

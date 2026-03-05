@@ -34,6 +34,7 @@ interface ReservationRequest {
   notes?: string;
   paymentComment?: string;
   compCardNumber?: string; // For comp card tracking
+  checkNumber?: string; // For check payment tracking
   staff: string;
   quantity?: number; // defaults to 1
   deductMeal?: boolean; // Only deduct from lunch card if true (for first meal in batch)
@@ -85,7 +86,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body: ReservationRequest = await request.json();
-    const { date, mealType, memberStatus, paymentMethod, lunchCardId, notes, paymentComment, compCardNumber, staff, quantity = 1, isFrozenFriday = false, retroactive = false } = body;
+    const { date, mealType, memberStatus, paymentMethod, lunchCardId, notes, paymentComment, compCardNumber, checkNumber, staff, quantity = 1, isFrozenFriday = false, retroactive = false } = body;
     const name = titleCaseName(body.name || '');
 
     // Contact Sync Logic
@@ -325,6 +326,7 @@ export async function POST(request: NextRequest) {
         'Status': 'Reserved',
         'Frozen Friday': isFrozenFriday,
         ...(compCardNumber ? { 'Comp Card Number': compCardNumber.trim().substring(0, 50) } : {}),
+        ...(checkNumber ? { 'Check Number': checkNumber.trim().substring(0, 50) } : {}),
         ...(paymentComment ? { 'Payment Comment': paymentComment.trim().substring(0, 1000) } : {}),
         ...(contactId ? { 'Contact': [contactId] } : {}),
       },
@@ -429,18 +431,37 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET endpoint to fetch reservations for a specific date
+// GET endpoint to fetch reservations for a specific date OR search by name
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const date = searchParams.get('date');
+    const search = searchParams.get('search'); // Search by last name
+    const futureOnly = searchParams.get('futureOnly') === 'true'; // Only return today + future
 
     if (!process.env.AIRTABLE_API_KEY || !process.env.AIRTABLE_BASE_ID || !process.env.AIRTABLE_LUNCH_RESERVATIONS_TABLE_ID) {
       throw new Error('Airtable environment variables not configured');
     }
 
     let filterFormula = '';
-    if (date) {
+    
+    if (search) {
+      // Search by name (last name match) - case insensitive
+      const sanitizedSearch = search.replace(/'/g, "\\'").toLowerCase().trim();
+      
+      if (futureOnly) {
+        // Get today's date in YYYY-MM-DD format
+        const now = new Date();
+        const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        filterFormula = `?filterByFormula=${encodeURIComponent(
+          `AND(SEARCH("${sanitizedSearch}", LOWER({Name})), NOT({Cancelled}), IS_AFTER({Date}, DATEADD('${today}', -1, 'days')))`
+        )}&sort%5B0%5D%5Bfield%5D=Date&sort%5B0%5D%5Bdirection%5D=asc`;
+      } else {
+        filterFormula = `?filterByFormula=${encodeURIComponent(
+          `AND(SEARCH("${sanitizedSearch}", LOWER({Name})), NOT({Cancelled}))`
+        )}&sort%5B0%5D%5Bfield%5D=Date&sort%5B0%5D%5Bdirection%5D=desc`;
+      }
+    } else if (date) {
       // Use IS_SAME for date comparison - Airtable date fields need proper date comparison, not string equality
       filterFormula = `?filterByFormula=${encodeURIComponent(`AND(IS_SAME({Date}, '${date}', 'day'), NOT({Cancelled}))`)}`;
     }

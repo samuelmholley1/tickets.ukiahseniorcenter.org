@@ -187,57 +187,65 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Text area
+      // Text area - right side after logo
       const logoWidth = logoBase64 ? width * 0.22 : 0;
       const textStartX = x + logoWidth + 0.18;
       const textWidth = width * (logoBase64 ? 0.78 : 1.0) - 0.3;
       const textCenterX = textStartX + textWidth / 2;
-      
-      let textY = y + 0.24;
 
-      // Event Title
+      // --- Event Title (largest, primary hierarchy) ---
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...USC_COLORS.GOLD);
+      doc.text('An Affair to Remember', textCenterX, y + 0.30, { align: 'center' });
+
+      // --- Subtitle ---
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...USC_COLORS.GOLD);
+      doc.text('A Night at the Speakeasy', textCenterX, y + 0.46, { align: 'center' });
+
+      // --- Date ---
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...USC_COLORS.WHITE);
+      doc.text('Saturday, April 11, 2026', textCenterX, y + 0.64, { align: 'center' });
+
+      // --- Time ---
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Doors 6pm  |  Entertainment 7-10pm', textCenterX, y + 0.80, { align: 'center' });
+
+      // --- Dress Code ---
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'italic');
+      doc.setTextColor(...USC_COLORS.GOLD);
+      doc.text('1920s Speakeasy Attire Encouraged', textCenterX, y + 0.96, { align: 'center' });
+
+      // --- Decorative gold divider ---
+      const dividerY = y + 1.10;
+      const dividerHalfW = 0.6;
+      doc.setDrawColor(...USC_COLORS.GOLD);
+      doc.setLineWidth(0.01);
+      doc.line(textCenterX - dividerHalfW, dividerY, textCenterX + dividerHalfW, dividerY);
+
+      // --- Guest Name ---
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...USC_COLORS.GOLD);
-      doc.text('An Affair to Remember', textCenterX, textY, { align: 'center' });
+      const guestText = `${customerName}  -  ${ticket.ticketNumber} of ${ticket.totalTickets}`;
+      doc.text(guestText, textCenterX, y + 1.28, { align: 'center' });
 
-      textY += 0.18;
-
-      // Subtitle
-      doc.setFontSize(13);
-      doc.setFont('helvetica', 'bold');
-      doc.text('🎭 A Night at the Speakeasy', textCenterX, textY, { align: 'center' });
-
-      textY += 0.20;
-
-      // Date
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...USC_COLORS.WHITE);
-      doc.text('Saturday, April 11, 2026', textCenterX, textY, { align: 'center' });
-
-      textY += 0.16;
-
-      // Time
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
-      doc.text('Doors 6pm • Entertainment 7-10pm', textCenterX, textY, { align: 'center' });
-
-      // Guest Name
-      const guestY = y + height - 0.40;
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...USC_COLORS.GOLD);
-      const guestText = `${customerName} • ${ticket.ticketNumber} of ${ticket.totalTickets}`;
-      doc.text(guestText, textCenterX, guestY, { align: 'center' });
-
-      // Footer
-      const footerY = y + height - 0.20;
+      // --- Venue Name ---
       doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...USC_COLORS.WHITE);
-      const footer = '495 Leslie St, Ukiah • (707) 462-4343 ext 209';
-      doc.text(footer, x + width / 2, footerY, { align: 'center' });
+      doc.text('Bartlett Event Center', textCenterX, y + 1.48, { align: 'center' });
+
+      // --- Footer Address ---
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'normal');
+      doc.text('495 Leslie St, Ukiah  |  (707) 462-4343 ext 209', textCenterX, y + 1.62, { align: 'center' });
     };
 
     // Layout tickets in 2x4 grid (8 per page)

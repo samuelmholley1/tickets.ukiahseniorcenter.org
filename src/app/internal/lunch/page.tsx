@@ -1347,6 +1347,7 @@ export default function LunchPage() {
                 lunchCardId: selectedLunchCard?.id,
                 bufferCardId: bufferCard?.id, // Pass buffer card for multi-card deduction
                 notes: mealNotes,
+                checkNumber: (paymentMethod === 'check' || paymentMethod === 'cashCheckSplit') ? (checkNumber || undefined) : undefined,
                 compCardNumber: paymentMethod === 'compCard' ? (compCardNumbers[globalMealIdx] || '') : undefined,
                 paymentComment: paymentMethod === 'staffOverride' ? (paymentComment.trim() || undefined) : undefined,
                 staff: staffInitials,
@@ -3396,15 +3397,9 @@ export default function LunchPage() {
             </div>
             
             {(() => {
-              // Show all transactions, hiding $0 duplicate entries from multi-meal cash/check batches
-              const allFiltered = recentTransactions.filter(tx => {
-                // $0 cash/check entries are extra rows in multi-meal batches — hide them
-                if (tx.amount === 0) {
-                  const pm = (tx.paymentMethod || '').toLowerCase();
-                  if (pm.includes('cash') || pm.includes('check')) return false;
-                }
-                return true;
-              });
+              // Show all transactions - no longer hide $0 entries since each reservation should be visible
+              // (Previously hid $0 cash/check but this caused issues with multi-meal batches)
+              const allFiltered = recentTransactions;
               const filteredTransactions = allFiltered.slice(0, visibleTxCount);
               const hasMore = allFiltered.length > visibleTxCount;
               

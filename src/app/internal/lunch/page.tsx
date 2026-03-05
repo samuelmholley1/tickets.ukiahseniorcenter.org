@@ -34,6 +34,7 @@ interface AggregatedCardInfo {
 interface MealEntry {
   name: string;         // Customer name for this meal
   specialRequest: string; // Special request for this meal (was "notes")
+  comment?: string;       // Short staff comment (prints on PDF, not red)
   isFrozenFriday?: boolean; // Is this a frozen Friday meal (picked up Thursday)?
 }
 
@@ -561,10 +562,7 @@ export default function LunchPage() {
   } | null>(null);
   const [isLoadingReview, setIsLoadingReview] = useState(false);
 
-  // Auto-detected lunch card from customer name (aggregated with buffer info)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [_autoDetectedCard, setAutoDetectedCard] = useState<LunchCard | null>(null);
-  const [autoDetectedCardInfo, setAutoDetectedCardInfo] = useState<AggregatedCardInfo | null>(null);
+
   
   // Fetch deduction history when a card is selected
   useEffect(() => {
@@ -1002,77 +1000,32 @@ export default function LunchPage() {
     }
   }, [customer.firstName, customer.lastName]);
   
-  // Auto-lookup lunch card when customer name changes
-  const searchCustomerCard = useCallback(async (firstName: string, lastName: string) => {
-    const fullName = `${firstName} ${lastName}`.trim();
-    if (fullName.length < 3) {
-      setAutoDetectedCard(null);
-      setAutoDetectedCardInfo(null);
-      return;
-    }
-    
-    try {
-      // Search lunch cards and contacts in parallel
-      const [cardResponse, contactResponse] = await Promise.all([
-        fetch(`/api/lunch/card?search=${encodeURIComponent(fullName)}`),
-        fetch(`/api/contacts/search?search=${encodeURIComponent(fullName)}`),
-      ]);
-
-      // Handle lunch card results
-      const data = await cardResponse.json();
-      if (data.success && data.cards && data.cards.length > 0) {
-        // Get all cards that match this person (including buffer cards)
-        const getBaseName = (name: string) => name.replace(/\s*\[BUFFER\]\s*/gi, '').trim().toLowerCase();
-        const matchingCards = data.cards.filter((card: LunchCard) => 
-          getBaseName(card.name) === fullName.toLowerCase() ||
-          card.name.toLowerCase().includes(fullName.toLowerCase())
-        );
-        
-        if (matchingCards.length > 0) {
-          const aggregated = aggregateCards(matchingCards);
-          setAutoDetectedCardInfo(aggregated);
-          setAutoDetectedCard(aggregated?.primaryCard || matchingCards[0]);
-        } else {
-          setAutoDetectedCard(data.cards[0]);
-          setAutoDetectedCardInfo(aggregateCards([data.cards[0]]));
-        }
-      } else {
-        setAutoDetectedCard(null);
-        setAutoDetectedCardInfo(null);
-      }
-
-      // Handle contact results - autofill email/phone if found
-      if (contactResponse.ok) {
-        const contactData = await contactResponse.json();
-        const contacts = contactData.contacts || [];
-        // Find exact or best match
-        const exactMatch = contacts.find((c: { firstName: string; lastName: string }) => 
-          `${c.firstName} ${c.lastName}`.toLowerCase() === fullName.toLowerCase()
-        );
-        const contact = exactMatch || contacts[0];
-        if (contact) {
-          setCustomer(prev => ({
-            ...prev,
-            email: contact.email || prev.email,
-            phone: contact.phone || prev.phone,
-          }));
-        }
-      }
-    } catch {
-      setAutoDetectedCard(null);
-      setAutoDetectedCardInfo(null);
-    }
-  }, []);
-  
-  // Debounced auto-lookup on name change
+  // Auto-lookup contact info (email/phone) when customer name changes
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (customer.firstName || customer.lastName) {
-        searchCustomerCard(customer.firstName, customer.lastName);
-      }
+    const timer = setTimeout(async () => {
+      const fullName = `${customer.firstName} ${customer.lastName}`.trim();
+      if (fullName.length < 3) return;
+      try {
+        const contactResponse = await fetch(`/api/contacts/search?search=${encodeURIComponent(fullName)}`);
+        if (contactResponse.ok) {
+          const contactData = await contactResponse.json();
+          const contacts = contactData.contacts || [];
+          const exactMatch = contacts.find((c: { firstName: string; lastName: string }) => 
+            `${c.firstName} ${c.lastName}`.toLowerCase() === fullName.toLowerCase()
+          );
+          const contact = exactMatch || contacts[0];
+          if (contact) {
+            setCustomer(prev => ({
+              ...prev,
+              email: contact.email || prev.email,
+              phone: contact.phone || prev.phone,
+            }));
+          }
+        }
+      } catch { /* ignore */ }
     }, 500);
     return () => clearTimeout(timer);
-  }, [customer.firstName, customer.lastName, searchCustomerCard]);
+  }, [customer.firstName, customer.lastName]);
 
   // Calculate individual meal price (single meal)
   const calculateSingleMealPrice = () => {
@@ -1157,8 +1110,6 @@ export default function LunchPage() {
     setSelectedCardInfo(null); // Also clear aggregated card info
     setLunchCardSearch('');
     setAvailableLunchCards([]);
-    setAutoDetectedCard(null);
-    setAutoDetectedCardInfo(null);
     setSubmitResult(null);
     setShowConfirmation(false);
     setRetroactiveOverride(false);
@@ -1203,7 +1154,6 @@ export default function LunchPage() {
         if (searchData.success && searchData.cards && searchData.cards.length > 0) {
           const newCard = searchData.cards[0];
           setSelectedLunchCard(newCard);
-          setAutoDetectedCard(newCard);
           setPaymentMethod('lunchCard');
           // Fill customer info
           const parsed = parseJointName(newCardForm.name);
@@ -1350,6 +1300,7 @@ export default function LunchPage() {
                 checkNumber: (paymentMethod === 'check' || paymentMethod === 'cashCheckSplit') ? (checkNumber || undefined) : undefined,
                 compCardNumber: paymentMethod === 'compCard' ? (compCardNumbers[globalMealIdx] || '') : undefined,
                 paymentComment: paymentMethod === 'staffOverride' ? (paymentComment.trim() || undefined) : undefined,
+                comment: meal.comment?.trim() || undefined,
                 staff: staffInitials,
                 quantity: isFirstMeal ? totalMeals : 1, // Deduct total on first call
                 deductMeal: isFirstMeal, // Only deduct from card on first meal
@@ -1524,21 +1475,6 @@ export default function LunchPage() {
                 💳 Card
               </button>
             </div>
-            
-            {/* Show auto-detected card balance in sticky header - with buffer breakdown */}
-            {autoDetectedCardInfo && transactionType === 'individual' && (
-              <div className={`px-3 py-1 rounded-full ${autoDetectedCardInfo.totalMeals > 0 ? 'bg-green-100' : 'bg-yellow-100'}`}>
-                <span className={`font-['Jost',sans-serif] text-sm font-bold ${autoDetectedCardInfo.totalMeals > 0 ? 'text-green-700' : 'text-yellow-700'}`}>
-                  🎫 {autoDetectedCardInfo.baseName}: {autoDetectedCardInfo.totalMeals} meals
-                  {autoDetectedCardInfo.hasBuffer && (
-                    <span className="text-amber-600 ml-1">
-                      ({autoDetectedCardInfo.regularMeals}+{autoDetectedCardInfo.bufferMeals}buf)
-                    </span>
-                  )}
-                  {autoDetectedCardInfo.totalMeals === 0 && ' (EMPTY)'}
-                </span>
-              </div>
-            )}
             
             {/* Quick total display */}
             {transactionType === 'individual' && selectedDates.length > 0 && (
@@ -1883,7 +1819,6 @@ export default function LunchPage() {
                                               totalMeals,
                                               hasBuffer,
                                             });
-                                            setAutoDetectedCard(card);
                                             setPaymentMethod('lunchCard');
                                             setLunchCardSearch('');
                                             setAvailableLunchCards([]);
@@ -2223,8 +2158,6 @@ export default function LunchPage() {
                   type="button"
                   onClick={() => {
                     setCustomer({ firstName: '', lastName: '', email: 'cashier@seniorctr.org', phone: '111-111-1111' });
-                    setAutoDetectedCard(null);
-                    setAutoDetectedCardInfo(null);
                   }}
                   className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-['Jost',sans-serif] font-bold rounded-lg transition-all text-sm"
                 >
@@ -2232,64 +2165,6 @@ export default function LunchPage() {
                 </button>
               </div>
               
-              {/* Auto-detected lunch card notification - with buffer breakdown */}
-              {autoDetectedCardInfo && transactionType === 'individual' && (
-                <div className={`mb-4 p-3 border-2 rounded-lg ${autoDetectedCardInfo.totalMeals === 0 ? 'bg-yellow-100 border-yellow-400' : (autoDetectedCardInfo.totalMeals === 2 || autoDetectedCardInfo.totalMeals === 3) ? 'bg-yellow-100 border-yellow-400' : 'bg-green-100 border-green-400'}`}>
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <div>
-                      <div className={`font-['Jost',sans-serif] font-bold ${autoDetectedCardInfo.totalMeals > 0 && autoDetectedCardInfo.totalMeals !== 2 && autoDetectedCardInfo.totalMeals !== 3 ? 'text-green-800' : 'text-yellow-800'}`}>
-                        🎫 Lunch Card Found: {autoDetectedCardInfo.baseName}
-                      </div>
-                      <div className={`font-['Bitter',serif] ${autoDetectedCardInfo.totalMeals > 0 && autoDetectedCardInfo.totalMeals !== 2 && autoDetectedCardInfo.totalMeals !== 3 ? 'text-green-700' : 'text-yellow-700'}`}>
-                        <span className="font-bold text-lg">{autoDetectedCardInfo.totalMeals}</span> meals remaining
-                        {autoDetectedCardInfo.hasBuffer && (
-                          <span className="ml-2 text-amber-600">
-                            ({autoDetectedCardInfo.regularMeals} paid + {autoDetectedCardInfo.bufferMeals} buffer)
-                          </span>
-                        )}
-                        {autoDetectedCardInfo.totalMeals === 0 && <span className="ml-2 text-red-600 font-bold">(EMPTY)</span>}
-                      </div>
-                      {autoDetectedCardInfo.hasBuffer && (
-                        <div className="text-xs text-amber-700 mt-1 bg-amber-50 px-2 py-1 rounded inline-block">
-                          ⚡ Weekly buyer - buffer refreshes on card purchase
-                        </div>
-                      )}
-                    </div>
-                    {autoDetectedCardInfo.totalMeals > 0 && (
-                      paymentMethod === 'lunchCard' && selectedLunchCard?.id === autoDetectedCardInfo.primaryCard.id ? (
-                        <div className="px-4 py-2 bg-green-800 text-white font-['Jost',sans-serif] font-bold rounded-lg flex items-center gap-2">
-                          ✅ Card Selected
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            // Parse name into first/last (same as Lunch Card Lookup button)
-                            const { firstName, lastName } = parseJointName(autoDetectedCardInfo.baseName);
-                            setCustomer(prev => ({
-                              ...prev,
-                              firstName,
-                              lastName,
-                              phone: autoDetectedCardInfo.primaryCard.contactPhone || autoDetectedCardInfo.primaryCard.phone || prev.phone,
-                              email: autoDetectedCardInfo.primaryCard.contactEmail || prev.email,
-                            }));
-                            setSelectedLunchCard(autoDetectedCardInfo.primaryCard);
-                            setSelectedCardInfo(autoDetectedCardInfo);
-                            setPaymentMethod('lunchCard');
-                            // Scroll to payment section so user sees it's applied
-                            setTimeout(() => {
-                              document.getElementById('payment-method-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            }, 100);
-                          }}
-                          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-['Jost',sans-serif] font-bold rounded-lg"
-                        >
-                          Use This Card
-                        </button>
-                      )
-                    )}
-                  </div>
-                </div>
-              )}
               
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-3)' }}>
                 <div>
@@ -2702,6 +2577,18 @@ export default function LunchPage() {
                                     })}
                                   </div>
                                 </div>
+                              </div>
+                              {/* Comment - short staff note (prints on PDF) */}
+                              <div className="mt-2">
+                                <label className="block text-xs text-gray-600 mb-1">💬 Comment (optional — prints on attendance list)</label>
+                                <input
+                                  type="text"
+                                  placeholder="Short comment..."
+                                  maxLength={200}
+                                  value={meal.comment || ''}
+                                  onChange={(e) => updateMealDetail(date, idx, 'comment', e.target.value)}
+                                  className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-['Bitter',serif]"
+                                />
                               </div>
                             </div>
                           ))}
@@ -3327,8 +3214,14 @@ export default function LunchPage() {
                     );
                   })()}
                   {paymentComment && (
-                    <p className="col-span-2 text-red-700"><strong>Comment:</strong> {paymentComment}</p>
+                    <p className="col-span-2 text-red-700"><strong>Override Comment:</strong> {paymentComment}</p>
                   )}
+                  {transactionType === 'individual' && (() => {
+                    const allComments = Object.values(dateMeals).flat().map(m => m.comment?.trim()).filter(Boolean);
+                    return allComments.length > 0 ? (
+                      <p className="col-span-2 text-gray-700"><strong>💬 Comments:</strong> {allComments.join(', ')}</p>
+                    ) : null;
+                  })()}
                   {paymentMethod === 'lunchCard' && selectedLunchCard && (
                     selectedLunchCard.remainingMeals >= getTotalMeals() ? (
                       <p className="col-span-2 text-green-700 font-bold">

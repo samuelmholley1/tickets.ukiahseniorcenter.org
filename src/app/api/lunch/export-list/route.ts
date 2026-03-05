@@ -68,6 +68,7 @@ interface Reservation {
   Phone?: string; // Customer phone number
   ContactId?: string; // Linked Contact record ID
   PaymentComment?: string; // Staff Override comment
+  Comment?: string; // General staff comment (prints on PDF)
   isFrozenFriday?: boolean; // Frozen Friday meal (printed with Thursday)
 }
 
@@ -227,6 +228,7 @@ export async function GET(request: NextRequest) {
         LunchCardId: lunchCardId,
         ContactId: contactId,
         PaymentComment: record.fields['Payment Comment'] as string || '',
+        Comment: record.fields['Comment'] as string || '',
       };
     });
 
@@ -862,7 +864,10 @@ export async function GET(request: NextRequest) {
       
       const maxLines = Math.max(nameLines.length, reqLinesCount);
       const lineHeight = 0.17;
-      const rowHeight = Math.max(0.34, (maxLines * lineHeight) + 0.17);
+      // Add extra height for comment line if present
+      const commentText = res.Comment?.trim() || '';
+      const commentExtra = commentText ? 0.16 : 0;
+      const rowHeight = Math.max(0.34, (maxLines * lineHeight) + 0.17 + commentExtra);
       
       checkNewPage(rowHeight);
       
@@ -1006,6 +1011,18 @@ export async function GET(request: NextRequest) {
       } else {
         doc.setTextColor(150, 150, 150);
         doc.text('N/A', x, y + 0.15);
+        doc.setTextColor(0, 0, 0);
+      }
+      
+      // 9. Comment line (if present) — calm teal italic below row data
+      if (commentText) {
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'bolditalic');
+        doc.setTextColor(66, 125, 120); // Teal color matching site theme
+        const commentY = y + (maxLines * lineHeight) + 0.12;
+        const truncatedComment = commentText.length > 90 ? commentText.substring(0, 88) + '...' : commentText;
+        doc.text(`>> ${truncatedComment}`, margin + 0.35, commentY);
+        doc.setFont('helvetica', 'normal');
         doc.setTextColor(0, 0, 0);
       }
       

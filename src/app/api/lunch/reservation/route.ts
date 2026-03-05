@@ -35,6 +35,7 @@ interface ReservationRequest {
   paymentComment?: string;
   compCardNumber?: string; // For comp card tracking
   checkNumber?: string; // For check payment tracking
+  comment?: string; // Short staff comment (prints on PDF)
   staff: string;
   quantity?: number; // defaults to 1
   deductMeal?: boolean; // Only deduct from lunch card if true (for first meal in batch)
@@ -86,7 +87,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body: ReservationRequest = await request.json();
-    const { date, mealType, memberStatus, paymentMethod, lunchCardId, notes, paymentComment, compCardNumber, checkNumber, staff, quantity = 1, isFrozenFriday = false, retroactive = false } = body;
+    const { date, mealType, memberStatus, paymentMethod, lunchCardId, notes, paymentComment, compCardNumber, checkNumber, comment, staff, quantity = 1, isFrozenFriday = false, retroactive = false } = body;
     const name = titleCaseName(body.name || '');
 
     // Contact Sync Logic
@@ -328,6 +329,7 @@ export async function POST(request: NextRequest) {
         ...(compCardNumber ? { 'Comp Card Number': compCardNumber.trim().substring(0, 50) } : {}),
         ...(checkNumber ? { 'Check Number': checkNumber.trim().substring(0, 50) } : {}),
         ...(paymentComment ? { 'Payment Comment': paymentComment.trim().substring(0, 1000) } : {}),
+        ...(comment ? { 'Comment': comment.trim().substring(0, 200) } : {}),
         ...(contactId ? { 'Contact': [contactId] } : {}),
       },
     };

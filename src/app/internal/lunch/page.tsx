@@ -581,6 +581,7 @@ export default function LunchPage() {
   }, [selectedLunchCard?.id]);
   
   // Helper to aggregate cards by base name
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const aggregateCards = (cards: LunchCard[]): AggregatedCardInfo | null => {
     if (!cards || cards.length === 0) return null;
     

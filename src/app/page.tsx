@@ -7,6 +7,7 @@ import LoadingStates from '@/components/LoadingStates';
 
 export default function Tickets() {
   const [isSpeakeasyLoading, setIsSpeakeasyLoading] = useState(true);
+  const [isSponsorshipLoading, setIsSponsorshipLoading] = useState(true);
 
   const scrollToForm = (formId: string) => {
     const element = document.getElementById(formId);
@@ -36,17 +37,6 @@ export default function Tickets() {
           {/* Event Buttons */}
           <div className="grid-cards" style={{ marginBottom: 'var(--space-4)', maxWidth: '800px', marginInline: 'auto' }}>
             <button
-              onClick={() => scrollToForm('valentines-section')}
-              className="group flex flex-col items-center justify-center text-center bg-white rounded-lg border-4 border-pink-500 hover:bg-pink-500 transition-all duration-300 shadow-lg hover:shadow-xl cursor-pointer"
-              style={{ padding: '24px 20px', minHeight: '180px' }}
-              aria-label="Purchase Valentine's Day Dance tickets"
-            >
-              <div className="text-4xl" style={{ marginBottom: 'var(--space-2)' }}>💕</div>
-              <div className="text-lg md:text-xl font-['Jost',sans-serif] font-bold text-gray-900 group-hover:text-white transition-colors" style={{ marginBottom: 'var(--space-1)', lineHeight: '1.2' }}>Valentine&apos;s Day Dance</div>
-              <div className="text-sm text-[#666] group-hover:text-white transition-colors font-['Bitter',serif]" style={{ lineHeight: '1.4' }}>February 14, 2026</div>
-              <div className="text-base md:text-lg font-bold text-pink-500 group-hover:text-white transition-colors font-['Jost',sans-serif]" style={{ marginTop: 'var(--space-1)' }}>Members $35 • Non-Members $45</div>
-            </button>
-            <button
               onClick={() => scrollToForm('speakeasy-section')}
               className="group flex flex-col items-center justify-center text-center bg-white rounded-lg border-4 border-amber-600 hover:bg-amber-600 transition-all duration-300 shadow-lg hover:shadow-xl cursor-pointer"
               style={{ padding: '24px 20px', minHeight: '180px' }}
@@ -58,32 +48,22 @@ export default function Tickets() {
               <div className="text-sm text-[#666] group-hover:text-white transition-colors font-['Bitter',serif]" style={{ lineHeight: '1.4' }}>April 11, 2026</div>
               <div className="text-base md:text-lg font-bold text-amber-600 group-hover:text-white transition-colors font-['Jost',sans-serif]" style={{ marginTop: 'var(--space-1)' }}>$100 per person</div>
             </button>
+            <button
+              onClick={() => scrollToForm('sponsorship-section')}
+              className="group flex flex-col items-center justify-center text-center bg-white rounded-lg border-4 border-yellow-700 hover:bg-yellow-700 transition-all duration-300 shadow-lg hover:shadow-xl cursor-pointer"
+              style={{ padding: '24px 20px', minHeight: '180px' }}
+              aria-label="Purchase Table Sponsorship"
+            >
+              <div className="text-4xl" style={{ marginBottom: 'var(--space-2)' }}>🥂</div>
+              <div className="text-lg md:text-xl font-['Jost',sans-serif] font-bold text-gray-900 group-hover:text-white transition-colors" style={{ marginBottom: 'var(--space-1)', lineHeight: '1.2' }}>Table Sponsorship</div>
+              <div className="text-xs md:text-sm text-[#666] group-hover:text-white transition-colors font-['Bitter',serif]" style={{ lineHeight: '1.4' }}>An Affair to Remember</div>
+              <div className="text-sm text-[#666] group-hover:text-white transition-colors font-['Bitter',serif]" style={{ lineHeight: '1.4' }}>April 11, 2026</div>
+              <div className="text-base md:text-lg font-bold text-yellow-700 group-hover:text-white transition-colors font-['Jost',sans-serif]" style={{ marginTop: 'var(--space-1)' }}>Starting at $400</div>
+            </button>
           </div>
 
           {/* Sign Up Forms */}
           <div style={{ display: 'grid', gap: 'var(--space-7)' }}>
-            {/* Valentine's Day Dance Section */}
-            <div id="valentines-section" className="scroll-mt-8">
-              <div className="card">
-                <div className="text-center" style={{ marginBottom: 'var(--space-3)' }}>
-                  <h2 className="text-xl md:text-2xl lg:text-3xl font-['Jost',sans-serif] font-bold text-pink-600" style={{ marginBottom: 'var(--space-2)', lineHeight: '1.2' }}>💕 Valentine&apos;s Day Dance</h2>
-                  <p className="text-base md:text-lg text-[#666] font-['Bitter',serif]" style={{ marginBottom: 0, maxWidth: '600px', marginInline: 'auto', lineHeight: '1.5' }}>February 14, 2026 • Members $35 • Non-Members $45</p>
-                </div>
-                <div className="bg-pink-50 rounded-lg border-4 border-pink-500" style={{ padding: 'var(--space-4)', textAlign: 'center' }}>
-                  <div className="text-4xl" style={{ marginBottom: 'var(--space-3)' }}>🎟️</div>
-                  <h3 className="text-lg md:text-xl font-['Jost',sans-serif] font-bold text-pink-700" style={{ marginBottom: 'var(--space-2)' }}>
-                    Online Sales Have Closed
-                  </h3>
-                  <p className="text-base md:text-lg text-gray-700 font-['Bitter',serif]" style={{ maxWidth: '500px', marginInline: 'auto', lineHeight: '1.6', marginBottom: 'var(--space-2)' }}>
-                    Tickets are available at the door tonight!
-                  </p>
-                  <p className="text-sm md:text-base text-gray-600 font-['Bitter',serif]" style={{ maxWidth: '500px', marginInline: 'auto', lineHeight: '1.6' }}>
-                    We accept <strong>cash</strong>, <strong>card</strong>, and <strong>check</strong>.
-                  </p>
-                </div>
-              </div>
-            </div>
-
             {/* An Affair to Remember Section */}
             <div id="speakeasy-section" className="scroll-mt-8">
               {/* Tip Notice */}
@@ -130,6 +110,59 @@ export default function Tickets() {
                       src="https://www.zeffy.com/embed/ticketing/an-affair-to-remember-2026-a-night-at-the-speakeasy"
                       allow="payment"
                       onLoad={() => setIsSpeakeasyLoading(false)}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Table Sponsorship Section */}
+            <div id="sponsorship-section" className="scroll-mt-8">
+              {/* Tip Notice */}
+              <div className="bg-red-50 border-2 border-red-400 rounded-lg" style={{ padding: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
+                <h3 className="text-base md:text-lg font-['Jost',sans-serif] font-bold text-red-900 text-center" style={{ marginBottom: 'var(--space-2)', lineHeight: '1.3' }}>
+                  ⚠️ Set Zeffy Tip to $0
+                </h3>
+                <p className="text-xs md:text-sm text-red-900 font-['Bitter',serif] text-center" style={{ marginBottom: 'var(--space-2)', maxWidth: '700px', marginInline: 'auto', lineHeight: '1.6' }}>
+                  When filling out the form below, <strong>set the tip to $0</strong> so you don&apos;t pay any fees.
+                </p>
+                <div className="bg-white rounded border border-red-300" style={{ padding: 'var(--space-2)', maxWidth: '600px', marginInline: 'auto', overflow: 'hidden' }}>
+                  <img
+                    src="/zero_tip.png"
+                    alt="Set Zeffy tip to zero"
+                    className="rounded"
+                    style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
+                  />
+                </div>
+              </div>
+
+              {/* Table Sponsorship Form */}
+              <div className="card">
+                <div className="text-center" style={{ marginBottom: 'var(--space-3)' }}>
+                  <h2 className="text-xl md:text-2xl lg:text-3xl font-['Jost',sans-serif] font-bold text-yellow-800" style={{ marginBottom: 'var(--space-2)', lineHeight: '1.2' }}>🥂 Table Sponsorship</h2>
+                  <p className="text-base md:text-lg text-[#666] font-['Bitter',serif]" style={{ marginBottom: 0, maxWidth: '600px', marginInline: 'auto', lineHeight: '1.5' }}>An Affair to Remember • A Night at the Speakeasy • April 11, 2026 • Sponsorship tables starting at $400</p>
+                </div>
+                <div className="bg-yellow-50 rounded-lg border-4 border-yellow-700 relative" style={{ padding: 'var(--space-3)' }}>
+                  {isSponsorshipLoading && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-yellow-50 rounded-lg z-10">
+                      <LoadingStates size="lg" />
+                      <p className="text-lg text-gray-600 font-['Bitter',serif] font-medium" style={{ marginTop: 'var(--space-3)' }}>Loading sponsorship form...</p>
+                      <div className="w-full max-w-md space-y-3" style={{ marginTop: 'var(--space-4)', paddingInline: 'var(--space-4)' }}>
+                        <div className="h-12 bg-yellow-200 rounded-lg animate-pulse"></div>
+                        <div className="h-12 bg-yellow-200 rounded-lg animate-pulse"></div>
+                        <div className="h-12 bg-yellow-200 rounded-lg animate-pulse"></div>
+                        <div className="h-24 bg-yellow-200 rounded-lg animate-pulse"></div>
+                      </div>
+                    </div>
+                  )}
+                  <div style={{ position: 'relative', overflow: 'hidden', height: '450px', width: '100%', paddingTop: '450px' }}>
+                    <iframe
+                      title="Donation form powered by Zeffy"
+                      style={{ position: 'absolute', border: 0, top: 0, left: 0, bottom: 0, right: 0, width: '100%', height: '100%' }}
+                      src="https://www.zeffy.com/embed/ticketing/table-sponsors-an-affair-to-remember-2026-a-night-at-the-speakeasy"
+                      allow="payment"
+                      allowTransparency={true}
+                      onLoad={() => setIsSponsorshipLoading(false)}
                     />
                   </div>
                 </div>
